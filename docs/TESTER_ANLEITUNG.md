@@ -4,7 +4,7 @@ Hallo Michi, hallo Anna! Danke, dass ihr thisCounts testet.
 
 ## 1. App installieren
 
-Öffnet den Link, den ihr bekommen habt.
+Öffnet **https://thiscounts.netlify.app** auf eurem Handy.
 
 - **iPhone:** unbedingt in **Safari** öffnen (nicht Chrome) → unten auf **Teilen** tippen (Quadrat mit Pfeil) → **Zum Home-Bildschirm**.
 - **Android:** in **Chrome** öffnen → oben rechts **⋮** → **App installieren** (oder **Zum Startbildschirm hinzufügen**).

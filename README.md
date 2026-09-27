@@ -1,5 +1,7 @@
 # thisCounts V1
 
+**Live:** https://thiscounts.netlify.app
+
 A shared shopping list for two people that sorts items **by store** and, inside a store, **by the path through the store**. It's an installable web app (PWA) that works fully offline and syncs live between both phones.
 
 - **Setting it up (accounts, hosting, testing):** [`docs/SETUP.md`](docs/SETUP.md)
