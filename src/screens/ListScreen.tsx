@@ -12,7 +12,7 @@ import { OnceSheet } from '../sheets/OnceSheet';
 import { QtySheet } from '../sheets/QtySheet';
 import { Avatar, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { useMarkSince } from '../app/markSince';
-import { ask as askState } from '../app/shopping';
+import { ask as askState, holdForNextTrip } from '../app/shopping';
 import { SESSION_STALE_MS } from '../lib/logic';
 import type { Session, Stop } from '../lib/types';
 
@@ -54,7 +54,7 @@ export function ListScreen() {
     if (!ask) return;
     const it = items.find(i => i.id === ask.itemId);
     if (it) {
-      if (!take) actions.updateItem(it, { pendingDecision: false, nextTrip: true });
+      if (!take) holdForNextTrip(it, data.sessions, app.user.uid);
       else if (ask.at.custom) actions.updateItem(it, { pendingDecision: false, storeId: null, once: true, onceStopName: ask.at.name, parked: false });
       else actions.updateItem(it, { pendingDecision: false, storeId: ask.at.id, once: !list.storeIds.includes(ask.at.id), onceStopName: null, parked: false });
     }
@@ -70,6 +70,8 @@ export function ListScreen() {
     return () => clearTimeout(t);
   }, [ask]);
   useEffect(() => () => { if (askState.openItemId) resolveRef.current(false); }, []);
+  // The shopper finished (or went quiet) while the question was open → nothing left to decide
+  useEffect(() => { if (ask && !shopper) resolveRef.current(false); }, [ask, shopper]);
 
   /** Creates the item; asks first if it lands at a store the shopper already finished (R5). */
   const createItem = (data0: { name: string; qty: string | null; category: string; storeId: string | null }): string => {
@@ -77,11 +79,13 @@ export function ListScreen() {
     const target = effStore(probe, list, storeIdSet);
     if (shopper && shopperAt && target && shopper.doneStoreIds.includes(target) && target !== shopper.storeId) {
       const from = stopById(target, data.stores, items);
-      const id = actions.addItem(list.id, { ...data0, pendingDecision: true });
-      askState.openItemId = id;
-      inRef.current?.blur();
-      if (from) setAsk({ itemId: id, name: data0.name, from, at: shopperAt });
-      return id;
+      if (from) {
+        const id = actions.addItem(list.id, { ...data0, pendingDecision: true });
+        askState.openItemId = id;
+        inRef.current?.blur();
+        setAsk({ itemId: id, name: data0.name, from, at: shopperAt });
+        return id;
+      }
     }
     return actions.addItem(list.id, data0);
   };

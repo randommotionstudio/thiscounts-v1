@@ -6,8 +6,7 @@ import { guessDeptFromName } from '../lib/logic';
 import type { Item, List, Store } from '../lib/types';
 import { memoryId } from '../data/refs';
 import { useConnection, type Conn } from './useConnection';
-import { ask } from './shopping';
-import * as actions from '../data/actions';
+import { ask, holdForNextTrip } from './shopping';
 import type { Route } from './router';
 
 export interface ListDraft {
@@ -99,8 +98,8 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   useEffect(() => {
     Object.values(data.itemsByList).flat()
       .filter(i => i.pendingDecision && i.createdBy === user.uid && i.id !== ask.openItemId)
-      .forEach(i => actions.updateItem(i, { pendingDecision: false, nextTrip: true }));
-  }, [data.itemsByList, user.uid]);
+      .forEach(i => holdForNextTrip(i, data.sessions, user.uid));
+  }, [data.itemsByList, data.sessions, user.uid]);
 
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();

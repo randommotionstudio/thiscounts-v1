@@ -22,6 +22,8 @@ export interface Data {
   history: HistoryEntry[];
   /** V1.1: live shopping sessions by uid (stale ones included; filter with SESSION_STALE_MS) */
   sessions: Record<string, Session>;
+  /** The sessions snapshot has arrived (from cache or server) */
+  sessionsReady: boolean;
   /** V1.1: Profil → "Beim Einkaufen" */
   notifyWhileShopping: boolean;
   /** Local changes that haven't reached the server yet */
@@ -73,6 +75,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [memory, setMemory] = useState<Data['memory']>({});
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [sessions, setSessions] = useState<Record<string, Session>>({});
+  const [sessionsReady, setSessionsReady] = useState(false);
   const [notifyWhileShopping, setNotify] = useState(true);
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
   const seeded = useRef(false);
@@ -135,6 +138,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         };
       });
       setSessions(m);
+      setSessionsReady(true);
     }, onErr);
     const u7 = onSnapshot(userRef(user.uid), snap => { setNotify(snap.get('notifyWhileShopping') !== false); }, onErr);
     return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); };
@@ -163,9 +167,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     ready: !!hh && lists.length > 0,
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
-    stores, lists, itemsByList, memory, history, sessions, notifyWhileShopping,
+    stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, notifyWhileShopping, pendingMap, openWrites]);
+  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

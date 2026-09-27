@@ -43,7 +43,7 @@ export function setChecked(item: Item, checked: boolean) {
 
 /** setStore(): fixed store (or null = automatic) + remembered for this name */
 export function setItemStore(item: Item, storeId: string | null) {
-  updateItem(item, { storeId, once: false, onceStopName: null, parked: false });
+  updateItem(item, { storeId, once: false, onceStopName: null, parked: false, nextTrip: false, pendingDecision: false });
   report(setDoc(memoryRef(item.name), { name: normName(item.name), storeId }, { merge: true }));
 }
 
@@ -58,8 +58,8 @@ export function setCategoryForName(allItems: Item[], name: string, category: str
 /** assignOnce(): one-time stop — a free-text place or a store outside the list. Not remembered. */
 export function assignOnce(item: Item, target: { text: string } | { storeId: string }) {
   updateItem(item, 'text' in target
-    ? { storeId: null, once: true, onceStopName: target.text, parked: false }
-    : { storeId: target.storeId, once: true, onceStopName: null, parked: false });
+    ? { storeId: null, once: true, onceStopName: target.text, parked: false, nextTrip: false, pendingDecision: false }
+    : { storeId: target.storeId, once: true, onceStopName: null, parked: false, nextTrip: false, pendingDecision: false });
 }
 
 /** "Artikel fehlt": move to another stop, optionally splitting off the rest. */
@@ -98,7 +98,7 @@ export function finishShopping(list: List, items: Item[]) {
   report(batch.commit());
   updateList(list.id, { tripOrder: null, deferred: [] });
   // Items held back for "next time" are back on the next trip
-  items.filter(i => !i.checked && i.nextTrip).forEach(i => updateItem(i, { nextTrip: false }));
+  items.filter(i => !i.checked && (i.nextTrip || i.pendingDecision)).forEach(i => updateItem(i, { nextTrip: false, pendingDecision: false }));
   endSession();
 }
 

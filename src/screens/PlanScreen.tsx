@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { useTrip } from '../app/useTrip';
 import * as actions from '../data/actions';
-import { moveInOrder, tint } from '../lib/logic';
+import { moveInOrder, onTrip, tint } from '../lib/logic';
 import type { Stop } from '../lib/types';
 import { ConnPill, LogoTile, TabBar, UpDown, useHeaderHeight } from '../ui/kit';
 
@@ -37,7 +37,7 @@ export function PlanScreen() {
     if (next) actions.updateList(list.id, { tripOrder: next, deferred: [] });
   };
   const allHere = (s: Stop) => {
-    const n = items.filter(i => !i.parked).length;
+    const n = items.filter(onTrip).length;
     actions.allHere(items, list, s.id);
     setMenu(null);
     goStore(s.id);

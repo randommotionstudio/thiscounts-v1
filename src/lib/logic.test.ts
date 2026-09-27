@@ -163,3 +163,11 @@ describe('V1.1 trip exclusions', () => {
     expect(route2([item({ storeId: 'b', nextTrip: true }), item({ storeId: 'c', pendingDecision: true })], l, STORES)).toEqual([]);
   });
 });
+
+import { markSinceAtStart } from '../app/markSince';
+describe('V1.1 markSince', () => {
+  const M = 60 * 1000;
+  it('first launch marks nothing', () => { expect(markSinceAtStart(1000 * M, null, null)).toBe(1000 * M); });
+  it('quick restart keeps the stored value', () => { expect(markSinceAtStart(1000 * M, 998 * M, 900 * M)).toBe(900 * M); });
+  it('back after >= 10 min: since the app was closed', () => { expect(markSinceAtStart(1000 * M, 985 * M, 900 * M)).toBe(985 * M); });
+});

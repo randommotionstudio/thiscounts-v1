@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
-import { enterStore, markStoreDone, notifiedItems, setPosition } from '../app/shopping';
+import { enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
   CHECK_AFTER, agoText, ageDays, effStore, icon, onTrip, posInfo, stopById, storeGroups, storeToStop, tint,
@@ -42,32 +42,42 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const curIdx = route.findIndex(s => s.id === cur.id);
   const curItems = itemsAt(cur.id);
 
+  const order = cur.categoryOrder || data.defaultCategoryOrder;
+  const orderKey = order.join('|');
+
   // ---- V1.1 shopping session: written when entering the stop ----
-  const [session, setSession] = useState(() => enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid]));
+  // Waits for the sessions snapshot, so a reload mid-trip continues the trip instead of starting a new one.
+  const [session, setSession] = useState<ReturnType<typeof enterStore>['session'] | null>(null);
   useEffect(() => {
-    if (session.storeId !== cur.id) setSession(enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid]));
-  }, [cur.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!data.sessionsReady || (session && session.storeId === cur.id)) return;
+    const doneStops = route.filter(s => s.id !== cur.id && doneOf(s)).map(s => s.id);
+    const r = enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid], doneStops, orderKey);
+    // A new trip: items held back for "next time" on an earlier, unfinished trip are back on
+    if (r.newTrip) app.items.filter(i => i.nextTrip && i.createdAtMs < r.session.startedAtMs).forEach(i => actions.updateItem(i, { nextTrip: false }));
+    setSession(r.session);
+  }, [data.sessionsReady, cur.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Added by someone else during this trip → "new" (tag + border, maybe a banner)
-  const lateFromOther = (i: Item) => !!i.createdBy && i.createdBy !== user.uid && i.createdAtMs > session.startedAtMs;
-  const order = cur.categoryOrder || data.defaultCategoryOrder;
-  const pi = posInfo(curItems.map(i => ({ category: i.category, checked: i.checked, lateFromOther: lateFromOther(i) })), order, session.storeId === cur.id ? session.position : 0);
-  useEffect(() => { setPosition(cur.id, pi.pos); }, [cur.id, pi.pos]);
+  const lateFromOther = (i: Item) => !!session && !!i.createdBy && i.createdBy !== user.uid && i.createdAtMs > session.startedAtMs;
+  const floor = session && session.storeId === cur.id && session.orderKey === orderKey ? session.position : 0;
+  const pi = posInfo(curItems.map(i => ({ category: i.category, checked: i.checked, lateFromOther: lateFromOther(i) })), order, floor);
+  const checkedHere = curItems.filter(i => i.checked).length;
+  useEffect(() => { if (session) reportProgress(cur.id, pi.pos, orderKey); }, [session, cur.id, pi.pos, checkedHere, orderKey]);
 
   // ---- V1.1 in-app banner (R2): a new item lands here in a category we've already passed ----
   // An item counts once it is on the trip *at this stop* — e.g. also after a Rückfrage answered with "mitnehmen".
-  const seen = useRef<Set<string> | null>(null);
   useEffect(() => {
+    if (!session) return;
     const here = (i: Item) => onTrip(i) && effStore(i, list, storeIds) === cur.id;
-    if (!seen.current) { seen.current = new Set(app.items.filter(here).map(i => i.id)); return; }
+    const seen = seenSet(session.startedAtMs, cur.id, () => app.items.filter(here).map(i => i.id));
     for (const i of app.items) {
-      if (!here(i) || seen.current.has(i.id)) continue;
-      seen.current.add(i.id);
+      if (!here(i) || seen.has(i.id)) continue;
+      seen.add(i.id);
       if (notifiedItems.has(i.id) || !lateFromOther(i) || i.checked || !pi.passed(i.category)) continue;
       notifiedItems.add(i.id);
       if (data.notifyWhileShopping) setNotif({ title: other.name + ' hat ' + i.name + ' hinzugefügt', body: i.category + ' hast du schon hinter dir – noch mal kurz zurück?' });
     }
-  }, [app.items]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [app.items, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const groups = storeGroups(curItems, order);
   const doneCount = curItems.filter(i => i.checked).length;
