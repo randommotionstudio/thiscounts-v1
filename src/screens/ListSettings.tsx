@@ -19,20 +19,27 @@ export function ListSettings() {
   const selected = data.stores.filter(s => draft.storeIds.includes(s.id));
   const main = data.stores.find(s => s.id === draft.mainStoreId) || selected[0];
   const lastList = data.lists.length < 2;
+  const noStores = isEdit && !draft.storeIds.some(id => data.stores.some(s => s.id === id));
   const editItems = editList ? data.itemsByList[editList.id] || [] : [];
 
   const cancel = () => { app.setDraft(null); app.back(paths.list); };
   const next = () => {
     if (!isEdit) { if (name) navigate(paths.listStores); return; }
-    if (!editList) return;
-    actions.updateList(editList.id, {
-      name: name || editList.name,
-      storeIds: draft.storeIds,
-      mainStoreId: draft.mainStoreId,
-      storeOrder: setupOrdered(data.stores, draft.storeIds, draft.mainStoreId, draft.storeOrder).map(s => s.id),
-    });
+    if (!editList || noStores) return;
+    // Only write what was changed here, so a store edit on the other phone isn't overwritten with an old copy
+    const known = new Set(data.stores.map(s => s.id));
+    const storeIds = draft.storeIds.filter(id => known.has(id));
+    const mainStoreId = draft.mainStoreId && storeIds.includes(draft.mainStoreId) ? draft.mainStoreId : storeIds[0] || null;
+    const storeOrder = setupOrdered(data.stores, storeIds, mainStoreId, draft.storeOrder).map(s => s.id);
+    const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+    const patch: Parameters<typeof actions.updateList>[1] = {};
+    if ((name || editList.name) !== editList.name) patch.name = name || editList.name;
+    if (!same(storeIds, editList.storeIds)) patch.storeIds = storeIds;
+    if (mainStoreId !== editList.mainStoreId) patch.mainStoreId = mainStoreId;
+    if (!same(storeOrder, setupOrdered(data.stores, editList.storeIds, editList.mainStoreId, editList.storeOrder).map(s => s.id))) patch.storeOrder = storeOrder;
+    if (Object.keys(patch).length) actions.updateList(editList.id, patch);
     app.setDraft(null);
-    navigate(paths.list);
+    navigate(paths.list, true);
     toast('Änderungen gespeichert');
   };
   const del = () => {
@@ -41,11 +48,11 @@ export function ListSettings() {
     actions.deleteList(editList.id, editItems);
     app.setActiveList(rest[0].id);
     app.setDraft(null);
-    navigate(paths.list);
+    navigate(paths.list, true);
     toast('„' + editList.name + '“ gelöscht');
   };
 
-  const off = !isEdit && !name;
+  const off = (!isEdit && !name) || noStores;
   return (
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 20px) 20px 14px' }}>
@@ -93,7 +100,7 @@ export function ListSettings() {
         )}
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
-        <button className={'cta' + (off ? ' off' : '')} onClick={next}>{isEdit ? 'Änderungen speichern' : name ? 'Weiter zu den Läden' : 'Erst einen Namen eingeben'}</button>
+        <button className={'cta' + (off ? ' off' : '')} onClick={next}>{noStores ? 'Mindestens einen Laden wählen' : isEdit ? 'Änderungen speichern' : name ? 'Weiter zu den Läden' : 'Erst einen Namen eingeben'}</button>
       </div>
     </div>
   );

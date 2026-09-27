@@ -1,9 +1,9 @@
-import { Timestamp, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { Timestamp, getDocsFromServer, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   DEFAULT_CATEGORY_ORDER, PEOPLE, SEED_MAIN_STORE, SEED_STORES, seedCategoryOrder,
 } from '../config/household';
-import { householdRef, listRef, storeRef } from './refs';
+import { householdRef, listRef, storeRef, storesCol } from './refs';
 import { report } from './write';
 
 /**
@@ -38,4 +38,19 @@ export function seedHousehold(uid: string) {
     createdAt: serverTimestamp(),
   });
   report(batch.commit());
+}
+
+/** A fresh "Wocheneinkauf" with all stores — only used when every list has been deleted. */
+export function seedDefaultList() {
+  getDocsFromServer(storesCol()).then(snap => {
+    const ids = snap.docs
+      .map(d => ({ id: d.id, t: (d.get('createdAt') as Timestamp | undefined)?.toMillis() ?? 0 }))
+      .sort((a, b) => a.t - b.t)
+      .map(x => x.id);
+    const main = ids.includes(SEED_MAIN_STORE) ? SEED_MAIN_STORE : ids[0] || null;
+    report(setDoc(listRef('wocheneinkauf'), {
+      name: 'Wocheneinkauf', storeIds: ids, mainStoreId: main, storeOrder: ids.filter(id => id !== main),
+      tripOrder: null, deferred: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    }));
+  }).catch(e => console.warn('[thisCounts] could not create a list', e));
 }

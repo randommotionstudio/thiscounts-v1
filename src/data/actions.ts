@@ -76,7 +76,7 @@ export function moveItem(item: Item, patch: ItemPatch, split: { foundQty: string
 }
 
 export function parkItem(item: Item) {
-  updateItem(item, { parked: true, storeId: null, once: false, onceStopName: null });
+  updateItem(item, { parked: true, storeId: null, once: false, onceStopName: null, checked: false, checkedBy: null });
 }
 
 /** "Alles hier einkaufen · nur ein Stopp" */

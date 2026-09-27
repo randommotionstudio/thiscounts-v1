@@ -84,6 +84,15 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
     lsSet(LS_CURRENT + list.id, id);
   }, [list.id]);
 
+  // Someone finished the trip (checked items are gone) → no current stop any more on this phone either
+  const checkedCount = items.filter(i => i.checked).length;
+  const prevChecked = useRef({ listId: list.id, n: checkedCount });
+  useEffect(() => {
+    const p = prevChecked.current;
+    if (p.listId === list.id && p.n > 0 && checkedCount === 0 && currentStop) setCurrentStop(null);
+    prevChecked.current = { listId: list.id, n: checkedCount };
+  }, [list.id, checkedCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();
     const byId = new Map(data.stores.map(s => [s.id, s]));

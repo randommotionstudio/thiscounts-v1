@@ -71,7 +71,10 @@ function Screens() {
   const needsDraft = r.name === 'listNew' || r.name === 'listEdit' || r.name === 'listStores';
   const missingDraft = needsDraft && !app.draft;
   // A settings screen without a draft (e.g. after a reload) → back to the list
-  useEffect(() => { if (missingDraft) app.navigate('/', true); }, [missingDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!missingDraft) return;
+    if (history.state && history.state.prev) history.back(); else app.navigate('/', true);
+  }, [missingDraft]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let screen: ReactNode = null;
   switch (r.name) {

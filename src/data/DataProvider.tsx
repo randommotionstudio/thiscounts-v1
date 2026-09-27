@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
   type DocumentData, type DocumentSnapshot, type QuerySnapshot, type Timestamp, limit, onSnapshot, orderBy, query,
 } from 'firebase/firestore';
@@ -6,7 +6,8 @@ import type { User } from 'firebase/auth';
 import { ALL_DEPTS, UNKNOWN } from '../lib/logic';
 import type { HistoryEntry, Item, List, MemoryEntry, Store } from '../lib/types';
 import { historyCol, householdRef, itemsCol, listsCol, memoryCol, storesCol } from './refs';
-import { seedHousehold } from './seed';
+import { seedDefaultList, seedHousehold } from './seed';
+import { onWritesChange, writesInFlight } from './write';
 
 export interface Data {
   /** false until the household is known (first login only — afterwards it comes from the cache) */
@@ -66,6 +67,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
   const seeded = useRef(false);
+  const listSeeded = useRef(false);
+  const [listsGone, setListsGone] = useState(false);
+  const openWrites = useSyncExternalStore(onWritesChange, writesInFlight);
 
   const track = (key: string, snap: QuerySnapshot | DocumentSnapshot) => {
     const p = snap.metadata.hasPendingWrites;
@@ -95,6 +99,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     }, onErr);
     const u3 = onSnapshot(listsCol(), { includeMetadataChanges: true }, snap => {
       track('lists', snap);
+      setListsGone(snap.empty && !snap.metadata.fromCache);
       setLists(snap.docs.map(toList).sort((a, b) => a.createdAtMs - b.createdAtMs || a.id.localeCompare(b.id)));
     }, onErr);
     const u4 = onSnapshot(memoryCol(), { includeMetadataChanges: true }, snap => {
@@ -112,6 +117,11 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     }, onErr);
     return () => { u1(); u2(); u3(); u4(); u5(); };
   }, [user.uid]);
+
+  // Every list got deleted (e.g. on both phones while offline) → start a fresh one instead of hanging.
+  useEffect(() => {
+    if (hh?.exists && listsGone && !listSeeded.current) { listSeeded.current = true; seedDefaultList(); }
+  }, [hh, listsGone]);
 
   // Items: one listener per list
   const listIds = lists.map(l => l.id).join('|');
@@ -132,8 +142,8 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
     stores, lists, itemsByList, memory, history,
-    pending: Object.values(pendingMap).some(Boolean),
-  }), [hh, denied, stores, lists, itemsByList, memory, history, pendingMap]);
+    pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
+  }), [hh, denied, stores, lists, itemsByList, memory, history, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

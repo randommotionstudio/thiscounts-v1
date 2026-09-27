@@ -20,7 +20,7 @@ export function useTrip() {
       const done = items.filter(i => i.checked).length;
       actions.finishShopping(list, items);
       app.setCurrentStop(null);
-      app.navigate(paths.list);
+      app.navigate(paths.list, true);
       app.toast('Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
     return { route, itemsAt, doneOf, nextStore, goStore, finish, storeIds };

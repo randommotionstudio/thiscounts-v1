@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
@@ -20,8 +20,6 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const { route, itemsAt, doneOf, goStore, finish } = useTrip();
   const [menu, setMenu] = useState(false);
   const cur = useCurrentStop(stopId);
-
-  useEffect(() => { if (app.currentStop !== cur.id) app.setCurrentStop(cur.id); }, [cur.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const curIdx = route.findIndex(s => s.id === cur.id);
   const curItems = itemsAt(cur.id);
@@ -84,7 +82,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
                     <div onClick={() => actions.setChecked(i, !i.checked)} role="checkbox" aria-checked={i.checked} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minWidth: 0, alignSelf: 'stretch' }}>
                       <RoundCheck on={i.checked} size={28} color="#3E9B5F" />
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 17, color: i.checked ? '#8A7A6D' : '#2A1F17', textDecoration: i.checked ? 'line-through' : 'none', overflowWrap: 'anywhere' }}>{i.name}</div>
+                        <div style={{ fontWeight: 600, fontSize: 17, color: i.checked ? '#8A7A6D' : '#2A1F17', textDecoration: i.checked ? 'line-through' : 'none', overflowWrap: 'break-word', hyphens: 'auto' }}>{i.name}</div>
                         {i.qty && <div style={{ fontSize: 12, color: '#8A7A6D' }}>{i.qty}</div>}
                       </div>
                     </div>

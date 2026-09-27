@@ -40,7 +40,7 @@ export function StoresSetup() {
     const id = actions.createList({ name, storeIds: draft.storeIds, mainStoreId: draft.mainStoreId, storeOrder: setupOrd.map(s => s.id) });
     app.setActiveList(id);
     setDraft(null);
-    navigate(paths.list);
+    navigate(paths.list, true);
     toast('„' + name + '“ ist startklar · geteilt mit ' + app.other.name);
   };
 

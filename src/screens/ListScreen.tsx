@@ -206,7 +206,7 @@ export function ListScreen() {
                         <CatIcon src={icon(it.category)} size={20} label={it.category} />
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{it.name}</div>
+                        <div style={{ fontWeight: 600, overflowWrap: 'break-word', hyphens: 'auto' }}>{it.name}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: 12, color: it.category === UNKNOWN ? '#C9581A' : '#8A7A6D' }}>
                           <button onClick={e => { e.stopPropagation(); setPick(pickFor(it)); setExpanded(null); }} title="Menge ändern" style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: 'inherit', padding: '12px 10px', margin: '-12px -10px', fontSize: 12, fontWeight: 600, lineHeight: 'inherit', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                             {it.qty || '1 Stück'}<span style={{ width: 12, height: 12, display: 'block', opacity: 0.75, background: 'url(/icons/pencil.svg) center/12px no-repeat' }} />
