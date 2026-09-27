@@ -36,17 +36,17 @@ At **console.firebase.google.com**:
 6. **Project settings (gear icon) → General → Your apps → `</>` (Web)**, register an app called `thisCounts`. You don't need Firebase Hosting.
    Firebase shows a block like `const firebaseConfig = { apiKey: "…", authDomain: "…", … }`. **Paste that block into the chat with Claude.** These values aren't secret; the rules from step 5 protect the data.
 
-Claude then puts the values into `src/config/firebaseConfig.ts`, and the app is connected.
+Claude then puts the values into `src/config/firebaseConfig.ts`, and the app is connected. ✅ Done.
 
-## 2. Netlify (about 10 minutes, after Claude has connected Firebase)
+## 2. Netlify (about 10 minutes)
 
 1. At **app.netlify.com**: **Add new site → Import an existing project → GitHub** → pick `randommotionstudio/thiscounts-v1`.
-2. **Branch to deploy:** the branch Claude tells you (right now that's `claude/design-prototype-handoff-vm0ui6`, unless you let Claude create `main`).
+2. **Branch to deploy:** `main`.
 3. Build command and publish directory fill in automatically from `netlify.toml` (`npm run build`, `dist`). Click **Deploy**.
 4. Netlify gives you an address like `https://thiscounts-v1.netlify.app`. You can rename it under **Site configuration → Change site name**.
 5. Back in Firebase: **Authentication → Settings → Authorized domains → Add domain** → paste the Netlify address without `https://`.
 
-From now on, every change Claude pushes to that branch goes live automatically within a minute or two.
+From now on, every change that lands on `main` goes live automatically within a minute or two.
 
 ## 3. Test on two real phones (about 30 minutes)
 
