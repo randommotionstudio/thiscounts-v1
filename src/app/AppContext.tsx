@@ -6,6 +6,8 @@ import { guessDeptFromName } from '../lib/logic';
 import type { Item, List, Store } from '../lib/types';
 import { memoryId } from '../data/refs';
 import { useConnection, type Conn } from './useConnection';
+import { ask } from './shopping';
+import * as actions from '../data/actions';
 import type { Route } from './router';
 
 export interface ListDraft {
@@ -92,6 +94,13 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
     if (p.listId === list.id && p.n > 0 && checkedCount === 0 && currentStop) setCurrentStop(null);
     prevChecked.current = { listId: list.id, n: checkedCount };
   }, [list.id, checkedCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A Rückfrage left unanswered (app closed, sheet gone) counts as "Beim nächsten Einkauf"
+  useEffect(() => {
+    Object.values(data.itemsByList).flat()
+      .filter(i => i.pendingDecision && i.createdBy === user.uid && i.id !== ask.openItemId)
+      .forEach(i => actions.updateItem(i, { pendingDecision: false, nextTrip: true }));
+  }, [data.itemsByList, user.uid]);
 
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();

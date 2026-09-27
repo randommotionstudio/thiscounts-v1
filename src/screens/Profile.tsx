@@ -63,6 +63,19 @@ export function Profile() {
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={() => setSheet({ mode: 'new', name: '', branch: '', logo: null })}><span className="plus-ring" /><span>Laden hinzufügen</span></button>
         <p className="hint" style={{ marginTop: 10 }}>Welche Läden eine Liste nutzt, legst du in der Liste fest.</p>
+        <div className="section-label" style={{ margin: '24px 0 8px' }}>Benachrichtigungen</div>
+        <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
+          <div role="switch" aria-checked={data.notifyWhileShopping} onClick={() => actions.setNotifyWhileShopping(!data.notifyWhileShopping)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', minHeight: 64, boxSizing: 'border-box', cursor: 'pointer' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>Beim Einkaufen</div>
+              <div style={{ fontSize: 13, color: '#8A7A6D', textWrap: 'pretty' }}>Wenn jemand etwas hinzufügt, an dessen Abteilung du schon vorbei bist.</div>
+            </div>
+            <span style={{ width: 51, height: 31, borderRadius: 999, background: data.notifyWhileShopping ? '#F3752E' : '#D8CBBD', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+              <span style={{ position: 'absolute', left: 2, top: 2, width: 27, height: 27, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 4px rgba(42,31,23,.2)', transform: `translateX(${data.notifyWhileShopping ? 20 : 0}px)`, transition: 'transform .2s', display: 'block' }} />
+            </span>
+          </div>
+        </div>
         <button className="outline-danger" style={{ marginTop: 28 }} onClick={() => { signOut(auth); navigate('/', true); }}>Abmelden</button>
       </div>
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>

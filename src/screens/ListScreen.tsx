@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
@@ -10,7 +10,11 @@ import type { Item } from '../lib/types';
 import { DeptSheet } from '../sheets/DeptSheet';
 import { OnceSheet } from '../sheets/OnceSheet';
 import { QtySheet } from '../sheets/QtySheet';
-import { Avatar, CatIcon, ConnPill, TabBar, useHeaderHeight } from '../ui/kit';
+import { Avatar, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
+import { useMarkSince } from '../app/markSince';
+import { ask as askState } from '../app/shopping';
+import { SESSION_STALE_MS } from '../lib/logic';
+import type { Session, Stop } from '../lib/types';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 const CHIP_LIM = 6;
@@ -34,6 +38,53 @@ export function ListScreen() {
   const [headRef, headH] = useHeaderHeight();
 
   const storeIdSet = useMemo(() => new Set(data.stores.map(s => s.id)), [data.stores]);
+  const markSince = useMarkSince();
+
+  // ---- V1.1: the other person is shopping on this list right now ----
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
+  const shopper: Session | undefined = Object.values(data.sessions)
+    .find(s => s.uid !== app.user.uid && s.listId === list.id && now - s.updatedAtMs < SESSION_STALE_MS);
+  const shopperAt = shopper ? stopById(shopper.storeId, data.stores, items) : null;
+  const shopperDone = shopper ? shopper.doneStoreIds.map(id => stopById(id, data.stores, items)?.name).filter(Boolean) : [];
+
+  // ---- V1.1 Rückfrage (R5): added for a store the shopper has already finished today ----
+  const [ask, setAsk] = useState<{ itemId: string; name: string; from: Stop; at: Stop } | null>(null);
+  const resolveAsk = (take: boolean) => {
+    if (!ask) return;
+    const it = items.find(i => i.id === ask.itemId);
+    if (it) {
+      if (!take) actions.updateItem(it, { pendingDecision: false, nextTrip: true });
+      else if (ask.at.custom) actions.updateItem(it, { pendingDecision: false, storeId: null, once: true, onceStopName: ask.at.name, parked: false });
+      else actions.updateItem(it, { pendingDecision: false, storeId: ask.at.id, once: !list.storeIds.includes(ask.at.id), onceStopName: null, parked: false });
+    }
+    askState.openItemId = null;
+    setAsk(null);
+  };
+  const resolveRef = useRef(resolveAsk);
+  resolveRef.current = resolveAsk;
+  useEffect(() => {
+    if (!ask) return;
+    // Unanswered after 2 minutes (or when leaving the list) → "Beim nächsten Einkauf"
+    const t = setTimeout(() => resolveRef.current(false), 2 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [ask]);
+  useEffect(() => () => { if (askState.openItemId) resolveRef.current(false); }, []);
+
+  /** Creates the item; asks first if it lands at a store the shopper already finished (R5). */
+  const createItem = (data0: { name: string; qty: string | null; category: string; storeId: string | null }): string => {
+    const probe = { ...data0, id: '', listId: list.id, once: false, onceStopName: null, parked: false, checked: false, checkedBy: null, createdBy: null, createdAtMs: 0, pendingDecision: false, nextTrip: false };
+    const target = effStore(probe, list, storeIdSet);
+    if (shopper && shopperAt && target && shopper.doneStoreIds.includes(target) && target !== shopper.storeId) {
+      const from = stopById(target, data.stores, items);
+      const id = actions.addItem(list.id, { ...data0, pendingDecision: true });
+      askState.openItemId = id;
+      inRef.current?.blur();
+      if (from) setAsk({ itemId: id, name: data0.name, from, at: shopperAt });
+      return id;
+    }
+    return actions.addItem(list.id, data0);
+  };
   const liveIds = new Set(items.map(i => i.id));
   const freshLive = fresh.filter(id => liveIds.has(id));
 
@@ -44,7 +95,7 @@ export function ListScreen() {
     const { name, qty } = parseEntry(t);
     const ex = items.find(i => normName(i.name) === normName(name));
     if (ex) { inRef.current?.blur(); setPick(pickFor(ex)); setNewItem(''); return; }
-    const id = actions.addItem(list.id, { name, qty, category: guessDept(name), storeId: guessStore(name) });
+    const id = createItem({ name, qty, category: guessDept(name), storeId: guessStore(name) });
     setNewItem('');
     setFresh(f => [...f, id]);
   };
@@ -58,7 +109,7 @@ export function ListScreen() {
       setChipAdded(m => { const r = { ...m }; delete r[c.name]; return r; });
       return;
     }
-    const nid = actions.addItem(list.id, { name: c.name, qty: c.qty, category: guessDept(c.name), storeId: guessStore(c.name) });
+    const nid = createItem({ name: c.name, qty: c.qty, category: guessDept(c.name), storeId: guessStore(c.name) });
     setFresh(f => [...f, nid]);
     setChipAdded(m => ({ ...m, [c.name]: nid }));
     setNewItem('');
@@ -144,6 +195,21 @@ export function ListScreen() {
           </button>
           <span title={'Geteilt mit ' + other.name} style={{ display: 'flex' }}><Avatar person={other} /></span>
         </div>
+        {shopper && shopperAt && (
+          <div style={{ marginTop: 12, background: '#2A1F17', color: '#FBF5EE', borderRadius: 16, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, animation: 'toastIn .25s ease' }}>
+            <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
+              <Avatar person={other} size={32} fontSize={13} />
+              <span style={{ position: 'absolute', right: -2, bottom: -2, width: 11, height: 11, borderRadius: '50%', background: '#3E9B5F', border: '2px solid #2A1F17', display: 'block' }} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{other.name} kauft gerade ein</div>
+              <div className="ellipsis" style={{ fontSize: 12, color: '#C9B8A6' }}>
+                {shopperAt.name + ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : '')}
+              </div>
+            </div>
+            <LogoTile store={shopperAt} size={32} radius={9} initialSize={14} bordered={false} />
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <input ref={inRef} value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addEntry(); }}
             onFocus={() => { focusAt.current = Date.now(); setInFocus(true); }} onBlur={() => setInFocus(false)}
@@ -206,7 +272,12 @@ export function ListScreen() {
                         <CatIcon src={icon(it.category)} size={20} label={it.category} />
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, overflowWrap: 'break-word', hyphens: 'auto' }}>{it.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <span className="ellipsis" style={{ fontWeight: 600 }}>{it.name}</span>
+                          {it.createdBy && it.createdBy !== app.user.uid && it.createdAtMs > markSince && (
+                            <span title={'Neu von ' + other.name} aria-label={'Neu von ' + other.name} style={{ width: 20, height: 20, borderRadius: '50%', background: other.bg, color: other.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{other.name.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: 12, color: it.category === UNKNOWN ? '#C9581A' : '#8A7A6D' }}>
                           <button onClick={e => { e.stopPropagation(); setPick(pickFor(it)); setExpanded(null); }} title="Menge ändern" style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: 'inherit', padding: '12px 10px', margin: '-12px -10px', fontSize: 12, fontWeight: 600, lineHeight: 'inherit', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                             {it.qty || '1 Stück'}<span style={{ width: 12, height: 12, display: 'block', opacity: 0.75, background: 'url(/icons/pencil.svg) center/12px no-repeat' }} />
@@ -315,6 +386,28 @@ export function ListScreen() {
           onText={t => { actions.assignOnce(onceItem, { text: t }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + t); }}
           onStore={s => { actions.assignOnce(onceItem, { storeId: s.id }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + s.name); }}
         />
+      )}
+      {ask && (
+        <div className="sheet-layer" style={{ zIndex: 50 }}>
+          <div className="sheet-dim" />
+          <div className="sheet">
+            <div className="grab" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
+                <Avatar person={other} size={44} fontSize={18} display />
+                <span style={{ position: 'absolute', right: -5, bottom: -5, display: 'flex', borderRadius: 7, border: '2px solid #FBF5EE' }}>
+                  <LogoTile store={ask.at} size={20} radius={5} initialSize={11} bordered={false} />
+                </span>
+              </span>
+              <div className="sheet-title" style={{ flex: 1, minWidth: 0 }}>{other.name} ist schon bei {ask.at.name}</div>
+            </div>
+            <p style={{ margin: '12px 0 18px', fontSize: 15, color: '#6F6055', textWrap: 'pretty' }}>
+              Bei {ask.from.name} ist {other.name} für heute fertig. Soll {other.name} {ask.name} bei {ask.at.name} mitnehmen?
+            </p>
+            <button onClick={() => resolveAsk(true)} style={{ width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Bei {ask.at.name} mitnehmen</button>
+            <button onClick={() => resolveAsk(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Beim nächsten {ask.from.name}-Einkauf</button>
+          </div>
+        </div>
       )}
       {pick && (
         <QtySheet key={pick.editId} initial={pick} dept={guessDept(pick.name)} onClose={() => setPick(null)}

@@ -4,8 +4,8 @@ import {
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { ALL_DEPTS, UNKNOWN } from '../lib/logic';
-import type { HistoryEntry, Item, List, MemoryEntry, Store } from '../lib/types';
-import { historyCol, householdRef, itemsCol, listsCol, memoryCol, storesCol } from './refs';
+import type { HistoryEntry, Item, List, MemoryEntry, Session, Store } from '../lib/types';
+import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef } from './refs';
 import { seedDefaultList, seedHousehold } from './seed';
 import { onWritesChange, writesInFlight } from './write';
 
@@ -20,6 +20,10 @@ export interface Data {
   itemsByList: Record<string, Item[]>;
   memory: Record<string, MemoryEntry & { id: string }>;
   history: HistoryEntry[];
+  /** V1.1: live shopping sessions by uid (stale ones included; filter with SESSION_STALE_MS) */
+  sessions: Record<string, Session>;
+  /** V1.1: Profil → "Beim Einkaufen" */
+  notifyWhileShopping: boolean;
   /** Local changes that haven't reached the server yet */
   pending: boolean;
 }
@@ -39,7 +43,9 @@ const opts = { serverTimestamps: 'estimate' as const };
 
 const toStore = (d: DocumentSnapshot<DocumentData>): Store => {
   const x = d.data(opts) || {};
-  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? strArr(x.categoryOrder) : null, createdAtMs: ms(x.createdAt, Date.now()) };
+  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? strArr(x.categoryOrder) : null,
+    orderSetAtMs: x.orderSetAt ? ms(x.orderSetAt, Date.now()) : null, orderCheckedAtMs: x.orderCheckedAt ? ms(x.orderCheckedAt, Date.now()) : null, orderSetBy: str(x.orderSetBy),
+    createdAtMs: ms(x.createdAt, Date.now()) };
 };
 const toList = (d: DocumentSnapshot<DocumentData>): List => {
   const x = d.data(opts) || {};
@@ -54,6 +60,7 @@ const toItem = (listId: string, d: DocumentSnapshot<DocumentData>): Item => {
     id: d.id, listId, name: x.name || '', qty: str(x.qty), category: x.category || UNKNOWN, storeId: str(x.storeId),
     once: !!x.once, onceStopName: str(x.onceStopName), parked: !!x.parked, checked: !!x.checked, checkedBy: str(x.checkedBy),
     createdBy: str(x.createdBy), createdAtMs: ms(x.createdAt, Date.now()),
+    pendingDecision: !!x.pendingDecision, nextTrip: !!x.nextTrip,
   };
 };
 
@@ -65,6 +72,8 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [itemsByList, setItemsByList] = useState<Record<string, Item[]>>({});
   const [memory, setMemory] = useState<Data['memory']>({});
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [sessions, setSessions] = useState<Record<string, Session>>({});
+  const [notifyWhileShopping, setNotify] = useState(true);
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
   const seeded = useRef(false);
   const listSeeded = useRef(false);
@@ -115,7 +124,20 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         return { id: d.id, name: x.name || '', qty: str(x.qty), storeId: str(x.storeId), listId: x.listId || '', completedAtMs: ms(x.completedAt) };
       }));
     }, onErr);
-    return () => { u1(); u2(); u3(); u4(); u5(); };
+    const u6 = onSnapshot(sessionsCol(), snap => {
+      const m: Record<string, Session> = {};
+      snap.docs.forEach(d => {
+        const x = d.data(opts);
+        m[d.id] = {
+          uid: d.id, listId: x.listId || '', storeId: x.storeId || '', position: typeof x.position === 'number' ? x.position : 0,
+          doneStoreIds: strArr(x.doneStoreIds), stopIndex: x.stopIndex || 0, stopCount: x.stopCount || 0,
+          startedAtMs: ms(x.startedAt, Date.now()), updatedAtMs: ms(x.updatedAt, Date.now()),
+        };
+      });
+      setSessions(m);
+    }, onErr);
+    const u7 = onSnapshot(userRef(user.uid), snap => { setNotify(snap.get('notifyWhileShopping') !== false); }, onErr);
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); };
   }, [user.uid]);
 
   // Every list got deleted (e.g. on both phones while offline) → start a fresh one instead of hanging.
@@ -141,9 +163,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     ready: !!hh && lists.length > 0,
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
-    stores, lists, itemsByList, memory, history,
+    stores, lists, itemsByList, memory, history, sessions, notifyWhileShopping,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [hh, denied, stores, lists, itemsByList, memory, history, pendingMap, openWrites]);
+  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, notifyWhileShopping, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

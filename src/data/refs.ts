@@ -9,6 +9,11 @@ export const listsCol = () => collection(db, 'households', HOUSEHOLD_ID, 'lists'
 export const itemsCol = (listId: string) => collection(db, 'households', HOUSEHOLD_ID, 'lists', listId, 'items');
 export const memoryCol = () => collection(db, 'households', HOUSEHOLD_ID, 'memory');
 export const historyCol = () => collection(db, 'households', HOUSEHOLD_ID, 'history');
+/** V1.1: one live shopping session per person */
+export const sessionsCol = () => collection(db, 'households', HOUSEHOLD_ID, 'sessions');
+export const sessionRef = (uid: string) => doc(sessionsCol(), uid);
+/** V1.1: per-person settings */
+export const userRef = (uid: string) => doc(db, 'users', uid);
 
 export const storeRef = (id: string) => doc(storesCol(), id);
 export const listRef = (id: string) => doc(listsCol(), id);

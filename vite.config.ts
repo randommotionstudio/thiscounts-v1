@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'brand/*.png', 'icons/*.svg', 'logos/*.png'],
+      includeAssets: ['favicon.ico', 'favicon-*.png', 'brand/*.png', 'icons/*.svg', 'logos/*.png'],
       manifest: {
         name: 'thisCounts',
         short_name: 'thisCounts',
@@ -19,14 +19,14 @@ export default defineConfig({
         theme_color: '#FBF5EE',
         background_color: '#FBF5EE',
         icons: [
-          { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          // Full-bleed square icon: the OS applies its own corner mask
+          { src: '/brand/app-icon-v11-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/brand/app-icon-v11-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {
         // The whole app shell (code, fonts, icons, logos) is precached so the app starts without reception.
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,

@@ -9,6 +9,7 @@ import { ListScreen } from './screens/ListScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { StoreScreen } from './screens/StoreScreen';
 import { MissingScreen } from './screens/MissingScreen';
+import { RefineScreen } from './screens/RefineScreen';
 import { ListSettings } from './screens/ListSettings';
 import { StoresSetup } from './screens/StoresSetup';
 import { Profile } from './screens/Profile';
@@ -34,7 +35,7 @@ export function App() {
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   if (!isConfigured) {
-    return <Frame><Centered><img src="/brand/app-icon-144.png" alt="" style={{ width: 72, height: 72, borderRadius: 18 }} />thisCounts ist noch nicht mit der Datenbank verbunden.</Centered></Frame>;
+    return <Frame><Centered><img src="/brand/app-icon-v11-144.png" alt="" style={{ width: 72, height: 72, borderRadius: 18 }} />thisCounts ist noch nicht mit der Datenbank verbunden.</Centered></Frame>;
   }
   return (
     <Frame>
@@ -83,6 +84,7 @@ function Screens() {
     case 'profile': screen = <Profile />; break;
     case 'store': screen = <StoreScreen key={r.stopId} stopId={r.stopId} />; break;
     case 'missing': screen = <MissingScreen key={r.itemId} stopId={r.stopId} itemId={r.itemId} />; break;
+    case 'refine': screen = <RefineScreen key={r.stopId} stopId={r.stopId} />; break;
     case 'listNew': case 'listEdit': screen = app.draft ? <ListSettings /> : null; break;
     case 'listStores': screen = app.draft ? <StoresSetup /> : null; break;
   }

@@ -4,25 +4,26 @@ import {
   Timestamp, deleteDoc, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { normName } from '../lib/logic';
+import { normName, onTrip } from '../lib/logic';
 import type { Item, List, MemoryEntry, Store } from '../lib/types';
 import {
-  historyCol, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, storeRef, storesCol,
+  historyCol, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
 } from './refs';
 import { report } from './write';
 
 const uid = () => auth.currentUser?.uid ?? null;
 const stamp = () => ({ updatedAt: serverTimestamp() });
 
-type ItemPatch = Partial<Pick<Item, 'name' | 'qty' | 'category' | 'storeId' | 'once' | 'onceStopName' | 'parked' | 'checked' | 'checkedBy'>>;
+type ItemPatch = Partial<Pick<Item, 'name' | 'qty' | 'category' | 'storeId' | 'once' | 'onceStopName' | 'parked' | 'checked' | 'checkedBy' | 'pendingDecision' | 'nextTrip'>>;
 
 // ---------- Items ----------
 
-export function addItem(listId: string, data: { name: string; qty: string | null; category: string; storeId: string | null }): string {
-  const id = newId(itemsCol(listId));
+export function addItem(listId: string, data: { name: string; qty: string | null; category: string; storeId: string | null; pendingDecision?: boolean }, presetId?: string): string {
+  const id = presetId || newId(itemsCol(listId));
   report(setDoc(itemRef(listId, id), {
     name: data.name, qty: data.qty, category: data.category, storeId: data.storeId,
     once: false, onceStopName: null, parked: false, checked: false, checkedBy: null,
+    pendingDecision: !!data.pendingDecision, nextTrip: false,
     createdBy: uid(), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   }));
   return id;
@@ -82,7 +83,7 @@ export function parkItem(item: Item) {
 /** "Alles hier einkaufen · nur ein Stopp" */
 export function allHere(items: Item[], list: List, storeId: string) {
   const once = !list.storeIds.includes(storeId);
-  items.filter(i => !i.parked).forEach(i => updateItem(i, { storeId, once, onceStopName: null }));
+  items.filter(onTrip).forEach(i => updateItem(i, { storeId, once, onceStopName: null }));
 }
 
 /** "Einkauf abschließen": history for checked items, delete them, reset the trip. */
@@ -96,6 +97,57 @@ export function finishShopping(list: List, items: Item[]) {
   // Sets and deletes can't fail on a missing document, so this batch is safe; the list update goes separately.
   report(batch.commit());
   updateList(list.id, { tripOrder: null, deferred: [] });
+  // Items held back for "next time" are back on the next trip
+  items.filter(i => !i.checked && i.nextTrip).forEach(i => updateItem(i, { nextTrip: false }));
+  endSession();
+}
+
+// ---------- V1.1: shopping session ----------
+
+export interface SessionData {
+  listId: string; storeId: string; position: number; doneStoreIds: string[];
+  stopIndex: number; stopCount: number; startedAtMs: number;
+}
+
+/** Create or overwrite my session (entering store mode, switching stops) */
+export function writeSession(s: SessionData) {
+  const me = uid();
+  if (!me) return;
+  const { startedAtMs, ...rest } = s;
+  report(setDoc(sessionRef(me), { ...rest, startedAt: Timestamp.fromMillis(startedAtMs), updatedAt: serverTimestamp() }));
+}
+
+export function updateSession(patch: Partial<Pick<SessionData, 'position' | 'doneStoreIds'>>) {
+  const me = uid();
+  if (!me) return;
+  report(updateDoc(sessionRef(me), { ...patch, updatedAt: serverTimestamp() }));
+}
+
+export function endSession() {
+  const me = uid();
+  if (me) report(deleteDoc(sessionRef(me)));
+}
+
+export function setNotifyWhileShopping(on: boolean) {
+  const me = uid();
+  if (me) report(setDoc(userRef(me), { notifyWhileShopping: on }, { merge: true }));
+}
+
+// ---------- V1.1: Filiale einrichten ----------
+
+export function saveStoreOrder(store: Store, order: string[]) {
+  report(updateDoc(storeRef(store.id), {
+    categoryOrder: order,
+    orderCheckedAt: serverTimestamp(),
+    orderSetBy: uid(),
+    ...(store.orderSetAtMs == null ? { orderSetAt: serverTimestamp() } : {}),
+    ...stamp(),
+  }));
+}
+
+/** "Passt noch" */
+export function confirmStoreOrder(storeId: string) {
+  report(updateDoc(storeRef(storeId), { orderCheckedAt: serverTimestamp(), ...stamp() }));
 }
 
 // ---------- Lists ----------
@@ -125,7 +177,10 @@ export function deleteList(listId: string, items: Item[]) {
 
 export function createStore(data: { name: string; branch: string; logo: string | null }): string {
   const id = newId(storesCol());
-  report(setDoc(storeRef(id), { ...data, categoryOrder: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+  report(setDoc(storeRef(id), {
+    ...data, categoryOrder: null, orderSetAt: null, orderCheckedAt: null, orderSetBy: null,
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  }));
   return id;
 }
 

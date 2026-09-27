@@ -7,6 +7,7 @@ export type Route =
   | { name: 'profile' }
   | { name: 'store'; stopId: string }
   | { name: 'missing'; stopId: string; itemId: string }
+  | { name: 'refine'; stopId: string }
   | { name: 'listNew' }
   | { name: 'listEdit' }
   | { name: 'listStores' };
@@ -17,6 +18,7 @@ export const paths = {
   profile: '/profil',
   store: (stopId: string) => '/laden/' + encodeURIComponent(stopId),
   missing: (stopId: string, itemId: string) => '/laden/' + encodeURIComponent(stopId) + '/fehlt/' + encodeURIComponent(itemId),
+  refine: (stopId: string) => '/laden/' + encodeURIComponent(stopId) + '/weg',
   listNew: '/liste/neu',
   listEdit: '/liste/bearbeiten',
   listStores: '/liste/laeden',
@@ -31,6 +33,8 @@ export function parseRoute(path: string): Route {
   if (p === '/liste/laeden') return { name: 'listStores' };
   let m = p.match(/^\/laden\/([^/]+)\/fehlt\/([^/]+)$/);
   if (m) return { name: 'missing', stopId: decodeURIComponent(m[1]), itemId: decodeURIComponent(m[2]) };
+  m = p.match(/^\/laden\/([^/]+)\/weg$/);
+  if (m) return { name: 'refine', stopId: decodeURIComponent(m[1]) };
   m = p.match(/^\/laden\/([^/]+)$/);
   if (m) return { name: 'store', stopId: decodeURIComponent(m[1]) };
   return { name: 'list' };

@@ -6,7 +6,7 @@ import {
 import type { Item, List, Store } from './types';
 import { FORM_AISLES, seedCategoryOrder } from '../config/household';
 
-const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), branch: '', logo: null, categoryOrder: null, createdAtMs: i });
+const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), branch: '', logo: null, categoryOrder: null, orderSetAtMs: null, orderCheckedAtMs: null, orderSetBy: null, createdAtMs: i });
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
@@ -15,7 +15,7 @@ const list = (p: Partial<List> = {}): List => ({
 let n = 0;
 const item = (p: Partial<Item> = {}): Item => ({
   id: 'i' + ++n, listId: 'l', name: 'X', qty: null, category: UNKNOWN, storeId: null, once: false,
-  onceStopName: null, parked: false, checked: false, checkedBy: null, createdBy: null, createdAtMs: n, ...p,
+  onceStopName: null, parked: false, checked: false, checkedBy: null, createdBy: null, createdAtMs: n, pendingDecision: false, nextTrip: false, ...p,
 });
 
 describe('parseEntry', () => {
@@ -121,5 +121,45 @@ describe('seed aisles from the tester form', () => {
     expect(seedCategoryOrder(0).slice(0, 3)).toEqual(['Obst & Gemüse', 'Gewürze & Saucen', 'Backwaren']);
     expect(seedCategoryOrder(4)).toEqual(['Haushalt', 'Getränke', 'Süßwaren & Snacks', 'Backwaren']);
     expect(FORM_AISLES.map(r => r[0])).toEqual(ALL_DEPTS);
+  });
+});
+
+// ---------- V1.1 ----------
+import { agoText, posInfo, route as route2 } from './logic';
+
+describe('V1.1 posInfo', () => {
+  const order = ['Obst & Gemüse', 'Backwaren', 'Milchprodukte', 'Getränke'];
+  it('nothing checked → position 0', () => {
+    expect(posInfo([{ category: 'Milchprodukte', checked: false }], order).pos).toBe(0);
+  });
+  it('category complete → next one; incomplete → stays', () => {
+    const items = [{ category: 'Obst & Gemüse', checked: true }, { category: 'Milchprodukte', checked: true }, { category: 'Milchprodukte', checked: false }];
+    const p = posInfo(items, order);
+    expect(p.pos).toBe(2);
+    expect(p.passed('Backwaren')).toBe(true);
+    expect(p.passed('Milchprodukte')).toBe(false);
+    items[2].checked = true;
+    expect(posInfo(items, order).pos).toBe(3);
+  });
+  it('items someone else added later do not reopen a category', () => {
+    const p = posInfo([{ category: 'Milchprodukte', checked: true }, { category: 'Milchprodukte', checked: false, lateFromOther: true }], order);
+    expect(p.pos).toBe(3);
+    expect(p.passed('Milchprodukte')).toBe(true);
+  });
+  it('is monotonic with a floor', () => {
+    expect(posInfo([{ category: 'Obst & Gemüse', checked: false }], order, 3).pos).toBe(3);
+  });
+});
+
+describe('V1.1 agoText', () => {
+  it('formats ages', () => {
+    expect([0, 1, 5, 14, 30, 61, 150].map(agoText)).toEqual(['heute', 'gestern', 'vor 5 Tagen', 'vor 2 Wochen', 'vor 4 Wochen', 'vor 2 Monaten', 'vor 5 Monaten']);
+  });
+});
+
+describe('V1.1 trip exclusions', () => {
+  it('pendingDecision and nextTrip items create no stops', () => {
+    const l = list();
+    expect(route2([item({ storeId: 'b', nextTrip: true }), item({ storeId: 'c', pendingDecision: true })], l, STORES)).toEqual([]);
   });
 });

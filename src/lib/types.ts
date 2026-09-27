@@ -5,6 +5,11 @@ export interface Store {
   logo: string | null;
   /** Fixed path through this store; null → household default */
   categoryOrder: string[] | null;
+  /** V1.1: null = never set up by a user → setup offer in store mode */
+  orderSetAtMs: number | null;
+  /** V1.1: last save or last "Passt noch"; drives the 60-day check-back */
+  orderCheckedAtMs: number | null;
+  orderSetBy: string | null;
   createdAtMs: number;
 }
 
@@ -41,6 +46,25 @@ export interface Item {
   checkedBy: string | null;
   createdBy: string | null;
   createdAtMs: number;
+  /** V1.1: added for a store the shopper already finished; waiting for the Rückfrage answer. Not on the trip. */
+  pendingDecision: boolean;
+  /** V1.1: "Beim nächsten …-Einkauf" — not on the current trip, cleared on "Einkauf abschließen" */
+  nextTrip: boolean;
+}
+
+/** V1.1: someone is shopping right now (households/{hid}/sessions/{uid}) */
+export interface Session {
+  uid: string;
+  listId: string;
+  /** Stop the shopper is at (a store id, or "once:…" for a free-text stop) */
+  storeId: string;
+  /** Index into that store's category order: categories before it are passed */
+  position: number;
+  doneStoreIds: string[];
+  stopIndex: number;
+  stopCount: number;
+  startedAtMs: number;
+  updatedAtMs: number;
 }
 
 export interface MemoryEntry {

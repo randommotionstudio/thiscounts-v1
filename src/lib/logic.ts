@@ -142,7 +142,7 @@ export function guessDeptFromName(name: string): string {
 
 const DEPT_ICON: Record<string, string> = {
   'Obst & Gemüse': 'apple', 'Milchprodukte': 'milk', 'Backzutaten': 'wheat', 'Kaffee & Tee': 'coffee',
-  'Getränke': 'cup-soda', 'Tiefkühl': 'snowflake', 'Backwaren': 'wheat', 'Fleisch & Fisch': 'fish',
+  'Getränke': 'cup-soda', 'Tiefkühl': 'snowflake', 'Backwaren': 'bread', 'Fleisch & Fisch': 'fish',
   'Süßwaren & Snacks': 'cookie', 'Drogerie': 'droplet', 'Sonstiges': 'shopping-basket', 'Frühstück': 'croissant',
   'Nudeln & Reis': 'soup', 'Konserven': 'cylinder', 'Gewürze & Saucen': 'flame', 'Wurst & Käse': 'cheese',
   'Haushalt': 'spray-can', 'Baby': 'baby', 'Tiernahrung': 'paw-print',
@@ -161,6 +161,9 @@ export const icon = (d: string) => (d === UNKNOWN ? '/icons/help.svg' : '/icons/
 // ---------- Stops and route ----------
 
 export const onceKey = (n: string) => 'once:' + n.trim().toLowerCase();
+
+/** On the current trip: not parked, not waiting for a Rückfrage answer, not pushed to the next trip */
+export const onTrip = (i: { parked: boolean; pendingDecision?: boolean; nextTrip?: boolean }) => !i.parked && !i.pendingDecision && !i.nextTrip;
 
 /** effStore(): the stop an item is picked up at */
 export function effStore(it: Item, list: List, storeIds: Set<string>): string | null {
@@ -194,7 +197,7 @@ const sortByOrder = <T extends { id: string }>(arr: T[], ord: string[]) => {
  */
 export function route(items: Item[], list: List, stores: Store[]): Stop[] {
   const storeIds = new Set(stores.map(s => s.id));
-  const ids = new Set(items.filter(i => !i.parked).map(i => effStore(i, list, storeIds)).filter((x): x is string => !!x));
+  const ids = new Set(items.filter(onTrip).map(i => effStore(i, list, storeIds)).filter((x): x is string => !!x));
   let o = stores.filter(s => ids.has(s.id));
   const ord = list.tripOrder || list.storeOrder;
   if (ord && ord.length) o = sortByOrder(o, ord);
@@ -220,10 +223,15 @@ export function moveInOrder(ids: string[], id: string, dir: -1 | 1, min = 0): st
 }
 
 /** Category groups in store mode, following the store's fixed path. */
-export function storeGroups<T extends { category: string }>(items: T[], order: string[]) {
+/** The store's order plus categories of items there that aren't in it (appended, "Unbekannt" last). */
+export function effectiveOrder(items: { category: string }[], order: string[]): string[] {
   const deptOrder = [...order, ...[...new Set(items.map(i => i.category))].filter(d => !order.includes(d) && d !== UNKNOWN)];
   if (items.some(i => i.category === UNKNOWN) && !deptOrder.includes(UNKNOWN)) deptOrder.push(UNKNOWN);
-  return deptOrder
+  return deptOrder;
+}
+
+export function storeGroups<T extends { category: string }>(items: T[], order: string[]) {
+  return effectiveOrder(items, order)
     .map(d => ({ dept: d, label: d === UNKNOWN ? 'Noch einsortieren' : d, items: items.filter(i => i.category === d) }))
     .filter(g => g.items.length);
 }
@@ -277,3 +285,43 @@ export function missingQty(item: { name: string; qty: string | null } | null, fo
     foundQtyText: fmtNum(found) + ' ' + qtyUnit,
   };
 }
+
+// ---------- V1.1: where is the shopper? (posInfo) ----------
+
+/**
+ * The shopper's position in a store, derived from check-offs (no location needed).
+ * k = highest order index of any checked item; position = k + 1 if category k is complete, else k.
+ * Items someone else added during this trip (`lateFromOther`) don't reopen a category.
+ * `floor` keeps the position monotonic within a session.
+ */
+export function posInfo(
+  items: { category: string; checked: boolean; lateFromOther?: boolean }[],
+  order: string[],
+  floor = 0,
+) {
+  const deptOrder = effectiveOrder(items, order);
+  const dIdx = (d: string) => { const k = deptOrder.indexOf(d); return k < 0 ? deptOrder.length : k; };
+  let pos = 0;
+  const chk = items.filter(i => i.checked);
+  if (chk.length) {
+    const k = Math.max(...chk.map(i => dIdx(i.category))), d = deptOrder[k];
+    pos = items.filter(i => i.category === d && !i.lateFromOther).every(i => i.checked) ? k + 1 : k;
+  }
+  pos = Math.max(pos, floor);
+  return { deptOrder, pos, passed: (d: string) => dIdx(d) < pos };
+}
+
+// ---------- V1.1: Filiale einrichten ----------
+
+/** Days after the last save / "Passt noch" before the app asks again */
+export const CHECK_AFTER = 60;
+/** Everything a user can place on the path ("Sonstiges" and "Kasse" never go in) */
+export const REF_UNIVERSE = ALL_DEPTS.filter(d => d !== 'Sonstiges');
+export const DAY_MS = 24 * 60 * 60 * 1000;
+export const ageDays = (ms: number | null, now: number) => (ms == null ? null : Math.max(0, Math.floor((now - ms) / DAY_MS)));
+/** agoText(): heute / gestern / vor n Tagen / vor n Wochen / vor n Monaten */
+export const agoText = (a: number | null) =>
+  a == null ? '' : a === 0 ? 'heute' : a === 1 ? 'gestern' : a < 14 ? 'vor ' + a + ' Tagen' : a < 60 ? 'vor ' + Math.round(a / 7) + ' Wochen' : 'vor ' + Math.round(a / 30) + ' Monaten';
+
+/** Sessions older than this are ignored everywhere */
+export const SESSION_STALE_MS = 90 * 60 * 1000;

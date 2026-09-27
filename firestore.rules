@@ -2,9 +2,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
     // Only the two test accounts can read or write anything.
-    match /{document=**} {
-      allow read, write: if request.auth != null
+    function isTester() {
+      return request.auth != null
         && request.auth.token.email in ['michael@rieplhuber.com', 'annacvetkov@posteo.de'];
+    }
+
+    match /households/{hid} {
+      allow read, write: if isTester();
+    }
+    // Lists, items, stores, memory, history …
+    match /households/{hid}/{coll}/{rest=**} {
+      allow read: if isTester();
+      allow write: if isTester() && coll != 'sessions';
+    }
+    // Shopping sessions: everyone in the household reads them, each person writes only their own.
+    match /households/{hid}/sessions/{uid} {
+      allow write: if isTester() && request.auth.uid == uid;
+    }
+    // Personal settings (e.g. "Beim Einkaufen" notifications)
+    match /users/{uid} {
+      allow read, write: if isTester() && request.auth.uid == uid;
     }
   }
 }
