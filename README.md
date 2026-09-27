@@ -1,4 +1,4 @@
-# thisCounts V1
+# thisCounts V1.1
 
 **Live:** https://thiscounts.netlify.app
 
@@ -6,7 +6,7 @@ A shared shopping list for two people that sorts items **by store** and, inside 
 
 - **Setting it up (accounts, hosting, testing):** [`docs/SETUP.md`](docs/SETUP.md)
 - **Guide for the testers (German):** [`docs/TESTER_ANLEITUNG.md`](docs/TESTER_ANLEITUNG.md)
-- **Design handoff and prototype:** [`docs/design-handoff/`](docs/design-handoff/) (the README there is the spec)
+- **Design handoff and prototype:** [`docs/design-handoff/`](docs/design-handoff/) (V1 spec) and [`docs/design-handoff-v1.1/`](docs/design-handoff-v1.1/) (V1.1 delta: store setup, new-item markers, notifications while shopping)
 
 ## Stack
 
@@ -20,7 +20,7 @@ React 19 + TypeScript + Vite, Firebase Auth (email/password) and Firestore with 
 | `src/config/household.ts` | The two testers, and the seed stores + aisle order from the tester form |
 | `src/config/firebaseConfig.ts` | Firebase web config (not secret) |
 | `src/data/` | Firestore listeners (`DataProvider`), all writes (`actions.ts`), first-login seeding (`seed.ts`) |
-| `src/app/` | App context (active list, toasts, list draft), URL router, offline/sync state |
+| `src/app/` | App context (active list, toasts, list draft), URL router, offline/sync state, V1.1 shopping session (`shopping.ts`) and new-item markers (`markSince.ts`) |
 | `src/screens/`, `src/sheets/`, `src/ui/` | Screens, bottom sheets, shared UI pieces |
 | `firestore.rules` | Only the two tester emails may read or write |
 

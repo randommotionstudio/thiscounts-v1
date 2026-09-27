@@ -35,6 +35,14 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Nicht gefunden:** Artikel zu einem anderen Laden schieben (auch nur einen Teil davon) oder zurück auf die Liste setzen.
 - **Einkauf abschließen:** Erledigte Artikel verschwinden, der Rest bleibt auf der Liste – für euch beide.
 
+## Neu in Version 1.1
+
+- **Neu von …:** Artikel, die die andere Person hinzugefügt hat, während ihr die App zu hattet, bekommen auf der Liste ein kleines Symbol mit ihrem Anfangsbuchstaben.
+- **Wer kauft gerade ein:** Wenn die andere Person im Laden ist, seht ihr oben auf der Liste, wo sie gerade ist – z. B. „Netto · Stopp 1 von 2“.
+- **Nachschub beim Einkaufen:** Kommt beim Einkaufen ein Artikel dazu, taucht er mit „Neu von …“ auf. Liegt seine Abteilung schon hinter euch, erscheint unten ein Hinweis – so könnt ihr kurz zurückgehen. Ausschalten könnt ihr das im Profil unter „Benachrichtigungen“.
+- **Rückfrage:** Setzt ihr etwas für einen Laden auf die Liste, mit dem die andere Person heute schon fertig ist, fragt die App: gleich im aktuellen Laden mitnehmen – oder beim nächsten Einkauf?
+- **Filiale einrichten:** Im Laden unten auf „Hilf mit, diese Filiale genauer zu machen“ tippen und die Abteilungen in der Reihenfolge antippen, in der ihr durch den Laden lauft. Das gilt dann für euch beide. Später könnt ihr den Weg über „Aufbau der Filiale geändert?“ anpassen.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann
