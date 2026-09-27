@@ -1,0 +1,67 @@
+thisCounts V1 – Angaben für den Test
+====================================
+
+Bitte ausfüllen und an den Entwickler zurückschicken.
+
+
+1. E-MAIL-ADRESSEN DER BEIDEN TESTER
+------------------------------------
+
+Tester 1 – Name:     Michi
+Tester 1 – E-Mail:   michael@rieplhuber.com
+
+Tester 2 – Name:     Anna
+Tester 2 – E-Mail:   annacvetkov@posteo.de
+
+
+2. EURE LÄDEN
+-------------
+
+Tragt die Läden ein, in denen ihr regelmäßig einkauft.
+Filiale/Adresse hilft nur beim Wiedererkennen und ist optional.
+Kreuzt genau EINEN Laden als Hauptladen an.
+
+     Laden (z. B. Edeka)      Filiale / Adresse                              Hauptladen
+A    Netto                    Hochriesstraße 54, 83209 Prien am Chiemsee     [x]
+B    Edeka                    Hochriesstraße 54, 83209 Prien am Chiemsee     [ ]
+C    DM                       Systemformstraße 1, 83209 Prien am Chiemsee    [ ]
+D    REWE                     Hochriesstraße 62, 83209 Prien am Chiemsee     [ ]
+E    trinkgut                 Bernauer Str. 32, 83209 Prien am Chiemsee      [ ]
+
+In welcher Reihenfolge fahrt ihr die Läden normalerweise ab?
+(Buchstaben, z. B. A → C → B)
+
+     A → B → C → D → E
+
+
+3. REIHENFOLGE DER GÄNGE PRO LADEN
+----------------------------------
+
+Nummeriert die Abteilungen in der Reihenfolge, in der ihr sie
+beim Einkaufen erreicht (1 = gleich hinter dem Eingang).
+Was es in einem Laden nicht gibt, bleibt leer.
+Ungefähr reicht – wir können es später anpassen.
+
+                         Laden A   Laden B   Laden C   Laden D   Laden E
+Obst & Gemüse            1         1                   2         
+Backwaren                3         13        9         3         4  
+Fleisch & Fisch          12        11                  6         
+Wurst & Käse             11        5                   4         
+Milchprodukte            13        4                   5         
+Tiefkühl                 19        12                  19        
+Nudeln & Reis            15        7         8         9         
+Konserven                16        9         7         10        
+Gewürze & Saucen         2         2         5         8         
+Backzutaten              14        8         6         11        
+Kaffee & Tee             9         10        10        12        
+Getränke                 18        18        14        17        2  
+Süßwaren & Snacks        10        3         12        18        3  
+Frühstück                8         6         11        7         
+Drogerie                 4         14        2         13        
+Haushalt                 5         15        1         14        1  
+Baby                     6         16        4         15        
+Tiernahrung              7         17        3         16        
+Sonstiges                17        19        13        1         
+
+
+Danke!
