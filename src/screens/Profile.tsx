@@ -4,6 +4,7 @@ import { useApp } from '../app/AppContext';
 import { auth } from '../firebase';
 import * as actions from '../data/actions';
 import { StoreSheet, type StoreSheetState } from '../sheets/StoreSheet';
+import { AvatarSheet } from '../sheets/AvatarSheet';
 import { Avatar, LogoTile, TabBar } from '../ui/kit';
 
 /** Profil (reduced for V1): who you are, who you share with, and the household's stores. */
@@ -11,6 +12,7 @@ export function Profile() {
   const app = useApp();
   const { me, other, data, toast, navigate } = app;
   const [sheet, setSheet] = useState<StoreSheetState | null>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   const save = (v: { name: string; branch: string; logo: string | null }) => {
     if (!sheet) return;
@@ -36,14 +38,19 @@ export function Profile() {
       <div className="scroll" style={{ padding: 'calc(var(--safe-top) + 76px) 20px calc(var(--safe-bottom) + 96px)' }}>
         <div style={{ background: '#2A1F17', color: '#FBF5EE', borderRadius: 22, padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <Avatar person={me} size={54} fontSize={22} display />
+            <button onClick={() => setAvatarOpen(true)} title="Profilbild ändern" aria-label="Profilbild ändern" style={{ position: 'relative', width: 54, height: 54, padding: 0, border: 'none', background: 'none', cursor: 'pointer', flexShrink: 0 }}>
+              <Avatar person={me} size={54} label="" onDark />
+              <span style={{ position: 'absolute', right: -3, bottom: -3, width: 24, height: 24, borderRadius: '50%', background: '#FBF5EE', border: '2px solid #2A1F17', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ width: 11, height: 11, display: 'block', opacity: 0.8, background: 'url(/icons/pencil.svg) center/11px no-repeat' }} />
+              </span>
+            </button>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 17 }}>{me.name}</div>
               <div className="ellipsis" style={{ fontSize: 13, color: '#C9B8A6' }}>{app.user.email}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, paddingTop: 14, borderTop: '1px solid #4A3B2E' }}>
-            <Avatar person={other} />
+            <Avatar person={other} onDark />
             <span style={{ fontSize: 14, color: '#C9B8A6' }}>Teilt alle Listen mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{other.name}</span></span>
           </div>
         </div>
@@ -81,6 +88,7 @@ export function Profile() {
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>
         <TabBar active="profile" go={navigate} />
       </div>
+      {avatarOpen && <AvatarSheet person={me} onClose={() => setAvatarOpen(false)} />}
       {sheet && <StoreSheet key={sheet.id || 'new'} initial={sheet} onClose={() => setSheet(null)} onSave={save} onDelete={del} />}
     </div>
   );

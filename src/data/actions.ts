@@ -6,6 +6,7 @@ import {
 import { auth, db } from '../firebase';
 import { normName, onTrip } from '../lib/logic';
 import type { Item, List, MemoryEntry, Store } from '../lib/types';
+import type { AvatarPref } from '../lib/avatar';
 import {
   historyCol, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
 } from './refs';
@@ -126,6 +127,12 @@ export function updateSession(patch: Partial<Pick<SessionData, 'position' | 'don
 export function endSession() {
   const me = uid();
   if (me) report(deleteDoc(sessionRef(me)));
+}
+
+/** V1.2: profile picture — saved on every tap (works offline like every other write) */
+export function setAvatar(avatar: AvatarPref) {
+  const me = uid();
+  if (me) report(setDoc(userRef(me), { avatar, email: auth.currentUser?.email ?? null }, { merge: true }));
 }
 
 export function setNotifyWhileShopping(on: boolean) {

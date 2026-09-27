@@ -38,8 +38,8 @@ At **console.firebase.google.com**:
 
 Claude then puts the values into `src/config/firebaseConfig.ts`, and the app is connected. ✅ Done.
 
-### Update for V1.1: new database rules (1 minute)
-V1.1 adds shopping sessions and personal settings. The new rules let each person write only their own. In **Firestore → Rules**, replace everything with the content of [`firestore.rules`](../firestore.rules) in this repository, then click **Publish**. The app also works with the old rules; the new ones are just stricter.
+### Update for V1.1 / V1.2: new database rules (1 minute)
+V1.1 adds shopping sessions and personal settings, V1.2 profile pictures. In **Firestore → Rules**, replace everything with the content of [`firestore.rules`](../firestore.rules) in this repository, then click **Publish**. Without the V1.2 rules, each person only sees their own profile picture; the other person keeps the default.
 
 ## 2. Netlify (about 10 minutes)
 

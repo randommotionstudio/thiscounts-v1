@@ -208,7 +208,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>
-            <Avatar person={other} size={36} fontSize={15} />
+            <Avatar person={other} size={36} onDark />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{notif.title}</div>
               <div style={{ fontSize: 13, color: '#C9B8A6', marginTop: 2, textWrap: 'pretty' }}>{notif.body}</div>

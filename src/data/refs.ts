@@ -13,7 +13,8 @@ export const historyCol = () => collection(db, 'households', HOUSEHOLD_ID, 'hist
 export const sessionsCol = () => collection(db, 'households', HOUSEHOLD_ID, 'sessions');
 export const sessionRef = (uid: string) => doc(sessionsCol(), uid);
 /** V1.1: per-person settings */
-export const userRef = (uid: string) => doc(db, 'users', uid);
+export const usersCol = () => collection(db, 'users');
+export const userRef = (uid: string) => doc(usersCol(), uid);
 
 export const storeRef = (id: string) => doc(storesCol(), id);
 export const listRef = (id: string) => doc(listsCol(), id);

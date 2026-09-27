@@ -1,4 +1,4 @@
-# thisCounts V1.1
+# thisCounts V1.2
 
 **Live:** https://thiscounts.netlify.app
 
@@ -6,7 +6,7 @@ A shared shopping list for two people that sorts items **by store** and, inside 
 
 - **Setting it up (accounts, hosting, testing):** [`docs/SETUP.md`](docs/SETUP.md)
 - **Guide for the testers (German):** [`docs/TESTER_ANLEITUNG.md`](docs/TESTER_ANLEITUNG.md)
-- **Design handoff and prototype:** [`docs/design-handoff/`](docs/design-handoff/) (V1 spec) and [`docs/design-handoff-v1.1/`](docs/design-handoff-v1.1/) (V1.1 delta: store setup, new-item markers, notifications while shopping)
+- **Design handoff and prototype:** [`docs/design-handoff/`](docs/design-handoff/) (V1 spec) [`docs/design-handoff-v1.1/`](docs/design-handoff-v1.1/) (V1.1 delta: store setup, new-item markers, notifications while shopping) and [`docs/design-handoff-v1.2/`](docs/design-handoff-v1.2/) (V1.2: profile picture picker)
 
 ## Stack
 

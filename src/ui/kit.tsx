@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { LOGOS, logoUrl } from '../lib/logic';
 import type { Conn } from '../app/useConnection';
+import { AV_COLORS, DEFAULT_AVATAR, avatarIconUrl, type AvatarPref } from '../lib/avatar';
 
 /** Store logo in a white tile, or the store's initial when there's no logo. */
 export function LogoTile({ store, size, radius, initialSize, bordered = true, style }: {
@@ -78,13 +79,31 @@ export function UpDown({ onUp, onDown, noUp, noDown }: { onUp: () => void; onDow
   );
 }
 
-export function Avatar({ person, size = 28, fontSize = 12, display }: { person: { name: string; bg: string; fg: string }; size?: number; fontSize?: number; display?: boolean }) {
+/** A person's avatar (V1.2): their chosen initial or icon on their chosen color. */
+export function Avatar({ person, size = 28, iconScale = 0.55, shadow, label, onDark }: {
+  person: { name: string; avatar?: AvatarPref }; size?: number; iconScale?: number; shadow?: string; label?: string;
+  /** On a dark card: give the Espresso color a faint ring so the circle doesn't disappear */
+  onDark?: boolean;
+}) {
+  const av = person.avatar || DEFAULT_AVATAR;
+  const c = AV_COLORS[av.color] || AV_COLORS[0];
+  if (onDark && c.bg === '#2A1F17' && !shadow) shadow = '0 0 0 1.5px rgba(251,245,238,.3)';
   return (
-    <span title={person.name} style={{
-      width: size, height: size, borderRadius: '50%', background: person.bg, color: person.fg, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', fontSize, fontWeight: 700, flexShrink: 0, fontFamily: display ? 'var(--display)' : undefined,
-    }}>{person.name.charAt(0).toUpperCase()}</span>
+    <span title={label ?? person.name} aria-label={label} role={label ? 'img' : undefined} style={{
+      width: size, height: size, borderRadius: '50%', backgroundColor: c.bg, color: c.fg, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontSize: Math.round(size * 0.4), fontWeight: 700, flexShrink: 0, fontFamily: 'var(--display)', lineHeight: 1, boxShadow: shadow,
+    }}>
+      {av.kind === 'icon' && av.icon
+        ? <IconGlyph icon={av.icon} color={c.fg} size={Math.round(size * iconScale)} />
+        : person.name.charAt(0).toUpperCase()}
+    </span>
   );
+}
+
+/** A line icon tinted with any color (CSS mask). */
+export function IconGlyph({ icon, color, size }: { icon: string; color: string; size: number | string }) {
+  const url = `url(${avatarIconUrl(icon)}) center/contain no-repeat`;
+  return <span style={{ width: size, height: size, display: 'block', backgroundColor: color, WebkitMask: url, mask: url }} />;
 }
 
 export function CatIcon({ src, size, opacity = 0.85, label }: { src: string; size: number; opacity?: number; label?: string }) {

@@ -6,15 +6,14 @@ export const HOUSEHOLD_ID = 'main';
 export interface Person {
   email: string;
   name: string;
-  /** Avatar colours (AV_COLORS palette) */
-  bg: string;
-  fg: string;
+  /** V1.2: chosen profile picture (set at runtime from users/{uid}.avatar) */
+  avatar?: import('../lib/avatar').AvatarPref;
 }
 
 /** The two test accounts. Must match firestore.rules. */
 export const PEOPLE: Person[] = [
-  { email: 'michael@rieplhuber.com', name: 'Michi', bg: '#F3752E', fg: '#2A1F17' },
-  { email: 'annacvetkov@posteo.de', name: 'Anna', bg: '#DDF0E3', fg: '#1E5A34' },
+  { email: 'michael@rieplhuber.com', name: 'Michi' },
+  { email: 'annacvetkov@posteo.de', name: 'Anna' },
 ];
 
 const norm = (e: string | null | undefined) => (e || '').trim().toLowerCase();
@@ -23,7 +22,7 @@ export function personFor(email: string | null | undefined): Person {
   const p = PEOPLE.find(x => x.email === norm(email));
   if (p) return p;
   const name = (email || '?').split('@')[0];
-  return { email: email || '', name: name.charAt(0).toUpperCase() + name.slice(1), bg: '#E6DACB', fg: '#6F6055' };
+  return { email: email || '', name: name.charAt(0).toUpperCase() + name.slice(1) };
 }
 
 export function otherPerson(email: string | null | undefined): Person {

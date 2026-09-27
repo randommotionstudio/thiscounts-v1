@@ -5,7 +5,8 @@ import {
 import type { User } from 'firebase/auth';
 import { ALL_DEPTS, UNKNOWN } from '../lib/logic';
 import type { HistoryEntry, Item, List, MemoryEntry, Session, Store } from '../lib/types';
-import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef } from './refs';
+import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
+import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
 import { seedDefaultList, seedHousehold } from './seed';
 import { onWritesChange, writesInFlight } from './write';
 
@@ -26,6 +27,8 @@ export interface Data {
   sessionsReady: boolean;
   /** V1.1: Profil → "Beim Einkaufen" */
   notifyWhileShopping: boolean;
+  /** V1.2: everyone's profile picture by uid (missing → initial on orange) */
+  avatars: Record<string, AvatarPref>;
   /** Local changes that haven't reached the server yet */
   pending: boolean;
 }
@@ -77,6 +80,8 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [sessions, setSessions] = useState<Record<string, Session>>({});
   const [sessionsReady, setSessionsReady] = useState(false);
   const [notifyWhileShopping, setNotify] = useState(true);
+  const [myAvatar, setMyAvatar] = useState<AvatarPref>(normalizeAvatar(null));
+  const [otherAvatars, setOtherAvatars] = useState<Record<string, AvatarPref>>({});
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
   const seeded = useRef(false);
   const listSeeded = useRef(false);
@@ -140,8 +145,18 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       setSessions(m);
       setSessionsReady(true);
     }, onErr);
-    const u7 = onSnapshot(userRef(user.uid), snap => { setNotify(snap.get('notifyWhileShopping') !== false); }, onErr);
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); };
+    const u7 = onSnapshot(userRef(user.uid), snap => {
+      setNotify(snap.get('notifyWhileShopping') !== false);
+      setMyAvatar(normalizeAvatar(snap.get('avatar')));
+    }, onErr);
+    // Everyone's avatar. Needs the V1.2 rules (users readable by the household); with older rules
+    // this just fails quietly and the others keep the default avatar.
+    const u8 = onSnapshot(usersCol(), snap => {
+      const m: Record<string, AvatarPref> = {};
+      snap.docs.forEach(d => { m[d.id] = normalizeAvatar(d.get('avatar')); });
+      setOtherAvatars(m);
+    }, e => console.warn('[thisCounts] avatars not readable (update firestore.rules)', e));
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); };
   }, [user.uid]);
 
   // Every list got deleted (e.g. on both phones while offline) → start a fresh one instead of hanging.
@@ -168,8 +183,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
     stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
+    avatars: { ...otherAvatars, [user.uid]: myAvatar },
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, pendingMap, openWrites]);
+  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

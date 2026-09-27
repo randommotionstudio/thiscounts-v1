@@ -171,3 +171,11 @@ describe('V1.1 markSince', () => {
   it('quick restart keeps the stored value', () => { expect(markSinceAtStart(1000 * M, 998 * M, 900 * M)).toBe(900 * M); });
   it('back after >= 10 min: since the app was closed', () => { expect(markSinceAtStart(1000 * M, 985 * M, 900 * M)).toBe(985 * M); });
 });
+
+import { normalizeAvatar } from './avatar';
+describe('V1.2 avatar', () => {
+  it('missing → initial on orange', () => { expect(normalizeAvatar(undefined)).toEqual({ kind: 'initial', icon: null, color: 0 }); });
+  it('keeps a valid icon and color', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'pizza', color: 3 })).toEqual({ kind: 'icon', icon: 'pizza', color: 3 }); });
+  it('initial keeps the last icon (harmless)', () => { expect(normalizeAvatar({ kind: 'initial', icon: 'egg', color: 2 })).toEqual({ kind: 'initial', icon: 'egg', color: 2 }); });
+  it('rejects junk', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'rocket', color: 9 })).toEqual({ kind: 'initial', icon: null, color: 0 }); });
+});

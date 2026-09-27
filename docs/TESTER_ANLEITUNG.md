@@ -43,6 +43,10 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Rückfrage:** Setzt ihr etwas für einen Laden auf die Liste, mit dem die andere Person heute schon fertig ist, fragt die App: gleich im aktuellen Laden mitnehmen – oder beim nächsten Einkauf?
 - **Filiale einrichten:** Im Laden unten auf „Hilf mit, diese Filiale genauer zu machen“ tippen und die Abteilungen in der Reihenfolge antippen, in der ihr durch den Laden lauft. Das gilt dann für euch beide. Später könnt ihr den Weg über „Aufbau der Filiale geändert?“ anpassen.
 
+## Neu in Version 1.2
+
+- **Profilbild:** Im Profil auf euren Kreis mit dem Stift tippen und Anfangsbuchstaben oder ein Icon plus eine Farbe wählen. So seht ihr euch gegenseitig überall in der App – auf der Liste, beim Einkaufen und in den Hinweisen.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann

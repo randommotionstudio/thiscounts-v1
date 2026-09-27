@@ -103,10 +103,16 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
 
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();
+    // Two people share the household: the other one is whoever isn't me
+    const otherUid = Object.keys(data.avatars).find(id => id !== user.uid)
+      || Object.keys(data.sessions).find(id => id !== user.uid)
+      || allItems.find(i => i.createdBy && i.createdBy !== user.uid)?.createdBy || null;
     const byId = new Map(data.stores.map(s => [s.id, s]));
     const mainStore = (list.mainStoreId && byId.get(list.mainStoreId)) || null;
     return {
-      user, me: personFor(user.email), other: otherPerson(user.email), data,
+      user, data,
+      me: { ...personFor(user.email), avatar: data.avatars[user.uid] },
+      other: { ...otherPerson(user.email), avatar: otherUid ? data.avatars[otherUid] : undefined },
       list, items, allItems,
       mainStore, mainName: mainStore ? mainStore.name : (data.stores[0]?.name || '–'),
       selectedStores: data.stores.filter(s => list.storeIds.includes(s.id)),

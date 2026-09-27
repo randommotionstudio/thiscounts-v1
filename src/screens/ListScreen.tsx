@@ -202,7 +202,7 @@ export function ListScreen() {
         {shopper && shopperAt && (
           <div style={{ marginTop: 12, background: '#2A1F17', color: '#FBF5EE', borderRadius: 16, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, animation: 'toastIn .25s ease' }}>
             <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
-              <Avatar person={other} size={32} fontSize={13} />
+              <Avatar person={other} size={32} onDark />
               <span style={{ position: 'absolute', right: -2, bottom: -2, width: 11, height: 11, borderRadius: '50%', background: '#3E9B5F', border: '2px solid #2A1F17', display: 'block' }} />
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -279,7 +279,7 @@ export function ListScreen() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                           <span className="ellipsis" style={{ fontWeight: 600 }}>{it.name}</span>
                           {it.createdBy && it.createdBy !== app.user.uid && it.createdAtMs > markSince && (
-                            <span title={'Neu von ' + other.name} aria-label={'Neu von ' + other.name} style={{ width: 20, height: 20, borderRadius: '50%', background: other.bg, color: other.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{other.name.charAt(0).toUpperCase()}</span>
+                            <Avatar person={other} size={20} label={'Neu von ' + other.name} />
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: 12, color: it.category === UNKNOWN ? '#C9581A' : '#8A7A6D' }}>
@@ -398,7 +398,7 @@ export function ListScreen() {
             <div className="grab" />
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
-                <Avatar person={other} size={44} fontSize={18} display />
+                <Avatar person={other} size={44} />
                 <span style={{ position: 'absolute', right: -5, bottom: -5, display: 'flex', borderRadius: 7, border: '2px solid #FBF5EE' }}>
                   <LogoTile store={ask.at} size={20} radius={5} initialSize={11} bordered={false} />
                 </span>

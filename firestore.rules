@@ -19,9 +19,10 @@ service cloud.firestore {
     match /households/{hid}/sessions/{uid} {
       allow write: if isTester() && request.auth.uid == uid;
     }
-    // Personal settings (e.g. "Beim Einkaufen" notifications)
+    // Personal settings and profile picture: everyone in the household sees them, each person changes only their own.
     match /users/{uid} {
-      allow read, write: if isTester() && request.auth.uid == uid;
+      allow read: if isTester();
+      allow write: if isTester() && request.auth.uid == uid;
     }
   }
 }
