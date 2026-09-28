@@ -34,7 +34,7 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Im Laden:** Artikel abhaken. Die Gruppen kommen in der Reihenfolge, in der ihr durch den Laden geht.
 - **Nicht gefunden:** Artikel zu einem anderen Laden schieben (auch nur einen Teil davon) oder zurück auf die Liste setzen.
 - **Einkauf abschließen:** Erledigte Artikel verschwinden, der Rest bleibt auf der Liste – für euch beide.
-- **Nicht alles erwischt?** Tippt ihr auf „Weiter zu …“, obwohl noch Artikel offen sind, fragt die App: alle zum nächsten Laden mitnehmen – oder auf der Einkaufsliste lassen. Dann behalten sie ihren Laden und sind beim nächsten Einkauf wieder dabei.
+- **Nicht alles erwischt?** Tippt ihr auf „Weiter zu …“ oder „Einkauf abschließen“, obwohl noch Artikel offen sind, fragt die App: alle zum nächsten Laden mitnehmen – oder auf der Einkaufsliste lassen (im letzten Laden gibt es nur diese Möglichkeit). Dann behalten sie ihren Laden und sind beim nächsten Einkauf wieder dabei.
 
 ## Neu in Version 1.1
 

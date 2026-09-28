@@ -93,14 +93,15 @@ export function StoreScreen({ stopId }: { stopId: string }) {
     : allDone ? 'Einkauf abschließen' : 'Einkauf abschließen (' + openHere + ' offen)';
 
   const goNext = () => {
-    if (!nextStop) { finish(); return; }
-    // Items left unchecked here: ask what should happen to them instead of sending you back later
+    // Items left unchecked here: ask what should happen to them (also at the last stop, for consistency)
     if (openHere > 0) { setMenu(false); setLeaving(true); return; }
+    if (!nextStop) { finish(); return; }
     if (allDone) markStoreDone(cur.id);
     goStore(nextStop.id);
   };
   const leaveWithOpenItems = (takeAlong: boolean) => {
-    if (!nextStop) return;
+    // Last stop: the open items simply stay on the list with their store when the trip ends
+    if (!nextStop) { setLeaving(false); finish(); return; }
     const open = curItems.filter(i => !i.checked);
     const n = open.length, one = n === 1 ? open[0].name : null;
     if (takeAlong) {
@@ -252,7 +253,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
           </button>
         </div>
       </div>
-      {leaving && nextStop && (
+      {leaving && (
         <Sheet
           title={'Noch ' + openHere + ' Artikel offen'}
           sub={'Was soll mit den übrigen Artikeln von ' + cur.name + ' passieren?'}
@@ -263,12 +264,20 @@ export function StoreScreen({ stopId }: { stopId: string }) {
               <span key={i.id} style={{ fontSize: 13, padding: '5px 10px', borderRadius: 999, background: tint(i.category), color: '#2A1F17' }}>{i.name}</span>
             ))}
           </div>
-          <button onClick={() => leaveWithOpenItems(true)} className="ellipsis" style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0, padding: '0 16px' }}>
-            Alle zu {nextStop.name} mitnehmen
-          </button>
-          <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-            Auf der Einkaufsliste lassen
-          </button>
+          {nextStop && (
+            <button onClick={() => leaveWithOpenItems(true)} className="ellipsis" style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0, padding: '0 16px' }}>
+              Alle zu {nextStop.name} mitnehmen
+            </button>
+          )}
+          {nextStop ? (
+            <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+              Auf der Einkaufsliste lassen
+            </button>
+          ) : (
+            <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+              Auf der Einkaufsliste lassen
+            </button>
+          )}
           <div style={{ fontSize: 13, color: '#8A7A6D', textAlign: 'center', margin: '10px 8px 0', textWrap: 'pretty' }}>Sie behalten ihren Laden und sind beim nächsten Einkauf wieder dabei.</div>
         </Sheet>
       )}
