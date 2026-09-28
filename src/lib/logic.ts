@@ -325,3 +325,12 @@ export const agoText = (a: number | null) =>
 
 /** Sessions older than this are ignored everywhere */
 export const SESSION_STALE_MS = 90 * 60 * 1000;
+
+/** Fields that send an item to another stop (store on the list, store outside it, or a free-text stop). */
+export function movePatch(target: Stop, list: { storeIds: string[] }) {
+  return target.custom
+    ? { storeId: null, once: true, onceStopName: target.name, parked: false }
+    : list.storeIds.includes(target.id)
+      ? { storeId: target.id, once: false, onceStopName: null, parked: false }
+      : { storeId: target.id, once: true, onceStopName: null, parked: false };
+}

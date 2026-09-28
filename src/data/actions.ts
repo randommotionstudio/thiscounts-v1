@@ -77,6 +77,16 @@ export function moveItem(item: Item, patch: ItemPatch, split: { foundQty: string
   report(batch.commit());
 }
 
+/** Leaving a stop with open items: take them along to the next stop … */
+export function moveOpenItems(items: Item[], patch: ItemPatch) {
+  items.forEach(i => updateItem(i, { ...patch, checked: false, checkedBy: null }));
+}
+
+/** … or leave them on the list for another day. They keep their store; "Einkauf abschließen" puts them back on the plan. */
+export function keepOpenItemsOnList(items: Item[]) {
+  items.forEach(i => updateItem(i, { nextTrip: true }));
+}
+
 export function parkItem(item: Item) {
   updateItem(item, { parked: true, storeId: null, once: false, onceStopName: null, checked: false, checkedBy: null });
 }

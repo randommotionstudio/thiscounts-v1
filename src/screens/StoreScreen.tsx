@@ -5,10 +5,10 @@ import { useTrip } from '../app/useTrip';
 import { enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
-  CHECK_AFTER, agoText, ageDays, effStore, icon, onTrip, posInfo, stopById, storeGroups, storeToStop, tint,
+  CHECK_AFTER, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
-import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck } from '../ui/kit';
+import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet } from '../ui/kit';
 
 export function useCurrentStop(stopId: string): Stop {
   const app = useApp();
@@ -35,6 +35,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const { list, navigate, toast, data, user, other } = app;
   const { route, itemsAt, doneOf, goStore, finish, storeIds } = useTrip();
   const [menu, setMenu] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
   const cur = useCurrentStop(stopId);
   const store = cur.custom ? null : data.stores.find(s => s.id === cur.id) || null;
@@ -93,7 +94,24 @@ export function StoreScreen({ stopId }: { stopId: string }) {
 
   const goNext = () => {
     if (!nextStop) { finish(); return; }
+    // Items left unchecked here: ask what should happen to them instead of sending you back later
+    if (openHere > 0) { setMenu(false); setLeaving(true); return; }
     if (allDone) markStoreDone(cur.id);
+    goStore(nextStop.id);
+  };
+  const leaveWithOpenItems = (takeAlong: boolean) => {
+    if (!nextStop) return;
+    const open = curItems.filter(i => !i.checked);
+    const n = open.length, one = n === 1 ? open[0].name : null;
+    if (takeAlong) {
+      actions.moveOpenItems(open, movePatch(nextStop, list));
+      toast(one ? one + ' wandert zu ' + nextStop.name : n + ' Artikel wandern zu ' + nextStop.name);
+    } else {
+      actions.keepOpenItemsOnList(open);
+      toast(one ? one + ' bleibt auf der Einkaufsliste' : n + ' Artikel bleiben auf der Einkaufsliste');
+    }
+    setLeaving(false);
+    markStoreDone(cur.id);
     goStore(nextStop.id);
   };
   const skipStore = () => {
@@ -234,6 +252,26 @@ export function StoreScreen({ stopId }: { stopId: string }) {
           </button>
         </div>
       </div>
+      {leaving && nextStop && (
+        <Sheet
+          title={'Noch ' + openHere + ' Artikel offen'}
+          sub={'Was soll mit den übrigen Artikeln von ' + cur.name + ' passieren?'}
+          onClose={() => setLeaving(false)}
+        >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16, maxHeight: 132, overflow: 'auto', flexShrink: 0 }}>
+            {curItems.filter(i => !i.checked).map(i => (
+              <span key={i.id} style={{ fontSize: 13, padding: '5px 10px', borderRadius: 999, background: tint(i.category), color: '#2A1F17' }}>{i.name}</span>
+            ))}
+          </div>
+          <button onClick={() => leaveWithOpenItems(true)} className="ellipsis" style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0, padding: '0 16px' }}>
+            Alle zu {nextStop.name} mitnehmen
+          </button>
+          <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+            Auf der Einkaufsliste lassen
+          </button>
+          <div style={{ fontSize: 13, color: '#8A7A6D', textAlign: 'center', margin: '10px 8px 0', textWrap: 'pretty' }}>Sie behalten ihren Laden und sind beim nächsten Einkauf wieder dabei.</div>
+        </Sheet>
+      )}
     </div>
   );
 }

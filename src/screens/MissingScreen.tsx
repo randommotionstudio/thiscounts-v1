@@ -3,7 +3,7 @@ import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
 import * as actions from '../data/actions';
-import { missingQty, storeToStop } from '../lib/logic';
+import { missingQty, movePatch, storeToStop } from '../lib/logic';
 import type { Stop } from '../lib/types';
 import { LogoTile } from '../ui/kit';
 import { useCurrentStop } from './StoreScreen';
@@ -33,11 +33,7 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
     if (!target || done.current) return;
     done.current = true;
     const split = q.found > 0 && q.found < q.qtyNum;
-    const patch = target.custom
-      ? { storeId: null, once: true, onceStopName: target.name, parked: false }
-      : list.storeIds.includes(target.id)
-        ? { storeId: target.id, once: false, onceStopName: null, parked: false }
-        : { storeId: target.id, once: true, onceStopName: null, parked: false };
+    const patch = movePatch(target, list);
     // A moved item is still to be bought at its new stop
     actions.moveItem(mi, split ? patch : { ...patch, checked: false, checkedBy: null }, split ? { foundQty: q.foundQtyText, restQty: q.restText } : null);
     app.back(storePath);

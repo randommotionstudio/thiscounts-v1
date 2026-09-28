@@ -179,3 +179,13 @@ describe('V1.2 avatar', () => {
   it('initial keeps the last icon (harmless)', () => { expect(normalizeAvatar({ kind: 'initial', icon: 'egg', color: 2 })).toEqual({ kind: 'initial', icon: 'egg', color: 2 }); });
   it('rejects junk', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'rocket', color: 9 })).toEqual({ kind: 'initial', icon: null, color: 0 }); });
 });
+
+import { movePatch } from './logic';
+describe('movePatch', () => {
+  it('store on the list / outside it / free-text stop', () => {
+    const l = { storeIds: ['a', 'b'] };
+    expect(movePatch({ id: 'b', name: 'B', branch: '', logo: null, categoryOrder: null, custom: false }, l)).toMatchObject({ storeId: 'b', once: false });
+    expect(movePatch({ id: 'x', name: 'X', branch: '', logo: null, categoryOrder: null, custom: false }, l)).toMatchObject({ storeId: 'x', once: true });
+    expect(movePatch({ id: 'once:apotheke', name: 'Apotheke', branch: '', logo: null, categoryOrder: null, custom: true }, l)).toMatchObject({ storeId: null, once: true, onceStopName: 'Apotheke' });
+  });
+});
