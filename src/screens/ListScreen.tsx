@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
@@ -11,6 +11,7 @@ import { DeptSheet } from '../sheets/DeptSheet';
 import { OnceSheet } from '../sheets/OnceSheet';
 import { QtySheet } from '../sheets/QtySheet';
 import { Avatar, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
+import { SwipeRow } from '../ui/SwipeRow';
 import { useMarkSince } from '../app/markSince';
 import { ask as askState, holdForNextTrip } from '../app/shopping';
 import { SESSION_STALE_MS } from '../lib/logic';
@@ -29,6 +30,9 @@ export function ListScreen() {
   const [chipAdded, setChipAdded] = useState<Record<string, string>>({});
   const [fresh, setFresh] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+  /** Row whose "Löschen" button is revealed (one at a time) */
+  const [swiped, setSwiped] = useState<string | null>(null);
+  const closeSwipe = useCallback(() => setSwiped(null), []);
   const [listMenu, setListMenu] = useState(false);
   const [pick, setPick] = useState<Pick | null>(null);
   const [deptPick, setDeptPick] = useState<string | null>(null);
@@ -180,7 +184,10 @@ export function ListScreen() {
   const keepFocus = (e: React.MouseEvent) => { if (inFocus) e.preventDefault(); };
   const qDept = qName ? guessDept(qName) : '';
 
-  const onListScroll = () => { if (inFocus && Date.now() - focusAt.current > 500) inRef.current?.blur(); };
+  const onListScroll = () => {
+    if (swiped) setSwiped(null);
+    if (inFocus && Date.now() - focusAt.current > 500) inRef.current?.blur();
+  };
 
   const n = items.length;
   const deptItem = deptPick ? items.find(i => i.id === deptPick) : null;
@@ -271,6 +278,8 @@ export function ListScreen() {
                 ];
                 return (
                   <div key={it.id} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
+                    <SwipeRow open={swiped === it.id} onOpen={() => { setSwiped(it.id); setExpanded(null); }} onClose={closeSwipe}
+                      onDelete={() => { actions.deleteItem(it); setSwiped(null); }} deleteLabel={it.name + ' löschen'}>
                     <div onClick={() => setExpanded(e => (e === it.id ? null : it.id))} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', minHeight: 56, cursor: 'pointer', boxSizing: 'border-box' }}>
                       <button onClick={e => { e.stopPropagation(); setDeptPick(it.id); setExpanded(null); }} title="Kategorie ändern" style={{ width: 38, height: 38, border: 'none', padding: 0, borderRadius: 12, background: tint(it.category), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
                         <CatIcon src={icon(it.category)} size={20} label={it.category} />
@@ -297,8 +306,8 @@ export function ListScreen() {
                         {isOnce && <span title="Einmaliger Stopp" style={{ margin: '0 6px 0 -4px', padding: '1px 5px', borderRadius: 999, background: '#C9581A', color: '#fff', fontSize: 10, fontWeight: 800, lineHeight: 1.3, flexShrink: 0 }}>1×</span>}
                         <span className="ellipsis" style={{ lineHeight: 1.2 }}>{it.parked ? 'Offen · Laden wählen' : effName}</span>
                       </div>
-                      <button onClick={e => { e.stopPropagation(); actions.deleteItem(it); }} aria-label={it.name + ' löschen'} style={{ border: 'none', background: 'none', color: '#B9AA9C', fontSize: 20, lineHeight: 1, padding: 4, cursor: 'pointer' }}>×</button>
                     </div>
+                    </SwipeRow>
                     {isExp && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 14px 14px', borderTop: '1px solid #F3EADF' }}>
                         {opts.map(o => (
