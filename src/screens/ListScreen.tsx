@@ -345,7 +345,7 @@ export function ListScreen() {
         )}
       </div>
 
-      {app.toastText && <div className="toast-inline toast-overlay" role="status" style={{ top: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>{app.toastText}</div>}
+      {app.toastText && <div className={'toast-inline toast-overlay' + (app.toastLeaving ? ' toast-leaving' : '')} role="status" style={{ top: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
           <button className={'cta' + (n ? '' : ' off')} onClick={() => navigate(paths.plan)}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>

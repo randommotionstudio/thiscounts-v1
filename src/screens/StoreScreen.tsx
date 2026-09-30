@@ -225,7 +225,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
           </div>
         )}
       </div>
-      {app.toastText && <div className="toast-inline toast-overlay" role="status" style={{ top: headH + 16 }}>{app.toastText}</div>}
+      {app.toastText && <div className={'toast-inline toast-overlay' + (app.toastLeaving ? ' toast-leaving' : '')} role="status" style={{ top: headH + 16 }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>

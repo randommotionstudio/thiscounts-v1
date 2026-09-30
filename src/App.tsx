@@ -92,7 +92,7 @@ function Screens() {
   return (
     <>
       {screen}
-      {floatToast && <div className="toast-float">{app.toastText}</div>}
+      {floatToast && <div className={'toast-float' + (app.toastLeaving ? ' toast-leaving' : '')}>{app.toastText}</div>}
     </>
   );
 }

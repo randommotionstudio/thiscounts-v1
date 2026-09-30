@@ -33,6 +33,8 @@ export interface AppCtx {
   setActiveList: (id: string) => void;
   toast: (text: string) => void;
   toastText: string | null;
+  /** True during the short fade-out before the toast is removed */
+  toastLeaving: boolean;
   route: Route;
   navigate: (to: string, replace?: boolean) => void;
   back: (to: string) => void;
@@ -58,11 +60,15 @@ const LS_CURRENT = 'thisCounts.currentStop.';
 const lsGet = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 
+/** Matches the toastOut animation in styles.css */
+const TOAST_FADE_MS = 280;
+
 export function AppProvider({ user, route, navigate, back, children }: { user: User; route: Route; navigate: AppCtx['navigate']; back: AppCtx['back']; children: ReactNode }) {
   const data = useData();
   const conn = useConnection(data.pending);
   const [activeId, setActiveId] = useState<string | null>(() => lsGet(LS_ACTIVE));
   const [toastText, setToastText] = useState<string | null>(null);
+  const [toastLeaving, setToastLeaving] = useState(false);
   const [draft, setDraft] = useState<ListDraft | null>(null);
   const [currentStops, setCurrentStops] = useState<Record<string, string | null>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -75,7 +81,11 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const toast = useCallback((text: string) => {
     clearTimeout(toastTimer.current);
     setToastText(text);
-    toastTimer.current = setTimeout(() => setToastText(null), 3200);
+    setToastLeaving(false);
+    toastTimer.current = setTimeout(() => {
+      setToastLeaving(true); // fade out (.toast-leaving), then remove
+      toastTimer.current = setTimeout(() => { setToastText(null); setToastLeaving(false); }, TOAST_FADE_MS);
+    }, 3200);
   }, []);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
@@ -116,11 +126,11 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       list, items, allItems,
       mainStore, mainName: mainStore ? mainStore.name : (data.stores[0]?.name || '–'),
       selectedStores: data.stores.filter(s => list.storeIds.includes(s.id)),
-      setActiveList, toast, toastText, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
+      setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
       guessDept: name => data.memory[memoryId(name)]?.category || guessDeptFromName(name),
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
     };
-  }, [user, data, list, items, setActiveList, toast, toastText, route, navigate, back, conn, draft, currentStop, setCurrentStop]);
+  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
