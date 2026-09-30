@@ -48,6 +48,7 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 ## Neu in Version 1.2
 
 - **Profilbild:** Im Profil auf euren Kreis mit dem Stift tippen und Anfangsbuchstaben oder ein Icon plus eine Farbe wählen. So seht ihr euch gegenseitig überall in der App – auf der Liste, beim Einkaufen und in den Hinweisen.
+- **Weg durch die Filiale prüfen:** Bei euren fünf Läden steht unten im Laden jetzt „Aufbau der Filiale geändert?“. Dort seht ihr den hinterlegten Weg und könnt ihn mit dem echten Laden vergleichen und anpassen. Nur neu angelegte Läden zeigen noch „Hilf mit, diese Filiale genauer zu machen“.
 
 ## 5. Ohne Empfang
 

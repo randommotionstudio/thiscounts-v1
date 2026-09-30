@@ -255,7 +255,6 @@ export function ListScreen() {
       </div>
 
       <div className="scroll" onScroll={onListScroll} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
-        {app.toastText && <div className="toast-inline">{app.toastText}</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
           {sections.map(sec => (
             <div key={sec.title} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -346,6 +345,7 @@ export function ListScreen() {
         )}
       </div>
 
+      {app.toastText && <div className="toast-inline toast-overlay" role="status" style={{ top: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
           <button className={'cta' + (n ? '' : ' off')} onClick={() => navigate(paths.plan)}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
-import { REF_UNIVERSE, agoText, ageDays, icon } from '../lib/logic';
+import { REF_UNIVERSE, agoText, ageDays, icon, storeOrderInfo } from '../lib/logic';
 import { useHeaderHeight } from '../ui/kit';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
@@ -57,7 +57,8 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   const storePath = paths.store(stopId);
   const [headRef, headH] = useHeaderHeight();
 
-  const isEdit = !!store && store.orderSetAtMs != null;
+  const orderInfo = store ? storeOrderInfo(store) : null;
+  const isEdit = !!orderInfo && orderInfo.isSet;
   const base = isEdit ? (store!.categoryOrder || data.defaultCategoryOrder).filter(d => REF_UNIVERSE.includes(d)) : [];
   const [order, setOrder] = useState<string[]>(base);
   const [pick, setPick] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   const canSave = ready && (!isEdit || changed);
   const saveLabel = isEdit && !changed ? 'Noch keine Änderung' : !placed ? 'Erste Abteilung antippen' : !ready ? 'Alle Abteilungen einordnen' : isEdit ? 'Änderungen speichern' : 'Reihenfolge speichern';
   const pickIdx = pick ? order.indexOf(pick) : -1;
-  const age = ageDays(store.orderCheckedAtMs ?? store.orderSetAtMs, Date.now());
+  const age = ageDays(orderInfo!.checkedAtMs, Date.now());
 
   const swap = (dir: -1 | 1) => {
     const i = pickIdx, j = i + dir;

@@ -334,3 +334,13 @@ export function movePatch(target: Stop, list: { storeIds: string[] }) {
       ? { storeId: target.id, once: false, onceStopName: null, parked: false }
       : { storeId: target.id, once: true, onceStopName: null, parked: false };
 }
+
+/**
+ * Is the store's walking order set up, and since when? A store that already has a saved path counts as
+ * set up — also the paths from the initial tester form (dated to when the store was created).
+ * Only stores without any path (e.g. newly added ones) get the "Hilf mit …" setup offer.
+ */
+export function storeOrderInfo(s: { orderSetAtMs: number | null; orderCheckedAtMs: number | null; categoryOrder: string[] | null; createdAtMs: number }) {
+  const setAt = s.orderSetAtMs ?? (s.categoryOrder && s.categoryOrder.length ? s.createdAtMs : null);
+  return { isSet: setAt != null, checkedAtMs: s.orderCheckedAtMs ?? setAt };
+}

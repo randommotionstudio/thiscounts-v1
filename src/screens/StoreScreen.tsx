@@ -5,10 +5,10 @@ import { useTrip } from '../app/useTrip';
 import { enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
-  CHECK_AFTER, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeToStop, tint,
+  CHECK_AFTER, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
-import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet } from '../ui/kit';
+import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet, useHeaderHeight } from '../ui/kit';
 
 export function useCurrentStop(stopId: string): Stop {
   const app = useApp();
@@ -36,6 +36,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const { route, itemsAt, doneOf, goStore, finish, storeIds } = useTrip();
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [headRef, headH] = useHeaderHeight();
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
   const cur = useCurrentStop(stopId);
   const store = cur.custom ? null : data.stores.find(s => s.id === cur.id) || null;
@@ -124,13 +125,14 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   };
 
   // ---- V1.1 Filiale einrichten: which entry to show ----
-  const age = store ? ageDays(store.orderCheckedAtMs ?? store.orderSetAtMs, Date.now()) : null;
-  const refineState = !store ? null : store.orderSetAtMs == null ? 'offer' : age != null && age >= CHECK_AFTER ? 'check' : 'cooldown';
+  const orderInfo = store ? storeOrderInfo(store) : null;
+  const age = orderInfo ? ageDays(orderInfo.checkedAtMs, Date.now()) : null;
+  const refineState = !orderInfo ? null : !orderInfo.isSet ? 'offer' : age != null && age >= CHECK_AFTER ? 'check' : 'cooldown';
   const goRefine = () => navigate(paths.refine(cur.id));
 
   return (
     <div className="screen">
-      <div style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
+      <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>Stopp {Math.max(curIdx, 0) + 1} von {route.length}</span>
@@ -151,7 +153,6 @@ export function StoreScreen({ stopId }: { stopId: string }) {
         {app.conn !== 'online' && <div style={{ display: 'flex', marginTop: 10 }}><ConnPill conn={app.conn} dark /></div>}
       </div>
       <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
-        {app.toastText && <div className="toast-inline">{app.toastText}</div>}
         <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12 }}>Sortiert nach dem Weg durch diese Filiale</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {groups.map((g, n) => (
@@ -224,6 +225,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
           </div>
         )}
       </div>
+      {app.toastText && <div className="toast-inline toast-overlay" role="status" style={{ top: headH + 16 }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>

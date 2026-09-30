@@ -189,3 +189,11 @@ describe('movePatch', () => {
     expect(movePatch({ id: 'once:apotheke', name: 'Apotheke', branch: '', logo: null, categoryOrder: null, custom: true }, l)).toMatchObject({ storeId: null, once: true, onceStopName: 'Apotheke' });
   });
 });
+
+import { storeOrderInfo } from './logic';
+describe('storeOrderInfo', () => {
+  const base = { orderSetAtMs: null, orderCheckedAtMs: null, categoryOrder: null, createdAtMs: 1000 };
+  it('no path → setup offer', () => { expect(storeOrderInfo(base)).toEqual({ isSet: false, checkedAtMs: null }); });
+  it('path from the tester form → set up since creation', () => { expect(storeOrderInfo({ ...base, categoryOrder: ['Backwaren'] })).toEqual({ isSet: true, checkedAtMs: 1000 }); });
+  it('saved in the app → its own dates', () => { expect(storeOrderInfo({ ...base, categoryOrder: ['Backwaren'], orderSetAtMs: 5000, orderCheckedAtMs: 7000 })).toEqual({ isSet: true, checkedAtMs: 7000 }); });
+});
