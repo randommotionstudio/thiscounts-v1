@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
@@ -100,6 +100,13 @@ export function StoreScreen({ stopId }: { stopId: string }) {
     if (allDone) markStoreDone(cur.id);
     goStore(nextStop.id);
   };
+  // The last tick reached the list a moment after the tap (or the other person checked the rest):
+  // nothing is open any more, so carry on as if the popup had never opened instead of showing "Noch 0 Artikel offen".
+  const goNextRef = useRef(goNext);
+  goNextRef.current = goNext;
+  useEffect(() => {
+    if (leaving && openHere === 0) { setLeaving(false); goNextRef.current(); }
+  }, [leaving, openHere]);
   const leaveWithOpenItems = (takeAlong: boolean) => {
     // Last stop: the open items simply stay on the list with their store when the trip ends
     if (!nextStop) { setLeaving(false); finish(); return; }

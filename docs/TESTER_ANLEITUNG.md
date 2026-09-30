@@ -50,6 +50,10 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Profilbild:** Im Profil auf euren Kreis mit dem Stift tippen und Anfangsbuchstaben oder ein Icon plus eine Farbe wählen. So seht ihr euch gegenseitig überall in der App – auf der Liste, beim Einkaufen und in den Hinweisen.
 - **Weg durch die Filiale prüfen:** Bei euren fünf Läden steht unten im Laden jetzt „Aufbau der Filiale geändert?“. Dort seht ihr den hinterlegten Weg und könnt ihn mit dem echten Laden vergleichen und anpassen. Nur neu angelegte Läden zeigen noch „Hilf mit, diese Filiale genauer zu machen“.
 
+## Neu in Version 1.3
+
+- **Neue Kategorien:** „Gewürze & Saucen“ ist jetzt aufgeteilt in **Gewürze** und **Saucen**, **Eier** haben eine eigene Kategorie, und **Angebote** gibt es als Kategorie für Artikel im Angebot. Eure Läden haben die neuen Abteilungen schon im Weg: Angebote ganz vorne, Gewürze und Saucen dort, wo vorher „Gewürze & Saucen“ war, Eier direkt nach den Milchprodukten. Stimmt das in eurer Filiale nicht, passt es über „Aufbau der Filiale geändert?“ an.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann

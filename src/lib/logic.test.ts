@@ -36,8 +36,36 @@ describe('categories', () => {
     expect(guessDeptFromName('Glühbirne')).toBe(UNKNOWN);
     expect(guessDeptFromName('Zahnpasta')).toBe('Drogerie');
     expect(guessDeptFromName('Pasta')).toBe('Nudeln & Reis');
-    expect(guessDeptFromName('Eier')).toBe('Milchprodukte');
-    expect(guessDeptFromName('Bio-Eier')).toBe('Milchprodukte');
+    expect(guessDeptFromName('Eier')).toBe('Eier');
+    expect(guessDeptFromName('Bio-Eier')).toBe('Eier');
+    expect(guessDeptFromName('Eiernudeln')).toBe('Nudeln & Reis');
+    expect(guessDeptFromName('Milch')).toBe('Milchprodukte');
+    expect(guessDeptFromName('Pfeffer')).toBe('Gewürze');
+    expect(guessDeptFromName('Brühe')).toBe('Gewürze');
+    expect(guessDeptFromName('Ketchup')).toBe('Saucen');
+    expect(guessDeptFromName('Olivenöl')).toBe('Saucen');
+  });
+});
+
+describe('V1.3 category upgrade', () => {
+  it('splits old "Gewürze & Saucen" items by name', () => {
+    expect(upgradeCategory('Gewürze & Saucen', 'Senf')).toBe('Saucen');
+    expect(upgradeCategory('Gewürze & Saucen', 'Salz')).toBe('Gewürze');
+    expect(upgradeCategory('Gewürze & Saucen', 'Irgendwas')).toBe('Gewürze');
+  });
+  it('moves eggs out of Milchprodukte, leaves everything else', () => {
+    expect(upgradeCategory('Milchprodukte', 'Eier')).toBe('Eier');
+    expect(upgradeCategory('Milchprodukte', 'Quark')).toBe('Milchprodukte');
+    expect(upgradeCategory('Backwaren', 'Eier')).toBe('Backwaren');
+    expect(upgradeCategory('Saucen', 'Salz')).toBe('Saucen');
+  });
+  it('old store paths: split in place, Eier after Milchprodukte, Angebote first', () => {
+    expect(upgradeOrder(['Obst & Gemüse', 'Gewürze & Saucen', 'Milchprodukte', 'Getränke']))
+      .toEqual(['Angebote', 'Obst & Gemüse', 'Gewürze', 'Saucen', 'Milchprodukte', 'Eier', 'Getränke']);
+  });
+  it('paths saved after the split stay exactly as they are', () => {
+    const o = ['Obst & Gemüse', 'Saucen', 'Milchprodukte'];
+    expect(upgradeOrder(o)).toBe(o);
   });
 });
 
@@ -117,10 +145,13 @@ describe('seed aisles from the tester form', () => {
       expect(nums).toEqual(nums.map((_, i) => i + 1));
     }
   });
-  it('Netto order starts with Obst & Gemüse, Gewürze, Backwaren', () => {
-    expect(seedCategoryOrder(0).slice(0, 3)).toEqual(['Obst & Gemüse', 'Gewürze & Saucen', 'Backwaren']);
+  it('Netto order starts with Angebote, Obst & Gemüse, Gewürze, Saucen, Backwaren', () => {
+    expect(seedCategoryOrder(0).slice(0, 5)).toEqual(['Angebote', 'Obst & Gemüse', 'Gewürze', 'Saucen', 'Backwaren']);
+    expect(seedCategoryOrder(0)).toContain('Eier');
     expect(seedCategoryOrder(4)).toEqual(['Haushalt', 'Getränke', 'Süßwaren & Snacks', 'Backwaren']);
-    expect(FORM_AISLES.map(r => r[0])).toEqual(ALL_DEPTS);
+  });
+  it('every category after the upgrade is a known one', () => {
+    for (let c = 0; c < 5; c++) seedCategoryOrder(c).forEach(d => expect(ALL_DEPTS).toContain(d));
   });
 });
 
@@ -191,6 +222,7 @@ describe('movePatch', () => {
 });
 
 import { storeOrderInfo } from './logic';
+import { upgradeCategory, upgradeOrder } from './logic';
 describe('storeOrderInfo', () => {
   const base = { orderSetAtMs: null, orderCheckedAtMs: null, categoryOrder: null, createdAtMs: 1000 };
   it('no path → setup offer', () => { expect(storeOrderInfo(base)).toEqual({ isSet: false, checkedAtMs: null }); });

@@ -5,10 +5,13 @@ import type { HistoryEntry, Item, List, Stop, Store } from './types';
 export const UNKNOWN = 'Unbekannt';
 
 export const ALL_DEPTS = [
-  'Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch', 'Wurst & Käse', 'Milchprodukte', 'Tiefkühl',
-  'Nudeln & Reis', 'Konserven', 'Gewürze & Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke',
+  'Angebote', 'Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch', 'Wurst & Käse', 'Milchprodukte', 'Eier', 'Tiefkühl',
+  'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke',
   'Süßwaren & Snacks', 'Frühstück', 'Drogerie', 'Haushalt', 'Baby', 'Tiernahrung', 'Sonstiges',
 ];
+
+/** Split into "Gewürze" and "Saucen" in V1.3; older data may still contain it (see upgrade helpers below) */
+const OLD_SPICES = 'Gewürze & Saucen';
 
 export const LOGOS: Record<string, { label: string; size: string; radius: string }> = {
   edeka: { label: 'Edeka', size: '80%', radius: '2px' },
@@ -115,12 +118,14 @@ const DEPT_GUESS: [string, string][] = [
   ['wurst|schinken|salami|aufschnitt|käse|gouda|mozzarella|feta', 'Wurst & Käse'],
   ['hack|fleisch|hähnchen|steak|lachs|fisch', 'Fleisch & Fisch'],
   ['apfel|äpfel|banane|tomate|gurke|salat|obst|gemüse|zwiebel|kartoffel', 'Obst & Gemüse'],
-  ['milch|joghurt|butter|quark|sahne|(^|[^a-zäöü])eier', 'Milchprodukte'],
+  ['milch|joghurt|butter|quark|sahne', 'Milchprodukte'],
   ['müsli|cornflakes|haferflocken|marmelade|honig|nutella|aufstrich', 'Frühstück'],
   ['nudel|spaghetti|pasta|penne|reis|couscous|bulgur', 'Nudeln & Reis'],
+  ['(^|[^a-zäöü])eier', 'Eier'], // after Nudeln, so "Eiernudeln" stays pasta
   ['dose|konserve|mais|kichererbsen|bohnen|linsen|passierte', 'Konserven'],
   ['chips|schoko|gummibär|kekse|nüsse|bonbon|süßigkeit|cracker|salzstangen', 'Süßwaren & Snacks'],
-  ['salz|pfeffer|gewürz|ketchup|senf|mayo|sauce|soße|essig|öl|brühe|paprikapulver', 'Gewürze & Saucen'],
+  ['ketchup|senf|mayo|sauce|soße|essig|öl|dressing|pesto', 'Saucen'],
+  ['salz|pfeffer|gewürz|brühe|paprikapulver|curry|zimt|oregano', 'Gewürze'],
   ['mehl|zucker|backpulver|hefe', 'Backzutaten'],
   ['kaffee|tee', 'Kaffee & Tee'],
   ['wasser|saft|cola|bier|wein', 'Getränke'],
@@ -144,16 +149,40 @@ const DEPT_ICON: Record<string, string> = {
   'Obst & Gemüse': 'apple', 'Milchprodukte': 'milk', 'Backzutaten': 'wheat', 'Kaffee & Tee': 'coffee',
   'Getränke': 'cup-soda', 'Tiefkühl': 'snowflake', 'Backwaren': 'bread', 'Fleisch & Fisch': 'fish',
   'Süßwaren & Snacks': 'cookie', 'Drogerie': 'droplet', 'Sonstiges': 'shopping-basket', 'Frühstück': 'croissant',
-  'Nudeln & Reis': 'soup', 'Konserven': 'cylinder', 'Gewürze & Saucen': 'flame', 'Wurst & Käse': 'cheese',
-  'Haushalt': 'spray-can', 'Baby': 'baby', 'Tiernahrung': 'paw-print',
+  'Nudeln & Reis': 'soup', 'Konserven': 'cylinder', 'Gewürze': 'flame', 'Saucen': 'bottle', 'Wurst & Käse': 'cheese',
+  'Haushalt': 'spray-can', 'Baby': 'baby', 'Tiernahrung': 'paw-print', 'Eier': 'egg', 'Angebote': 'percent',
 };
 
 const ZONES: [string, string[]][] = [
   ['oklch(0.93 0.045 140)', ['Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch']],
-  ['oklch(0.93 0.035 235)', ['Wurst & Käse', 'Milchprodukte', 'Tiefkühl']],
-  ['oklch(0.93 0.05 80)', ['Frühstück', 'Nudeln & Reis', 'Konserven', 'Gewürze & Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke', 'Süßwaren & Snacks']],
+  ['oklch(0.93 0.035 235)', ['Wurst & Käse', 'Milchprodukte', 'Eier', 'Tiefkühl']],
+  ['oklch(0.93 0.05 80)', ['Frühstück', 'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke', 'Süßwaren & Snacks']],
   ['oklch(0.93 0.035 300)', ['Drogerie', 'Haushalt', 'Baby', 'Tiernahrung']],
+  ['oklch(0.92 0.05 25)', ['Angebote']],
 ];
+
+// ---------- V1.3 category upgrade ----------
+// Data saved before V1.3 is translated whenever it's read, so nothing has to be rewritten in the database.
+
+/** An item's category: "Gewürze & Saucen" → Gewürze or Saucen by name; eggs filed under Milchprodukte → Eier */
+export function upgradeCategory(category: string, name: string): string {
+  if (category === OLD_SPICES) return guessDeptFromName(name) === 'Saucen' ? 'Saucen' : 'Gewürze';
+  if (category === 'Milchprodukte' && guessDeptFromName(name) === 'Eier') return 'Eier';
+  return category;
+}
+
+/**
+ * A store's path saved before V1.3 (recognisable by "Gewürze & Saucen"): split that stop into Gewürze → Saucen,
+ * put Eier right after Milchprodukte and Angebote at the entrance. Paths saved later are left exactly as they are.
+ */
+export function upgradeOrder(order: string[]): string[] {
+  if (!order.includes(OLD_SPICES)) return order;
+  const out = order.flatMap(d => (d === OLD_SPICES ? ['Gewürze', 'Saucen'] : [d]));
+  const milk = out.indexOf('Milchprodukte');
+  if (milk >= 0 && !out.includes('Eier')) out.splice(milk + 1, 0, 'Eier');
+  if (!out.includes('Angebote')) out.unshift('Angebote');
+  return out;
+}
 
 export const tint = (d: string) => (d === UNKNOWN ? '#FDE4D1' : (ZONES.find(z => z[1].includes(d)) || ['#F3EADF'])[0]);
 export const icon = (d: string) => (d === UNKNOWN ? '/icons/help.svg' : '/icons/' + (DEPT_ICON[d] || 'shopping-basket') + '.svg');

@@ -3,7 +3,7 @@ import {
   type DocumentData, type DocumentSnapshot, type QuerySnapshot, type Timestamp, limit, onSnapshot, orderBy, query,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { ALL_DEPTS, UNKNOWN } from '../lib/logic';
+import { ALL_DEPTS, UNKNOWN, upgradeCategory, upgradeOrder } from '../lib/logic';
 import type { HistoryEntry, Item, List, MemoryEntry, Session, Store } from '../lib/types';
 import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
@@ -48,7 +48,7 @@ const opts = { serverTimestamps: 'estimate' as const };
 
 const toStore = (d: DocumentSnapshot<DocumentData>): Store => {
   const x = d.data(opts) || {};
-  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? strArr(x.categoryOrder) : null,
+  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? upgradeOrder(strArr(x.categoryOrder)) : null,
     orderSetAtMs: x.orderSetAt ? ms(x.orderSetAt, Date.now()) : null, orderCheckedAtMs: x.orderCheckedAt ? ms(x.orderCheckedAt, Date.now()) : null, orderSetBy: str(x.orderSetBy),
     createdAtMs: ms(x.createdAt, Date.now()) };
 };
@@ -62,7 +62,7 @@ const toList = (d: DocumentSnapshot<DocumentData>): List => {
 const toItem = (listId: string, d: DocumentSnapshot<DocumentData>): Item => {
   const x = d.data(opts) || {};
   return {
-    id: d.id, listId, name: x.name || '', qty: str(x.qty), category: x.category || UNKNOWN, storeId: str(x.storeId),
+    id: d.id, listId, name: x.name || '', qty: str(x.qty), category: upgradeCategory(x.category || UNKNOWN, x.name || ''), storeId: str(x.storeId),
     once: !!x.once, onceStopName: str(x.onceStopName), parked: !!x.parked, checked: !!x.checked, checkedBy: str(x.checkedBy),
     createdBy: str(x.createdBy), createdAtMs: ms(x.createdAt, Date.now()),
     pendingDecision: !!x.pendingDecision, nextTrip: !!x.nextTrip,
@@ -103,7 +103,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       track('household', snap);
       if (snap.exists()) {
         const order = strArr(snap.data()?.defaultCategoryOrder);
-        setHh({ exists: true, order: order.length ? order : ALL_DEPTS });
+        setHh({ exists: true, order: order.length ? upgradeOrder(order) : ALL_DEPTS });
       } else if (!snap.metadata.fromCache && !seeded.current) {
         // The server confirms there's no household yet → first login ever: set everything up.
         seeded.current = true;
@@ -122,7 +122,10 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     const u4 = onSnapshot(memoryCol(), { includeMetadataChanges: true }, snap => {
       track('memory', snap);
       const m: Data['memory'] = {};
-      snap.docs.forEach(d => { const x = d.data(); m[d.id] = { id: d.id, storeId: str(x.storeId), category: str(x.category) }; });
+      snap.docs.forEach(d => {
+        const x = d.data(), cat = str(x.category);
+        m[d.id] = { id: d.id, storeId: str(x.storeId), category: cat && upgradeCategory(cat, str(x.name) || d.id) };
+      });
       setMemory(m);
     }, onErr);
     const u5 = onSnapshot(query(historyCol(), orderBy('completedAt', 'desc'), limit(500)), { includeMetadataChanges: true }, snap => {
