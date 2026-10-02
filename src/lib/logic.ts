@@ -147,7 +147,7 @@ export function guessDeptFromName(name: string): string {
 
 const DEPT_ICON: Record<string, string> = {
   'Obst & Gemüse': 'apple', 'Milchprodukte': 'milk', 'Backzutaten': 'wheat', 'Kaffee & Tee': 'coffee',
-  'Getränke': 'cup-soda', 'Tiefkühl': 'snowflake', 'Backwaren': 'bread', 'Fleisch & Fisch': 'fish',
+  'Getränke': 'cup-soda', 'Tiefkühl': 'snowflake', 'Backwaren': 'bread', 'Fleisch & Fisch': 'beef',
   'Süßwaren & Snacks': 'cookie', 'Drogerie': 'droplet', 'Sonstiges': 'shopping-basket', 'Frühstück': 'croissant',
   'Nudeln & Reis': 'soup', 'Konserven': 'cylinder', 'Gewürze': 'flame', 'Saucen': 'bottle', 'Wurst & Käse': 'cheese',
   'Haushalt': 'spray-can', 'Baby': 'baby', 'Tiernahrung': 'paw-print', 'Eier': 'egg', 'Angebote': 'percent',
