@@ -130,8 +130,8 @@ const DEPT_GUESS: [string, string][] = [
   ['salz|pfeffer|gewürz|brühe|paprikapulver|curry|zimt|oregano', 'Gewürze'],
   ['mehl|zucker|backpulver|hefe', 'Backzutaten'],
   ['kaffee|tee', 'Kaffee & Tee'],
-  ['(^|[^a-zäöüß])wein|wein$|sekt|prosecco|champagner|bier|whisk|wodka|vodka|^gin|^rum|likör|schnaps|aperol|grappa|cognac|spirituosen', 'Wein & Spirituosen'],
-  ['wasser|saft|cola|limo|schorle', 'Getränke'],
+  ['(^|[^a-zäöüß])wein|wein$|sekt|prosecco|champagner|whisk|wodka|vodka|^gin|^rum|likör|schnaps|aperol|grappa|cognac|spirituosen', 'Wein & Spirituosen'],
+  ['wasser|saft|cola|limo|schorle|bier', 'Getränke'], // beer is with the drinks in German stores, not with the wine
   ['pizza|eis|tiefkühl', 'Tiefkühl'],
   ['windeln|babybrei|feuchttücher|schnuller', 'Baby'],
   ['katzenfutter|hundefutter|tierfutter|katzenstreu|leckerli', 'Tiernahrung'],

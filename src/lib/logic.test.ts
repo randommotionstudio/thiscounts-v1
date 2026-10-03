@@ -49,7 +49,9 @@ describe('categories', () => {
     expect(guessDeptFromName('Nudelsalat')).toBe('Kühltheke');
     expect(guessDeptFromName('Rotwein')).toBe('Wein & Spirituosen');
     expect(guessDeptFromName('Wein')).toBe('Wein & Spirituosen');
-    expect(guessDeptFromName('Bier')).toBe('Wein & Spirituosen');
+    expect(guessDeptFromName('Bier')).toBe('Getränke');
+    expect(guessDeptFromName('Weißbier')).toBe('Getränke');
+    expect(guessDeptFromName('Sekt')).toBe('Wein & Spirituosen');
     expect(guessDeptFromName('Gin')).toBe('Wein & Spirituosen');
     expect(guessDeptFromName('Schweinefilet')).toBe('Fleisch & Fisch');
     expect(guessDeptFromName('Bierschinken')).toBe('Wurst & Käse');
@@ -92,6 +94,7 @@ describe('V1.3 category upgrade', () => {
   it('wine and beer filed under Getränke move to Wein & Spirituosen', () => {
     expect(upgradeCategory('Getränke', 'Rotwein')).toBe('Wein & Spirituosen');
     expect(upgradeCategory('Getränke', 'Apfelsaft')).toBe('Getränke');
+    expect(upgradeCategory('Getränke', 'Bier')).toBe('Getränke');
   });
 });
 
