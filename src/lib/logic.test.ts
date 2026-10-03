@@ -127,14 +127,32 @@ describe('store groups', () => {
 });
 
 describe('usual chips', () => {
-  it('history first by count, then defaults', () => {
-    const now = Date.now();
-    const h = (name: string, qty: string, ago: number) => ({ id: name + ago, name, qty, storeId: null, listId: 'l', completedAtMs: now - ago });
-    const chips = usualChips([h('Hafermilch', '1 l', 1000), h('Hafermilch', '2 l', 10), h('Milch', '1 l', 5), h('Alt', '1 Stück', 40 * 86400000)], now);
-    expect(chips[0]).toEqual({ name: 'Hafermilch', qty: '2 l' });
-    expect(chips[1]).toEqual({ name: 'Milch', qty: '1 l' });
-    expect(chips.filter(c => c.name === 'Milch')).toHaveLength(1);
-    expect(chips.some(c => c.name === 'Alt')).toBe(false);
+  const now = Date.now(), DAY = 86400000;
+  const h = (name: string, qty: string, ago: number) => ({ id: name + ago + Math.random(), name, qty, storeId: null, listId: 'l', completedAtMs: now - ago });
+  it('only items bought on 2+ trips, most trips first, latest quantity; then defaults', () => {
+    const { usual } = usualChips([
+      h('Hafermilch', '1 l', 9 * DAY), h('Hafermilch', '2 l', 2 * DAY), h('Hafermilch', '1 l', 20 * DAY),
+      h('Kiwi', '3 Stück', 3 * DAY), h('Kiwi', '3 Stück', 10 * DAY),
+      h('Kondome', '1 Pck.', 4 * DAY),
+    ], now);
+    expect(usual[0]).toEqual({ name: 'Hafermilch', qty: '2 l' });
+    expect(usual[1]).toEqual({ name: 'Kiwi', qty: '3 Stück' });
+    expect(usual.some(c => c.name === 'Kondome')).toBe(false);
+    expect(usual[2].name).toBe('Milch'); // first default
+  });
+  it('one trip counts once, even if the item was split across two stores', () => {
+    const { usual } = usualChips([h('Käse', '100 g', DAY), h('Käse', '100 g', DAY)], now);
+    expect(usual.some(c => c.name === 'Käse' && c.qty === '100 g')).toBe(false);
+  });
+  it('things bought once are only offered while typing; older than 8 weeks are forgotten', () => {
+    const { all } = usualChips([h('Kondome', '1 Pck.', 4 * DAY), h('Alt', '1 Stück', 60 * DAY), h('Alt', '1 Stück', 70 * DAY)], now);
+    expect(all.some(c => c.name === 'Kondome')).toBe(true);
+    expect(all.some(c => c.name === 'Alt')).toBe(false);
+  });
+  it('defaults are not doubled when the household already buys them', () => {
+    const { usual, all } = usualChips([h('Milch', '2 l', DAY)], now);
+    expect(usual.filter(c => c.name === 'Milch')).toHaveLength(0);
+    expect(all.filter(c => c.name === 'Milch')).toEqual([{ name: 'Milch', qty: '2 l' }]);
   });
 });
 

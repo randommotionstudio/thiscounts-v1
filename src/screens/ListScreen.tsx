@@ -4,7 +4,7 @@ import { paths } from '../app/router';
 import * as actions from '../data/actions';
 import { memoryId } from '../data/refs';
 import {
-  ALL_DEPTS, UNKNOWN, effStore, icon, normName, parseEntry, pickFor, stopById, tint, usualChips, type Chip, type Pick,
+  ALL_DEPTS, UNKNOWN, effStore, icon, normName, parseEntry, pickFor, stopById, tint, usualChips, USUAL_MAX, type Chip, type Pick,
 } from '../lib/logic';
 import type { Item } from '../lib/types';
 import { DeptSheet } from '../sheets/DeptSheet';
@@ -174,10 +174,12 @@ export function ListScreen() {
   }
 
   // ---- Chips ----
-  const allChips = useMemo(() => usualChips(data.history, Date.now()), [data.history]);
+  const chipSets = useMemo(() => usualChips(data.history, Date.now()), [data.history]);
   const onList = (n: string) => items.some(i => normName(i.name) === normName(n));
-  let pool = allChips.filter(c => chipOn(c) || !onList(c.name));
-  if (searching) pool = pool.filter(c => c.name.toLowerCase().includes(ql));
+  // Typing searches everything bought lately; otherwise only the often-bought ones, capped
+  const pool = searching
+    ? chipSets.all.filter(c => (chipOn(c) || !onList(c.name)) && c.name.toLowerCase().includes(ql))
+    : chipSets.usual.filter(c => chipOn(c) || !onList(c.name)).slice(0, USUAL_MAX);
   const baseEmpty = items.every(i => freshLive.includes(i.id));
   const showAll = searching || chipsAll;
   const chipsOpen = pool.length > 0 && (inFocus || (baseEmpty && !searching));
@@ -231,7 +233,8 @@ export function ListScreen() {
         {chipsOpen && (
           <div style={{ marginTop: 12, animation: 'toastIn .2s ease' }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 4px 8px' }}>{searching ? 'Aus deinen üblichen Artikeln' : 'Üblich auf deiner Liste'}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {/* Capped height: the header can't scroll, so a long list must never grow over the bottom buttons */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: '34vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
               {pool.slice(0, showAll ? pool.length : CHIP_LIM).map(c => {
                 const on = chipOn(c), d = guessDept(c.name);
                 return (

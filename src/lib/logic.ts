@@ -269,29 +269,41 @@ export function storeGroups<T extends { category: string }>(items: T[], order: s
 
 export interface Chip { name: string; qty: string | null }
 
-const HISTORY_WINDOW_MS = 28 * 24 * 60 * 60 * 1000;
+const HISTORY_WINDOW_MS = 56 * 24 * 60 * 60 * 1000;
+/** Bought on at least this many shopping trips in the window → suggested without typing */
+const OFTEN_TRIPS = 2;
 
 /**
- * The usual items: most-bought names of the last 4 weeks (latest quantity),
- * topped up with the prototype's defaults so there is always something to tap.
+ * The usual items, from the last 8 weeks of finished trips (latest quantity of each).
+ * - usual: bought on 2+ trips, most trips first, then the prototype's defaults so a new household
+ *   has something to tap. The list screen shows at most USUAL_MAX of these.
+ * - all: also things bought only once, for the suggestions while typing.
  */
-export function usualChips(history: HistoryEntry[], now: number): Chip[] {
+export function usualChips(history: HistoryEntry[], now: number): { usual: Chip[]; all: Chip[] } {
   const recent = history.filter(h => now - h.completedAtMs <= HISTORY_WINDOW_MS);
-  const byName = new Map<string, { name: string; qty: string | null; count: number; last: number }>();
+  const byName = new Map<string, { name: string; qty: string | null; trips: Set<number>; last: number }>();
   for (const h of recent) {
     const k = normName(h.name);
     const e = byName.get(k);
-    if (!e) byName.set(k, { name: h.name.trim(), qty: h.qty, count: 1, last: h.completedAtMs });
+    // One "Einkauf abschließen" writes all its entries with the same time, so distinct times = distinct trips
+    // (an item split across two stores still counts once).
+    if (!e) byName.set(k, { name: h.name.trim(), qty: h.qty, trips: new Set([h.completedAtMs]), last: h.completedAtMs });
     else {
-      e.count++;
+      e.trips.add(h.completedAtMs);
       if (h.completedAtMs >= e.last) { e.last = h.completedAtMs; e.qty = h.qty; e.name = h.name.trim(); }
     }
   }
-  const fromHistory = [...byName.values()].sort((a, b) => b.count - a.count || b.last - a.last).map(e => ({ name: e.name, qty: e.qty }));
-  const seen = new Set(fromHistory.map(c => normName(c.name)));
+  const ranked = [...byName.values()].sort((a, b) => b.trips.size - a.trips.size || b.last - a.last);
+  const chip = (e: { name: string; qty: string | null }): Chip => ({ name: e.name, qty: e.qty });
+  const often = ranked.filter(e => e.trips.size >= OFTEN_TRIPS).map(chip);
+  const once = ranked.filter(e => e.trips.size < OFTEN_TRIPS).map(chip);
+  const seen = new Set(ranked.map(e => normName(e.name)));
   const defaults = USUAL.filter(u => !seen.has(normName(u.name))).map(u => ({ name: u.name, qty: qtyStr(u.qty, u.unit) }));
-  return [...fromHistory, ...defaults];
+  return { usual: [...often, ...defaults], all: [...often, ...once, ...defaults] };
 }
+
+/** Most suggestions shown on the list screen (collapsed: CHIP_LIM there, the rest behind "+ … mehr") */
+export const USUAL_MAX = 12;
 
 // ---------- "Artikel fehlt": partial amounts ----------
 

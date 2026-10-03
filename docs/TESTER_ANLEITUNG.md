@@ -53,6 +53,7 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 ## Neu in Version 1.3
 
 - **Neue Kategorien:** „Gewürze & Saucen“ ist jetzt aufgeteilt in **Gewürze** und **Saucen**, **Eier** haben eine eigene Kategorie, und **Angebote** gibt es als Kategorie für Artikel im Angebot. Eure Läden haben die neuen Abteilungen schon im Weg: Angebote ganz vorne, Gewürze und Saucen dort, wo vorher „Gewürze & Saucen“ war, Eier direkt nach den Milchprodukten. Stimmt das in eurer Filiale nicht, passt es über „Aufbau der Filiale geändert?“ an.
+- **Üblich auf deiner Liste:** Vorgeschlagen werden nur Artikel, die ihr in den letzten 8 Wochen bei mindestens zwei Einkäufen gekauft habt – die häufigsten zuerst, höchstens 12. Einmal gekaufte Sachen tauchen auf, sobald ihr anfangt zu tippen.
 
 ## 5. Ohne Empfang
 
