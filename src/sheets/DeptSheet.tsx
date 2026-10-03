@@ -5,7 +5,7 @@ import { CatIcon, Sheet } from '../ui/kit';
 export function DeptSheet({ name, current, onClose, onPick }: { name: string; current: string; onClose: () => void; onPick: (d: string) => void }) {
   return (
     <Sheet title={<>Wo findet man „{name}“?</>} sub="Wir merken uns die Kategorie für das nächste Mal." onClose={onClose} scrollBody>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 8, marginTop: 18 }}>
+      <div className="dept-grid">
         {ALL_DEPTS.map((d, i) => {
           const on = current === d;
           return (

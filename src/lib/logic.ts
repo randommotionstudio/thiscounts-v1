@@ -5,8 +5,8 @@ import type { HistoryEntry, Item, List, Stop, Store } from './types';
 export const UNKNOWN = 'Unbekannt';
 
 export const ALL_DEPTS = [
-  'Angebote', 'Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch', 'Wurst & Käse', 'Milchprodukte', 'Eier', 'Tiefkühl',
-  'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke',
+  'Angebote', 'Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch', 'Wurst & Käse', 'Milchprodukte', 'Eier', 'Kühltheke', 'Tiefkühl',
+  'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke', 'Wein & Spirituosen',
   'Süßwaren & Snacks', 'Frühstück', 'Drogerie', 'Haushalt', 'Baby', 'Tiernahrung', 'Sonstiges',
 ];
 
@@ -114,9 +114,11 @@ export function stepQ(pk: Pick, dir: 1 | -1): number {
 const DEPT_GUESS: [string, string][] = [
   // Checked first, so e.g. "Zahnpasta" doesn't end up under "pasta" (Nudeln & Reis)
   ['zahnpasta|zahnbürste|zahnseide', 'Drogerie'],
+  // Before Obst & Gemüse and Nudeln, so "Kartoffelsalat" or "Nudelsalat" end up in the chilled section
+  ['tofu|hummus|feinkost|kartoffelsalat|nudelsalat|krautsalat|pizzateig|blätterteig|flammkuchenteig|maultaschen|gnocchi|tortellini', 'Kühltheke'],
   ['brot|brötchen|toast', 'Backwaren'],
   ['wurst|schinken|salami|aufschnitt|käse|gouda|mozzarella|feta', 'Wurst & Käse'],
-  ['hack|fleisch|hähnchen|steak|lachs|fisch', 'Fleisch & Fisch'],
+  ['hack|fleisch|hähnchen|steak|lachs|fisch|schwein|rind|pute', 'Fleisch & Fisch'],
   ['apfel|äpfel|banane|tomate|gurke|salat|obst|gemüse|zwiebel|kartoffel', 'Obst & Gemüse'],
   ['milch|joghurt|butter|quark|sahne', 'Milchprodukte'],
   ['müsli|cornflakes|haferflocken|marmelade|honig|nutella|aufstrich', 'Frühstück'],
@@ -128,7 +130,8 @@ const DEPT_GUESS: [string, string][] = [
   ['salz|pfeffer|gewürz|brühe|paprikapulver|curry|zimt|oregano', 'Gewürze'],
   ['mehl|zucker|backpulver|hefe', 'Backzutaten'],
   ['kaffee|tee', 'Kaffee & Tee'],
-  ['wasser|saft|cola|bier|wein', 'Getränke'],
+  ['(^|[^a-zäöüß])wein|wein$|sekt|prosecco|champagner|bier|whisk|wodka|vodka|^gin|^rum|likör|schnaps|aperol|grappa|cognac|spirituosen', 'Wein & Spirituosen'],
+  ['wasser|saft|cola|limo|schorle', 'Getränke'],
   ['pizza|eis|tiefkühl', 'Tiefkühl'],
   ['windeln|babybrei|feuchttücher|schnuller', 'Baby'],
   ['katzenfutter|hundefutter|tierfutter|katzenstreu|leckerli', 'Tiernahrung'],
@@ -151,12 +154,13 @@ const DEPT_ICON: Record<string, string> = {
   'Süßwaren & Snacks': 'cookie', 'Drogerie': 'droplet', 'Sonstiges': 'shopping-basket', 'Frühstück': 'croissant',
   'Nudeln & Reis': 'soup', 'Konserven': 'cylinder', 'Gewürze': 'flame', 'Saucen': 'bottle', 'Wurst & Käse': 'cheese',
   'Haushalt': 'spray-can', 'Baby': 'baby', 'Tiernahrung': 'paw-print', 'Eier': 'egg', 'Angebote': 'percent',
+  'Kühltheke': 'thermometer', 'Wein & Spirituosen': 'wine',
 };
 
 const ZONES: [string, string[]][] = [
   ['oklch(0.93 0.045 140)', ['Obst & Gemüse', 'Backwaren', 'Fleisch & Fisch']],
-  ['oklch(0.93 0.035 235)', ['Wurst & Käse', 'Milchprodukte', 'Eier', 'Tiefkühl']],
-  ['oklch(0.93 0.05 80)', ['Frühstück', 'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke', 'Süßwaren & Snacks']],
+  ['oklch(0.93 0.035 235)', ['Wurst & Käse', 'Milchprodukte', 'Eier', 'Kühltheke', 'Tiefkühl']],
+  ['oklch(0.93 0.05 80)', ['Frühstück', 'Nudeln & Reis', 'Konserven', 'Gewürze', 'Saucen', 'Backzutaten', 'Kaffee & Tee', 'Getränke', 'Wein & Spirituosen', 'Süßwaren & Snacks']],
   ['oklch(0.93 0.035 300)', ['Drogerie', 'Haushalt', 'Baby', 'Tiernahrung']],
   ['oklch(0.92 0.05 25)', ['Angebote']],
 ];
@@ -164,22 +168,36 @@ const ZONES: [string, string[]][] = [
 // ---------- V1.3 category upgrade ----------
 // Data saved before V1.3 is translated whenever it's read, so nothing has to be rewritten in the database.
 
-/** An item's category: "Gewürze & Saucen" → Gewürze or Saucen by name; eggs filed under Milchprodukte → Eier */
+/** An item's category: "Gewürze & Saucen" → Gewürze or Saucen by name; eggs → Eier and wine, beer … → Wein & Spirituosen */
 export function upgradeCategory(category: string, name: string): string {
   if (category === OLD_SPICES) return guessDeptFromName(name) === 'Saucen' ? 'Saucen' : 'Gewürze';
   if (category === 'Milchprodukte' && guessDeptFromName(name) === 'Eier') return 'Eier';
+  if (category === 'Getränke' && guessDeptFromName(name) === 'Wein & Spirituosen') return 'Wein & Spirituosen';
   return category;
 }
 
+/** Stamped on store paths saved since V1.3 (stores/{id}.pathVersion); paths without it get upgradeOrder() */
+export const PATH_VERSION = 3;
+
+/** Old household default orders can only be recognised by the pre-V1.3 category */
+export const isLegacyOrder = (order: string[]) => order.includes(OLD_SPICES);
+
+const insertAfter = (out: string[], after: string, d: string) => {
+  const k = out.indexOf(after);
+  if (k >= 0 && !out.includes(d)) out.splice(k + 1, 0, d);
+};
+
 /**
- * A store's path saved before V1.3 (recognisable by "Gewürze & Saucen"): split that stop into Gewürze → Saucen,
- * put Eier right after Milchprodukte and Angebote at the entrance. Paths saved later are left exactly as they are.
+ * A path saved before V1.3: split "Gewürze & Saucen" into Gewürze → Saucen in place, Eier and Kühltheke right after
+ * Milchprodukte, Wein & Spirituosen right after Getränke, Angebote at the entrance. Only for legacy paths, so a path
+ * someone saved later stays exactly as they left it.
  */
-export function upgradeOrder(order: string[]): string[] {
-  if (!order.includes(OLD_SPICES)) return order;
+export function upgradeOrder(order: string[], legacy: boolean): string[] {
+  if (!legacy) return order;
   const out = order.flatMap(d => (d === OLD_SPICES ? ['Gewürze', 'Saucen'] : [d]));
-  const milk = out.indexOf('Milchprodukte');
-  if (milk >= 0 && !out.includes('Eier')) out.splice(milk + 1, 0, 'Eier');
+  insertAfter(out, 'Milchprodukte', 'Eier');
+  insertAfter(out, 'Eier', 'Kühltheke');
+  insertAfter(out, 'Getränke', 'Wein & Spirituosen');
   if (!out.includes('Angebote')) out.unshift('Angebote');
   return out;
 }

@@ -44,6 +44,17 @@ describe('categories', () => {
     expect(guessDeptFromName('Brühe')).toBe('Gewürze');
     expect(guessDeptFromName('Ketchup')).toBe('Saucen');
     expect(guessDeptFromName('Olivenöl')).toBe('Saucen');
+    expect(guessDeptFromName('Tofu')).toBe('Kühltheke');
+    expect(guessDeptFromName('Kartoffelsalat')).toBe('Kühltheke');
+    expect(guessDeptFromName('Nudelsalat')).toBe('Kühltheke');
+    expect(guessDeptFromName('Rotwein')).toBe('Wein & Spirituosen');
+    expect(guessDeptFromName('Wein')).toBe('Wein & Spirituosen');
+    expect(guessDeptFromName('Bier')).toBe('Wein & Spirituosen');
+    expect(guessDeptFromName('Gin')).toBe('Wein & Spirituosen');
+    expect(guessDeptFromName('Schweinefilet')).toBe('Fleisch & Fisch');
+    expect(guessDeptFromName('Bierschinken')).toBe('Wurst & Käse');
+    expect(guessDeptFromName('Mineralwasser')).toBe('Getränke');
+    expect(guessDeptFromName('Ingwer')).toBe(UNKNOWN);
   });
 });
 
@@ -59,13 +70,28 @@ describe('V1.3 category upgrade', () => {
     expect(upgradeCategory('Backwaren', 'Eier')).toBe('Backwaren');
     expect(upgradeCategory('Saucen', 'Salz')).toBe('Saucen');
   });
-  it('old store paths: split in place, Eier after Milchprodukte, Angebote first', () => {
-    expect(upgradeOrder(['Obst & Gemüse', 'Gewürze & Saucen', 'Milchprodukte', 'Getränke']))
-      .toEqual(['Angebote', 'Obst & Gemüse', 'Gewürze', 'Saucen', 'Milchprodukte', 'Eier', 'Getränke']);
+  it('old store paths: split in place, Eier + Kühltheke after Milchprodukte, Wein after Getränke, Angebote first', () => {
+    expect(upgradeOrder(['Obst & Gemüse', 'Gewürze & Saucen', 'Milchprodukte', 'Getränke'], true))
+      .toEqual(['Angebote', 'Obst & Gemüse', 'Gewürze', 'Saucen', 'Milchprodukte', 'Eier', 'Kühltheke', 'Getränke', 'Wein & Spirituosen']);
   });
-  it('paths saved after the split stay exactly as they are', () => {
-    const o = ['Obst & Gemüse', 'Saucen', 'Milchprodukte'];
-    expect(upgradeOrder(o)).toBe(o);
+  it('an old path without "Gewürze & Saucen" (trinkgut) is upgraded too', () => {
+    expect(upgradeOrder(['Haushalt', 'Getränke', 'Backwaren'], true)).toEqual(['Angebote', 'Haushalt', 'Getränke', 'Wein & Spirituosen', 'Backwaren']);
+  });
+  it('upgrading twice changes nothing more', () => {
+    const once = upgradeOrder(['Gewürze & Saucen', 'Milchprodukte', 'Getränke'], true);
+    expect(upgradeOrder(once, true)).toEqual(once);
+  });
+  it('paths saved since V1.3 stay exactly as they are', () => {
+    const o = ['Obst & Gemüse', 'Saucen', 'Milchprodukte', 'Getränke'];
+    expect(upgradeOrder(o, false)).toBe(o);
+  });
+  it('household default: legacy only if it still has "Gewürze & Saucen"', () => {
+    expect(isLegacyOrder(['Gewürze & Saucen'])).toBe(true);
+    expect(isLegacyOrder(ALL_DEPTS)).toBe(false);
+  });
+  it('wine and beer filed under Getränke move to Wein & Spirituosen', () => {
+    expect(upgradeCategory('Getränke', 'Rotwein')).toBe('Wein & Spirituosen');
+    expect(upgradeCategory('Getränke', 'Apfelsaft')).toBe('Getränke');
   });
 });
 
@@ -166,7 +192,7 @@ describe('seed aisles from the tester form', () => {
   it('Netto order starts with Angebote, Obst & Gemüse, Gewürze, Saucen, Backwaren', () => {
     expect(seedCategoryOrder(0).slice(0, 5)).toEqual(['Angebote', 'Obst & Gemüse', 'Gewürze', 'Saucen', 'Backwaren']);
     expect(seedCategoryOrder(0)).toContain('Eier');
-    expect(seedCategoryOrder(4)).toEqual(['Haushalt', 'Getränke', 'Süßwaren & Snacks', 'Backwaren']);
+    expect(seedCategoryOrder(4)).toEqual(['Angebote', 'Haushalt', 'Getränke', 'Wein & Spirituosen', 'Süßwaren & Snacks', 'Backwaren']);
   });
   it('every category after the upgrade is a known one', () => {
     for (let c = 0; c < 5; c++) seedCategoryOrder(c).forEach(d => expect(ALL_DEPTS).toContain(d));
@@ -240,7 +266,7 @@ describe('movePatch', () => {
 });
 
 import { storeOrderInfo } from './logic';
-import { upgradeCategory, upgradeOrder } from './logic';
+import { isLegacyOrder, upgradeCategory, upgradeOrder } from './logic';
 describe('storeOrderInfo', () => {
   const base = { orderSetAtMs: null, orderCheckedAtMs: null, categoryOrder: null, createdAtMs: 1000 };
   it('no path → setup offer', () => { expect(storeOrderInfo(base)).toEqual({ isSet: false, checkedAtMs: null }); });

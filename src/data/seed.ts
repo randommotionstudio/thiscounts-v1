@@ -4,6 +4,7 @@ import {
   DEFAULT_CATEGORY_ORDER, PEOPLE, SEED_MAIN_STORE, SEED_STORES, seedCategoryOrder,
 } from '../config/household';
 import { householdRef, listRef, storeRef, storesCol } from './refs';
+import { PATH_VERSION } from '../lib/logic';
 import { report } from './write';
 
 /**
@@ -16,7 +17,7 @@ export function seedHousehold(uid: string) {
   const base = Date.now();
   SEED_STORES.forEach((s, i) => {
     batch.set(storeRef(s.id), {
-      name: s.name, branch: s.branch, logo: s.logo, categoryOrder: seedCategoryOrder(i),
+      name: s.name, branch: s.branch, logo: s.logo, categoryOrder: seedCategoryOrder(i), pathVersion: PATH_VERSION,
       createdAt: Timestamp.fromMillis(base + i), updatedAt: serverTimestamp(),
     });
   });

@@ -117,6 +117,10 @@ input::placeholder { color: #A89888; }
 .sheet-title { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.1; }
 .sheet-sub { font-size: 13px; color: var(--muted); margin-top: 4px; text-wrap: pretty; }
 
+/* "Kategorie wählen": two columns; on 4" phones the names (Milchprodukte, Wein & Spirituosen) only fit in one */
+.dept-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-top: 18px; }
+@media (max-width: 359px) { .dept-grid { grid-template-columns: minmax(0, 1fr); } }
+
 .toast-inline { background: #DDF0E3; color: #1E5A34; border-radius: 14px; padding: 10px 14px; font-size: 14px; font-weight: 600; margin-bottom: 12px; animation: toastIn .3s ease; }
 /* Floats over the top of the scrolling content instead of taking up space in it: when it disappears nothing
    below moves, so iOS can't end up with tap targets that no longer match what's on screen. */

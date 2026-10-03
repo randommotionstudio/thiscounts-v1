@@ -3,7 +3,7 @@ import {
   type DocumentData, type DocumentSnapshot, type QuerySnapshot, type Timestamp, limit, onSnapshot, orderBy, query,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { ALL_DEPTS, UNKNOWN, upgradeCategory, upgradeOrder } from '../lib/logic';
+import { ALL_DEPTS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from '../lib/logic';
 import type { HistoryEntry, Item, List, MemoryEntry, Session, Store } from '../lib/types';
 import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
@@ -48,7 +48,7 @@ const opts = { serverTimestamps: 'estimate' as const };
 
 const toStore = (d: DocumentSnapshot<DocumentData>): Store => {
   const x = d.data(opts) || {};
-  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? upgradeOrder(strArr(x.categoryOrder)) : null,
+  return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? upgradeOrder(strArr(x.categoryOrder), !x.pathVersion) : null,
     orderSetAtMs: x.orderSetAt ? ms(x.orderSetAt, Date.now()) : null, orderCheckedAtMs: x.orderCheckedAt ? ms(x.orderCheckedAt, Date.now()) : null, orderSetBy: str(x.orderSetBy),
     createdAtMs: ms(x.createdAt, Date.now()) };
 };
@@ -103,7 +103,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       track('household', snap);
       if (snap.exists()) {
         const order = strArr(snap.data()?.defaultCategoryOrder);
-        setHh({ exists: true, order: order.length ? upgradeOrder(order) : ALL_DEPTS });
+        setHh({ exists: true, order: order.length ? upgradeOrder(order, isLegacyOrder(order)) : ALL_DEPTS });
       } else if (!snap.metadata.fromCache && !seeded.current) {
         // The server confirms there's no household yet → first login ever: set everything up.
         seeded.current = true;

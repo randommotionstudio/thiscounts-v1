@@ -69,12 +69,12 @@ export const FORM_AISLES: [string, (number | null)[]][] = [
   ['Sonstiges',         [17, 19, 13, 1,  _]],
 ];
 
-/** The form still has the pre-V1.3 "Gewürze & Saucen" row; upgradeOrder() splits it like it does for saved stores. */
+/** The form predates V1.3 ("Gewürze & Saucen", no Eier …), so it goes through upgradeOrder() like old saved paths. */
 export function seedCategoryOrder(column: number): string[] {
   return upgradeOrder(FORM_AISLES
     .filter(([, nums]) => nums[column] != null)
     .sort((a, b) => (a[1][column] as number) - (b[1][column] as number))
-    .map(([dept]) => dept));
+    .map(([dept]) => dept), true);
 }
 
 export const DEFAULT_CATEGORY_ORDER = ALL_DEPTS;

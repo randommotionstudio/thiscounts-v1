@@ -4,7 +4,7 @@ import {
   Timestamp, deleteDoc, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { normName, onTrip } from '../lib/logic';
+import { PATH_VERSION, normName, onTrip } from '../lib/logic';
 import type { Item, List, MemoryEntry, Store } from '../lib/types';
 import type { AvatarPref } from '../lib/avatar';
 import {
@@ -155,6 +155,7 @@ export function setNotifyWhileShopping(on: boolean) {
 export function saveStoreOrder(store: Store, order: string[]) {
   report(updateDoc(storeRef(store.id), {
     categoryOrder: order,
+    pathVersion: PATH_VERSION,
     orderCheckedAt: serverTimestamp(),
     orderSetBy: uid(),
     ...(store.orderSetAtMs == null ? { orderSetAt: serverTimestamp() } : {}),
