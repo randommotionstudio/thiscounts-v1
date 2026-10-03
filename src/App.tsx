@@ -35,7 +35,7 @@ export function App() {
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   if (!isConfigured) {
-    return <Frame><Centered><img src="/brand/app-icon-v11-144.png" alt="" style={{ width: 72, height: 72, borderRadius: 18 }} />thisCounts ist noch nicht mit der Datenbank verbunden.</Centered></Frame>;
+    return <Frame><Centered><img src="/brand/app-icon-v13-144.png" alt="" style={{ width: 72, height: 72, borderRadius: 18 }} />thisCounts ist noch nicht mit der Datenbank verbunden.</Centered></Frame>;
   }
   return (
     <Frame>

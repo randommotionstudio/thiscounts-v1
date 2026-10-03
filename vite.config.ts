@@ -20,8 +20,8 @@ export default defineConfig({
         background_color: '#FBF5EE',
         icons: [
           // Full-bleed square icon: the OS applies its own corner mask
-          { src: '/brand/app-icon-v11-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: '/brand/app-icon-v11-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: '/brand/app-icon-v13-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/brand/app-icon-v13-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {
