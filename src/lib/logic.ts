@@ -26,6 +26,8 @@ export const LOGOS: Record<string, { label: string; size: string; radius: string
   schuhbeck: { label: 'Der Bäcker Schuhbeck', size: '86%', radius: '0' },
   trinkgut: { label: 'trinkgut', size: '86%', radius: '0' },
   denns: { label: 'Denns BioMarkt', size: '80%', radius: '50%' },
+  mueller: { label: 'Müller', size: '78%', radius: '0' },
+  mixmarkt: { label: 'Mix Markt', size: '88%', radius: '0' },
 };
 
 export const logoUrl = (key: string) => '/logos/' + key + '.png';
