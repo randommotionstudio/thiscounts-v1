@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { LOGOS, logoUrl } from '../lib/logic';
-import type { Town } from '../lib/types';
+import { LOGOS, agoText, ageDays, logoUrl, storeOrderInfo, storesInTown } from '../lib/logic';
+import type { Store, Town } from '../lib/types';
 import { newTownId, type StoreEdit } from '../data/actions';
 import { Sheet } from '../ui/kit';
 
@@ -22,9 +22,13 @@ const chip = (on: boolean) => ({
  * V1.4: the same store in other towns ("Filialen"): each with its own address and, later, its own path.
  * The first branch in another town also names the household's existing town (the home town).
  */
-export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '', onClose, onSave, onDelete }: {
-  initial: StoreSheetState; towns: Town[]; defaultTown?: string | null; homeGuess?: string; onClose: () => void;
-  onSave: (v: StoreEdit) => void; onDelete?: () => void;
+export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '', store = null, onClose, onSave, onDelete, onEditPath }: {
+  initial: StoreSheetState; towns: Town[]; defaultTown?: string | null; homeGuess?: string;
+  /** The saved store (edit mode) – for the status of its paths */
+  store?: Store | null;
+  onClose: () => void; onSave: (v: StoreEdit) => void; onDelete?: () => void;
+  /** V1.4: open the path editor for a branch (null town = no towns); `pending` = unsaved changes to save first */
+  onEditPath?: (town: string | null, pending: StoreEdit | null) => void;
 }) {
   const [sh, setSh] = useState(() => ({ ...initial, town: initial.town ?? (initial.mode === 'new' ? defaultTown : null), branches: { ...(initial.branches || {}) } }));
   const [newTowns, setNewTowns] = useState<Town[]>([]);
@@ -59,15 +63,33 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
   };
   const removeBranch = (t: string) => setSh(s => { const b = { ...s.branches }; delete b[t]; return { ...s, branches: b }; });
 
-  const save = () => {
-    if (!name) return;
-    const branches = Object.fromEntries(Object.entries(sh.branches).map(([t, a]) => [t, a.trim()]));
-    onSave({
-      name, branch: sh.branch.trim(), logo: sh.logo,
-      town: sh.town && sh.town !== homeId ? sh.town : null, branches,
-      towns: newTowns.length ? allTowns : null,
-    });
+  const buildEdit = (): StoreEdit => ({
+    name, branch: sh.branch.trim(), logo: sh.logo,
+    town: sh.town && sh.town !== homeId ? sh.town : null,
+    branches: Object.fromEntries(Object.entries(sh.branches).map(([t, a]) => [t, a.trim()])),
+    towns: newTowns.length ? allTowns : null,
+  });
+  const save = () => { if (name) onSave(buildEdit()); };
+  // Anything changed in the sheet since it opened?
+  const dirty = () => {
+    const e = buildEdit(), b = initial.branches || {};
+    return !!e.towns || e.name !== initial.name.trim() || e.branch !== initial.branch.trim() || e.logo !== initial.logo
+      || JSON.stringify(Object.entries(e.branches).sort()) !== JSON.stringify(Object.entries(b).map(([t, a]) => [t, a.trim()]).sort());
   };
+
+  // V1.4: "Weg durch die Filiale" – one row per branch, with whether its path is set up
+  const pathRows = (multi ? [baseTown, ...Object.keys(sh.branches)] : [null]).map(t => {
+    // The store's own branch is the saved store itself (also while its towns are only being created here);
+    // other branches only count once they're saved in a saved town
+    const p = !store ? undefined
+      : !multi || (t === baseTown && towns.length < 2) ? store
+      : towns.length >= 2 && towns.some(x => x.id === t) ? storesInTown([store], towns, t).find(x => x.id === store.id) : undefined;
+    const info = p ? storeOrderInfo(p) : null;
+    return {
+      town: t, title: multi ? townName(t) : 'Abteilungs-Reihenfolge',
+      status: info && info.isSet ? 'Eingerichtet · gespeichert ' + agoText(ageDays(info.checkedAtMs, Date.now())) : 'Noch nicht eingerichtet',
+    };
+  });
 
   const newTownName = adding && adding.town === 'new' ? adding.name.trim() : '';
   const canAdd = !!adding && (adding.town !== 'new' || (!!newTownName && (allTowns.length > 0 || !!adding.home.trim())));
@@ -132,6 +154,24 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
               <button onClick={addBranch} disabled={!canAdd} style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', background: canAdd ? '#F3752E' : '#E3D5C6', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: canAdd ? 'pointer' : 'default' }}>Filiale hinzufügen</button>
             </div>
           </div>
+        )}
+
+        {sh.mode === 'edit' && onEditPath && (
+          <>
+            <div className="section-label" style={{ margin: '22px 0 8px' }}>Weg durch die Filiale</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {pathRows.map(r => (
+                <button key={r.town || 'only'} onClick={() => name && onEditPath(r.town, dirty() ? buildEdit() : null)} style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '10px 14px', minHeight: 58, border: '2px solid #EADCCD', borderRadius: 16, background: '#fff', color: '#2A1F17', cursor: 'pointer' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15 }}>{r.title}</div>
+                    <div style={{ fontSize: 12, color: r.status.startsWith('Noch') ? '#C9581A' : '#8A7A6D' }}>{r.status}</div>
+                  </div>
+                  <span style={{ color: '#8A7A6D', fontSize: 20 }}>›</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: '#8A7A6D', margin: '8px 4px 0', textWrap: 'pretty' }}>Beim Einkaufen geht's auch direkt im Laden: unten „Aufbau der Filiale geändert?“.</div>
+          </>
         )}
 
         <div className="section-label" style={{ margin: '18px 0 8px' }}>Logo</div>

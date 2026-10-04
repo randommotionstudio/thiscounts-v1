@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { useApp } from '../app/AppContext';
+import { paths } from '../app/router';
 import { auth } from '../firebase';
 import * as actions from '../data/actions';
 import { StoreSheet, type StoreSheetState } from '../sheets/StoreSheet';
@@ -133,7 +134,15 @@ export function Profile() {
         <TabBar active="profile" go={navigate} />
       </div>
       {avatarOpen && <AvatarSheet person={me} onClose={() => setAvatarOpen(false)} />}
-      {sheet && <StoreSheet key={sheet.id || 'new'} initial={sheet} towns={app.towns} defaultTown={app.town} homeGuess={guessTownName(data.stores.map(s => s.branch))} onClose={() => setSheet(null)} onSave={save} onDelete={del} />}
+      {sheet && <StoreSheet key={sheet.id || 'new'} initial={sheet} towns={app.towns} defaultTown={app.town} homeGuess={guessTownName(data.stores.map(s => s.branch))}
+        store={sheet.id ? data.stores.find(s => s.id === sheet.id) || null : null} onClose={() => setSheet(null)} onSave={save} onDelete={del}
+        onEditPath={(town, pending) => {
+          const before = data.stores.find(s => s.id === sheet.id);
+          if (!before) return;
+          if (pending) actions.saveStore(pending, before); // keep what was changed in the sheet
+          setSheet(null);
+          navigate(paths.refine(before.id, town));
+        }} />}
       {townEdit && (
         <Sheet title="Ort bearbeiten" onClose={() => setTownEdit(null)}>
           <div className="section-label" style={{ margin: '18px 0 8px' }}>Name</div>

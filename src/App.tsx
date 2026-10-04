@@ -85,7 +85,7 @@ function Screens() {
     case 'store': screen = <StoreScreen key={r.stopId} stopId={r.stopId} />; break;
     case 'spontan': screen = <StoreScreen key={'spontan:' + r.storeId} stopId={r.storeId} spontaneous />; break;
     case 'missing': screen = <MissingScreen key={r.itemId} stopId={r.stopId} itemId={r.itemId} />; break;
-    case 'refine': screen = <RefineScreen key={r.stopId} stopId={r.stopId} />; break;
+    case 'refine': screen = <RefineScreen key={r.stopId + '|' + (r.town || '')} stopId={r.stopId} town={r.town} />; break;
     case 'listNew': case 'listEdit': screen = app.draft ? <ListSettings /> : null; break;
     case 'listStores': screen = app.draft ? <StoresSetup /> : null; break;
   }

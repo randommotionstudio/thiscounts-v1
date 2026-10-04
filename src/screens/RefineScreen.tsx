@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
-import { REF_UNIVERSE, agoText, ageDays, icon, storeOrderInfo } from '../lib/logic';
+import { REF_UNIVERSE, agoText, ageDays, icon, storeOrderInfo, storesInTown } from '../lib/logic';
 import { useHeaderHeight } from '../ui/kit';
+import type { Store } from '../lib/types';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 
@@ -50,28 +51,44 @@ function StorePathIllustration() {
 }
 
 /** V1.1 Feature A: "Filiale einrichten / anpassen" — the walking order of the categories in a store. */
-export function RefineScreen({ stopId }: { stopId: string }) {
+export function RefineScreen({ stopId, town }: { stopId: string; town?: string }) {
+  const app = useApp();
+  const { data } = app;
+  // V1.4: a given branch (from the profile), otherwise the branch of the trip's town
+  const store = (town ? storesInTown(data.stores, app.towns, town) : app.townStores).find(s => s.id === stopId) || null;
+  // Back to where it was opened: a spontaneous trip or the profile; otherwise store mode
+  const [storePath] = useState(() => {
+    const from = history.state && history.state.prev;
+    return from === paths.spontan(stopId) || from === paths.profile ? from as string : paths.store(stopId);
+  });
+  const fromProfile = storePath === paths.profile;
+
+  // A free-text stop or a deleted store has nothing to set up. (A branch saved a moment ago may still be on its way.)
+  useEffect(() => {
+    if (store) return;
+    const t = setTimeout(() => app.back(storePath), 2000);
+    return () => clearTimeout(t);
+  }, [store]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!store) return null;
+  // V1.4: with towns, name the branch ("Netto Frasdorf")
+  const townLabel = town ? app.towns.find(t => t.id === town)?.name : app.townName;
+  const label = store.name + (app.towns.length >= 2 && townLabel ? ' ' + townLabel : '');
+  return <RefineEditor store={store} storePath={storePath} fromProfile={fromProfile} label={label} />;
+}
+
+/** The editor itself – only mounted once the store (branch) is there, so it starts from its saved path */
+function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; storePath: string; fromProfile: boolean; label: string }) {
   const app = useApp();
   const { data, toast, other } = app;
-  // V1.4: the branch of the trip's town
-  const store = app.townStores.find(s => s.id === stopId) || null;
-  // Opened from a spontaneous trip → back there, not into normal store mode
-  const storePath = history.state && history.state.prev === paths.spontan(stopId) ? paths.spontan(stopId) : paths.store(stopId);
   const [headRef, headH] = useHeaderHeight();
 
-  const orderInfo = store ? storeOrderInfo(store) : null;
-  const isEdit = !!orderInfo && orderInfo.isSet;
-  const base = isEdit ? (store!.categoryOrder || data.defaultCategoryOrder).filter(d => REF_UNIVERSE.includes(d)) : [];
+  const orderInfo = storeOrderInfo(store);
+  const isEdit = orderInfo.isSet;
+  const base = isEdit ? (store.categoryOrder || data.defaultCategoryOrder).filter(d => REF_UNIVERSE.includes(d)) : [];
   const [order, setOrder] = useState<string[]>(base);
   const [pick, setPick] = useState<string | null>(null);
   const [guide, setGuide] = useState(!isEdit);
   const [noneOk, setNoneOk] = useState(isEdit);
-
-  // A free-text stop or a deleted store has nothing to set up
-  useEffect(() => { if (!store) app.back(storePath); }, [store]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!store) return null;
-  // V1.4: with towns, name the branch ("Netto Frasdorf")
-  const label = store.name + (app.towns.length >= 2 && app.townName ? ' ' + app.townName : '');
 
   const placed = order.length;
   const open = REF_UNIVERSE.filter(d => !order.includes(d));
@@ -80,7 +97,7 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   const canSave = ready && (!isEdit || changed);
   const saveLabel = isEdit && !changed ? 'Noch keine Änderung' : !placed ? 'Erste Abteilung antippen' : !ready ? 'Alle Abteilungen einordnen' : isEdit ? 'Änderungen speichern' : 'Reihenfolge speichern';
   const pickIdx = pick ? order.indexOf(pick) : -1;
-  const age = ageDays(orderInfo!.checkedAtMs, Date.now());
+  const age = ageDays(orderInfo.checkedAtMs, Date.now());
 
   const swap = (dir: -1 | 1) => {
     const i = pickIdx, j = i + dir;
@@ -115,7 +132,7 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   return (
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 14px) 20px 12px' }}>
-        <button className="back-link" style={{ margin: '0 0 2px' }} onClick={() => app.back(storePath)}>‹ Zurück in den Laden</button>
+        <button className="back-link" style={{ margin: '0 0 2px' }} onClick={() => app.back(storePath)}>{fromProfile ? '‹ Zurück' : '‹ Zurück in den Laden'}</button>
         <h1 className="h1" style={{ fontSize: 26, margin: '2px 0 2px', textWrap: 'pretty' }}>{isEdit ? 'Was hat sich bei ' + label + ' geändert?' : 'Wie läufst du durch ' + label + '?'}</h1>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D' }}>{store.branch}</div>
       </div>

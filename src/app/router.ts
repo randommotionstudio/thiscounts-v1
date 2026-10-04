@@ -8,7 +8,7 @@ export type Route =
   | { name: 'store'; stopId: string }
   | { name: 'spontan'; storeId: string }
   | { name: 'missing'; stopId: string; itemId: string }
-  | { name: 'refine'; stopId: string }
+  | { name: 'refine'; stopId: string; town?: string }
   | { name: 'listNew' }
   | { name: 'listEdit' }
   | { name: 'listStores' };
@@ -21,7 +21,8 @@ export const paths = {
   /** "Woanders einkaufen": the whole list at any store, without reassigning anything */
   spontan: (storeId: string) => '/spontan/' + encodeURIComponent(storeId),
   missing: (stopId: string, itemId: string) => '/laden/' + encodeURIComponent(stopId) + '/fehlt/' + encodeURIComponent(itemId),
-  refine: (stopId: string) => '/laden/' + encodeURIComponent(stopId) + '/weg',
+  /** V1.4: with a town, that branch's path (opened from the profile) */
+  refine: (stopId: string, town?: string | null) => '/laden/' + encodeURIComponent(stopId) + '/weg' + (town ? '/' + encodeURIComponent(town) : ''),
   listNew: '/liste/neu',
   listEdit: '/liste/bearbeiten',
   listStores: '/liste/laeden',
@@ -38,8 +39,8 @@ export function parseRoute(path: string): Route {
   if (m) return { name: 'spontan', storeId: decodeURIComponent(m[1]) };
   m = p.match(/^\/laden\/([^/]+)\/fehlt\/([^/]+)$/);
   if (m) return { name: 'missing', stopId: decodeURIComponent(m[1]), itemId: decodeURIComponent(m[2]) };
-  m = p.match(/^\/laden\/([^/]+)\/weg$/);
-  if (m) return { name: 'refine', stopId: decodeURIComponent(m[1]) };
+  m = p.match(/^\/laden\/([^/]+)\/weg(?:\/([^/]+))?$/);
+  if (m) return m[2] ? { name: 'refine', stopId: decodeURIComponent(m[1]), town: decodeURIComponent(m[2]) } : { name: 'refine', stopId: decodeURIComponent(m[1]) };
   m = p.match(/^\/laden\/([^/]+)$/);
   if (m) return { name: 'store', stopId: decodeURIComponent(m[1]) };
   return { name: 'list' };
