@@ -5,28 +5,17 @@ import { useTrip } from '../app/useTrip';
 import { endLocalSession, enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
-  CHECK_AFTER, UNKNOWN, agoText, ageDays, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
+  CHECK_AFTER, UNKNOWN, ageDays, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
-import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet, useHeaderHeight } from '../ui/kit';
+import { Avatar, CatIcon, ConnPill, LabeledRule, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
+import { LeaveSheet } from '../sheets/LeaveSheet';
+import { RefinePrompt } from './store/RefinePrompt';
 
 export function useCurrentStop(stopId: string): Stop {
   const app = useApp();
   const { route, townStores } = useTrip();
   return stopById(stopId, townStores, app.items) || route[0] || (app.mainStore ? storeToStop(app.mainStore) : { id: stopId, name: '–', branch: '', logo: null, categoryOrder: null, custom: true });
-}
-
-/** The route glyph used on the "Filiale einrichten" cards */
-export function RouteGlyph() {
-  return (
-    <div style={{ width: 38, height: 38, borderRadius: 12, background: '#F3752E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg width="26" height="26" viewBox="0 0 26 26" style={{ display: 'block' }}>
-        <polyline points="4,20 9,8 17,18 23,7" fill="none" stroke="#2A1F17" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <polyline points="18.5,7.5 23,7 23.5,11.5" fill="none" stroke="#2A1F17" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="4" cy="20" r="2.6" fill="#2A1F17" /><circle cx="9" cy="8" r="2.6" fill="#2A1F17" /><circle cx="17" cy="18" r="2.6" fill="#2A1F17" />
-      </svg>
-    </div>
-  );
 }
 
 /** Open items on the list that a spontaneous trip offers: everything except what waits for a Rückfrage or the next trip */
@@ -242,11 +231,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         </div>
         {notHereGroups.length > 0 && (
           <div style={{ marginTop: 26 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 4px 4px' }}>
-              <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D' }}>Gibt's hier vermutlich nicht</span>
-              <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
-            </div>
+            <LabeledRule style={{ margin: '0 4px 4px' }}>Gibt's hier vermutlich nicht</LabeledRule>
             <div style={{ fontSize: 12, color: '#8A7A6D', textAlign: 'center', margin: '0 8px 14px' }}>Diese Abteilungen sind nicht auf eurem Weg durch {cur.name}.</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: 0.75 }}>
               {notHereGroups.map((g, n) => renderGroup(g, groups.length + n))}
@@ -255,38 +240,8 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         )}
         {!curItems.length && <div style={{ textAlign: 'center', color: '#8A7A6D', padding: '30px 0' }}>{spontaneous ? 'Deine Liste ist leer.' : 'Hier ist nichts mehr zu holen.'}</div>}
 
-        {refineState === 'cooldown' && (
-          <div style={{ marginTop: 22, display: 'flex', justifyContent: 'center' }}>
-            <button onClick={goRefine} style={{ border: 'none', background: 'none', padding: '12px 8px', minHeight: 44, fontSize: 14, color: '#6F6055', cursor: 'pointer' }}>
-              <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: '#C9B8A6' }}>Aufbau der Filiale geändert?</span>
-            </button>
-          </div>
-        )}
-        {refineState === 'check' && store && (
-          <div style={{ marginTop: 20, background: '#FDE4D1', borderRadius: 18, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <RouteGlyph />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>Stimmt dein Weg noch?</div>
-                <div style={{ fontSize: 13, color: '#9C4412' }}>Gespeichert {agoText(age)}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); }} style={{ flex: 1, height: 44, borderRadius: 14, border: '2px solid #F3752E', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Passt noch</button>
-              <button onClick={goRefine} style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', background: '#F3752E', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Anpassen</button>
-            </div>
-          </div>
-        )}
-        {refineState === 'offer' && (
-          <div onClick={goRefine} style={{ marginTop: 20, background: '#FDE4D1', borderRadius: 18, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-            <RouteGlyph />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>Hilf mit, diese Filiale genauer zu machen</div>
-              <div style={{ fontSize: 13, color: '#9C4412' }}>Abteilungs-Reihenfolge antippen</div>
-            </div>
-            <span style={{ color: '#9C4412', fontSize: 20 }}>›</span>
-          </div>
-        )}
+        <RefinePrompt state={refineState} age={age} onRefine={goRefine}
+          onConfirm={() => { if (store) { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); } }} />
       </div>
       {app.toastText && <div className={'toast-inline toast-overlay' + (app.toastLeaving ? ' toast-leaving' : '')} role="status" style={{ top: headH + 16 }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
@@ -325,32 +280,8 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         )}
       </div>
       {leaving && (
-        <Sheet
-          title={'Noch ' + openHere + ' Artikel offen'}
-          sub={'Was soll mit den übrigen Artikeln von ' + cur.name + ' passieren?'}
-          onClose={() => setLeaving(false)}
-        >
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16, maxHeight: 132, overflow: 'auto', flexShrink: 0 }}>
-            {curItems.filter(i => !i.checked).map(i => (
-              <span key={i.id} style={{ fontSize: 13, padding: '5px 10px', borderRadius: 999, background: tint(i.category), color: '#2A1F17' }}>{i.name}</span>
-            ))}
-          </div>
-          {nextStop && (
-            <button onClick={() => leaveWithOpenItems(true)} className="ellipsis" style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0, padding: '0 16px' }}>
-              Alle zu {nextStop.name} mitnehmen
-            </button>
-          )}
-          {nextStop ? (
-            <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-              Auf der Einkaufsliste lassen
-            </button>
-          ) : (
-            <button onClick={() => leaveWithOpenItems(false)} style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
-              Auf der Einkaufsliste lassen
-            </button>
-          )}
-          <div style={{ fontSize: 13, color: '#8A7A6D', textAlign: 'center', margin: '10px 8px 0', textWrap: 'pretty' }}>Sie behalten ihren Laden und sind beim nächsten Einkauf wieder dabei.</div>
-        </Sheet>
+        <LeaveSheet open={curItems.filter(i => !i.checked)} storeName={cur.name} nextStopName={nextStop ? nextStop.name : null}
+          onAnswer={leaveWithOpenItems} onClose={() => setLeaving(false)} />
       )}
     </div>
   );

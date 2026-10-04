@@ -131,3 +131,23 @@ export function RoundCheck({ on, size = 26, color = '#F3752E' }: { on: boolean; 
     }}>{on && <span className="check-tick" style={size > 27 ? { width: 11 } : undefined} />}</div>
   );
 }
+
+/** A thin line with a small label in the middle ("Ohne feste Reihenfolge", "Gibt’s hier vermutlich nicht") */
+export function LabeledRule({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, ...style }}>
+      <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
+      <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D' }}>{children}</span>
+      <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
+    </div>
+  );
+}
+
+/** A quiet, underlined text button for rarely used actions ("Woanders einkaufen …") */
+export function TextLink({ onClick, children, style }: { onClick: () => void; children: ReactNode; style?: CSSProperties }) {
+  return (
+    <button onClick={onClick} style={{ border: 'none', background: 'none', padding: '12px 8px', minHeight: 44, fontSize: 14, color: '#6F6055', cursor: 'pointer', ...style }}>
+      <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: '#C9B8A6' }}>{children}</span>
+    </button>
+  );
+}

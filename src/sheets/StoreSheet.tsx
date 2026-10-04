@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LOGOS, agoText, ageDays, logoUrl, storeOrderInfo, storesInTown } from '../lib/logic';
 import type { Store, Town } from '../lib/types';
 import { newTownId, type StoreEdit } from '../data/actions';
-import { Sheet } from '../ui/kit';
+import { Sheet, TextLink } from '../ui/kit';
 
 export interface StoreSheetState {
   mode: 'new' | 'edit'; id?: string; name: string; branch: string; logo: string | null;
@@ -125,9 +125,7 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
         ))}
 
         {!adding && (
-          <button onClick={startAdding} style={{ marginTop: 12, border: 'none', background: 'none', padding: '8px 0', minHeight: 40, fontSize: 14, color: '#6F6055', cursor: 'pointer' }}>
-            <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: '#C9B8A6' }}>+ Filiale in einem anderen Ort</span>
-          </button>
+          <TextLink onClick={startAdding} style={{ marginTop: 12, padding: '8px 0', minHeight: 40 }}>+ Filiale in einem anderen Ort</TextLink>
         )}
         {adding && (
           <div style={{ marginTop: 16, background: '#F3EADF', borderRadius: 18, padding: '14px 14px 12px' }}>

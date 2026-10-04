@@ -9,6 +9,8 @@ import {
 import type { Item } from '../lib/types';
 import { DeptSheet } from '../sheets/DeptSheet';
 import { OnceSheet } from '../sheets/OnceSheet';
+import { AskSheet } from '../sheets/AskSheet';
+import { UsualChips } from './list/UsualChips';
 import { QtySheet } from '../sheets/QtySheet';
 import { Avatar, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { SwipeRow } from '../ui/SwipeRow';
@@ -18,7 +20,6 @@ import { SESSION_STALE_MS } from '../lib/logic';
 import type { Session, Stop } from '../lib/types';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
-const CHIP_LIM = 6;
 
 export function ListScreen() {
   const app = useApp();
@@ -231,29 +232,8 @@ export function ListScreen() {
           <button onMouseDown={keepFocus} onClick={addEntry} aria-label="Hinzufügen" style={{ width: 50, height: 50, border: 'none', borderRadius: 999, background: INK, color: '#FBF5EE', fontSize: 26, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>+</button>
         </div>
         {chipsOpen && (
-          <div style={{ marginTop: 12, animation: 'toastIn .2s ease' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 4px 8px' }}>{searching ? 'Aus deinen üblichen Artikeln' : 'Üblich auf deiner Liste'}</div>
-            {/* Capped height: the header can't scroll, so a long list must never grow over the bottom buttons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: '34vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
-              {pool.slice(0, showAll ? pool.length : CHIP_LIM).map(c => {
-                const on = chipOn(c), d = guessDept(c.name);
-                return (
-                  <button key={c.name} onMouseDown={keepFocus} onClick={() => toggleChip(c)} style={{ display: 'flex', alignItems: 'center', gap: 7, height: 38, padding: '0 13px 0 5px', borderRadius: 999, border: `1px solid ${on ? ACC : 'rgba(255,255,255,.95)'}`, background: on ? SOFT : 'rgba(255,255,255,.75)', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 4px rgba(42,31,23,.05)', whiteSpace: 'nowrap' }}>
-                    {on
-                      ? <span style={{ width: 28, height: 28, borderRadius: '50%', background: ACC, color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, fontWeight: 800, animation: 'pop .25s ease' }}>✓</span>
-                      : <span style={{ width: 28, height: 28, borderRadius: '50%', background: tint(d), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon src={icon(d)} size={15} opacity={0.8} /></span>}
-                    <span>{c.name}</span>
-                    {c.qty && <span style={{ color: '#8A7A6D', fontWeight: 500, fontSize: 13 }}>{c.qty}</span>}
-                  </button>
-                );
-              })}
-              {!searching && pool.length > CHIP_LIM && (
-                <button onMouseDown={keepFocus} onClick={() => setChipsAll(v => !v)} style={{ height: 38, padding: '0 14px', borderRadius: 999, border: '1px dashed #B8A696', background: 'transparent', color: '#6F6055', fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  {chipsAll ? 'Weniger' : '+ ' + (pool.length - CHIP_LIM) + ' mehr'}
-                </button>
-              )}
-            </div>
-          </div>
+          <UsualChips pool={pool} searching={searching} showAll={showAll} isOn={chipOn} deptOf={guessDept}
+            onToggle={toggleChip} onToggleAll={() => setChipsAll(v => !v)} keepFocus={keepFocus} />
         )}
       </div>
 
@@ -403,28 +383,7 @@ export function ListScreen() {
           onStore={s => { actions.assignOnce(onceItem, { storeId: s.id }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + s.name); }}
         />
       )}
-      {ask && (
-        <div className="sheet-layer" style={{ zIndex: 50 }}>
-          <div className="sheet-dim" />
-          <div className="sheet">
-            <div className="grab" />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
-                <Avatar person={other} size={44} />
-                <span style={{ position: 'absolute', right: -5, bottom: -5, display: 'flex', borderRadius: 7, border: '2px solid #FBF5EE' }}>
-                  <LogoTile store={ask.at} size={20} radius={5} initialSize={11} bordered={false} />
-                </span>
-              </span>
-              <div className="sheet-title" style={{ flex: 1, minWidth: 0 }}>{other.name} ist schon bei {ask.at.name}</div>
-            </div>
-            <p style={{ margin: '12px 0 18px', fontSize: 15, color: '#6F6055', textWrap: 'pretty' }}>
-              Bei {ask.from.name} ist {other.name} für heute fertig. Soll {other.name} {ask.name} bei {ask.at.name} mitnehmen?
-            </p>
-            <button onClick={() => resolveAsk(true)} style={{ width: '100%', height: 52, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Bei {ask.at.name} mitnehmen</button>
-            <button onClick={() => resolveAsk(false)} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Beim nächsten {ask.from.name}-Einkauf</button>
-          </div>
-        </div>
-      )}
+      {ask && <AskSheet other={other} itemName={ask.name} from={ask.from} at={ask.at} onAnswer={resolveAsk} />}
       {pick && (
         <QtySheet key={pick.editId} initial={pick} dept={guessDept(pick.name)} onClose={() => setPick(null)}
           onSave={q => { const it = items.find(i => i.id === pick.editId); if (it) actions.updateItem(it, { qty: q }); setPick(null); }} />

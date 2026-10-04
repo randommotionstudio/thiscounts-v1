@@ -1,0 +1,22 @@
+const { chromium, SHOTS, BASE, login, resetDb } = require('./lib.cjs');
+const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
+(async () => {
+  await resetDb();
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'de-DE' });
+  const P = await ctx.newPage();
+  await login(P, 'michael@rieplhuber.com'); await P.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 20000 });
+  await P.goto(BASE + '/profil'); await P.click('button:has-text("Laden hinzufügen")'); await P.waitForTimeout(400);
+  ok(await P.locator('button[title="Müller"]').count() === 1 && await P.locator('button[title="Mix Markt"]').count() === 1, 'Müller and Mix Markt are in the logo picker');
+  await P.fill('input[placeholder="z. B. Edeka"]', 'Müller');
+  await P.click('button[title="Müller"]');
+  await P.locator('button[title="Mix Markt"]').scrollIntoViewIfNeeded();
+  await P.screenshot({ path: SHOTS + '180-logo-picker.png' });
+  await P.click('button:has-text("Laden speichern")'); await P.waitForTimeout(600);
+  await P.click('button:has-text("Laden hinzufügen")'); await P.fill('input[placeholder="z. B. Edeka"]', 'Mix Markt'); await P.click('button[title="Mix Markt"]');
+  await P.click('button:has-text("Laden speichern")'); await P.waitForTimeout(800);
+  const loaded = await P.evaluate(() => Promise.all(['/logos/mueller.png', '/logos/mixmarkt.png'].map(u => fetch(u).then(r => r.ok && r.headers.get('content-type')))));
+  ok(loaded.every(t => t === 'image/png'), 'both logo files load: ' + loaded.join(', '));
+  await P.screenshot({ path: SHOTS + '181-logo-profile.png', fullPage: true });
+  await browser.close();
+})().catch(e => { console.log('ERROR', e.message); process.exit(1); });
