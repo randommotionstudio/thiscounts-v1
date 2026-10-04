@@ -390,6 +390,13 @@ describe('stand-in stores (Bernau: DM, ALDI, Denns)', () => {
     expect(t.stopOf(its[0])).toBe('denns');
     expect(t.stopOf(its[1])).toBe('aldi'); // Denns has no Backwaren
   });
+  it('a one-time stop at a store elsewhere is never replaced', () => {
+    const bun = item({ name: 'Brezen', category: 'Backwaren', storeId: 'netto', once: true });
+    const t = tripPlan([...its, bun], l, stores, ts, { order, standIn: true });
+    expect(t.stopOf(bun)).toBeNull();
+    expect(t.unavailable.map(i => i.name)).toEqual(['Brezen']);
+    expect(t.temp(bun)).toBeNull();
+  });
   it('a temporary move wins and stays temporary', () => {
     const t = tripPlan(its, l, stores, ts, { order, standIn: true, moves: { [its[1].id]: 'denns' } });
     expect(t.stopOf(its[1])).toBe('denns');

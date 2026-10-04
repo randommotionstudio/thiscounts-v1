@@ -291,7 +291,7 @@ export interface TripOpts {
 /**
  * tripPlan(): the trip in one town. `allStores` are all of the household's stores, `townStores` the ones there.
  * - stopOf(item): where it's picked up. Its own store (or the Hauptladen) if that's in this town; otherwise, with
- *   stand-ins on, a store here by department and order. null = it waits on the list.
+ *   stand-ins on, a store here by department and order (not for one-time stops). null = it waits on the list.
  * - temp(item): set when the item is only here for this trip (stand-in or moved on): from where, and whether
  *   the store probably doesn't have it.
  * - route: the ordered stops (see route()); unavailable: items that wait.
@@ -315,7 +315,8 @@ export function tripPlan(items: Item[], list: List, allStores: Store[], townStor
     const mv = opts.moves && opts.moves[it.id];
     if (mv && townIds.has(mv)) return mv;
     const o = own(it);
-    if (o || !opts.standIn) return o;
+    // A one-time stop ("Einmaliger Stopp") is a deliberate choice of that very store: never replaced
+    if (o || !opts.standIn || it.once) return o;
     return standInFor(it.category, candidates)?.id ?? null;
   };
   const temp = (it: Item): { from: string | null; maybeNot: boolean } | null => {

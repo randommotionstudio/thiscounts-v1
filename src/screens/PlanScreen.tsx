@@ -242,7 +242,7 @@ export function PlanScreen() {
                 );
               })}
               <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>Bleiben auf der Liste, bis du wieder dort einkaufst.</div>
-              {app.town && previewIn(app.town).stores.length > 0 && (
+              {app.town && !app.standIn && previewIn(app.town).stores.length > 0 && previewIn(app.town).missing.length > 0 && (
                 <button onClick={() => setAskStandIn(app.town)} style={{ height: 40, border: '2px solid #EADCCD', borderRadius: 12, background: '#fff', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Heute in {app.townName} ersetzen …</button>
               )}
             </div>

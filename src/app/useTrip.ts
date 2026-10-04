@@ -24,7 +24,8 @@ export function useTrip() {
       const ts = storesInTown(data.stores, towns, t);
       const without = tripPlan(items, list, data.stores, ts, { order: orderIn(t) });
       const withIn = tripPlan(items, list, data.stores, ts, { order: orderIn(t), standIn: true });
-      return { missing: without.unavailable, stopOf: withIn.stopOf, temp: withIn.temp, stores: ts };
+      // Only what stand-ins would take: one-time stops at a store elsewhere keep waiting for that store
+      return { missing: without.unavailable.filter(i => !i.once), stopOf: withIn.stopOf, temp: withIn.temp, stores: ts };
     };
     const itemsAt = (id: string): Item[] => items.filter(i => onTrip(i) && stopOf(i) === id);
     const doneOf = (s: Stop) => itemsAt(s.id).every(i => i.checked);
