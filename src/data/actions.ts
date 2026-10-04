@@ -1,14 +1,14 @@
 // All writes. Field-level updates only (last change wins per field), never whole-document
 // overwrites, so two people editing different fields of the same item don't clobber each other.
 import {
-  Timestamp, deleteDoc, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
+  Timestamp, deleteDoc, deleteField, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { PATH_VERSION, normName, onTrip } from '../lib/logic';
-import type { Item, List, MemoryEntry, Store } from '../lib/types';
+import type { Item, List, MemoryEntry, Store, Town } from '../lib/types';
 import type { AvatarPref } from '../lib/avatar';
 import {
-  historyCol, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
+  historyCol, householdRef, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
 } from './refs';
 import { report } from './write';
 
@@ -118,6 +118,8 @@ export function finishShopping(list: List, items: Item[]) {
 export interface SessionData {
   listId: string; storeId: string; position: number; doneStoreIds: string[];
   stopIndex: number; stopCount: number; startedAtMs: number; spontaneous: boolean;
+  /** V1.4: the town of the trip (null without towns) */
+  town: string | null;
 }
 
 /** Create or overwrite my session (entering store mode, switching stops) */
@@ -152,20 +154,24 @@ export function setNotifyWhileShopping(on: boolean) {
 
 // ---------- V1.1: Filiale einrichten ----------
 
+/** V1.4: field prefix of the branch a (town-projected) store stands for: its own fields, or branches.<town>. */
+const branchField = (store: Store) => (store.branchTown ? 'branches.' + store.branchTown + '.' : '');
+
 export function saveStoreOrder(store: Store, order: string[]) {
+  const p = branchField(store);
   report(updateDoc(storeRef(store.id), {
-    categoryOrder: order,
-    pathVersion: PATH_VERSION,
-    orderCheckedAt: serverTimestamp(),
-    orderSetBy: uid(),
-    ...(store.orderSetAtMs == null ? { orderSetAt: serverTimestamp() } : {}),
+    [p + 'categoryOrder']: order,
+    [p + 'pathVersion']: PATH_VERSION,
+    [p + 'orderCheckedAt']: serverTimestamp(),
+    [p + 'orderSetBy']: uid(),
+    ...(store.orderSetAtMs == null ? { [p + 'orderSetAt']: serverTimestamp() } : {}),
     ...stamp(),
   }));
 }
 
 /** "Passt noch" */
-export function confirmStoreOrder(storeId: string) {
-  report(updateDoc(storeRef(storeId), { orderCheckedAt: serverTimestamp(), ...stamp() }));
+export function confirmStoreOrder(store: Store) {
+  report(updateDoc(storeRef(store.id), { [branchField(store) + 'orderCheckedAt']: serverTimestamp(), ...stamp() }));
 }
 
 // ---------- Lists ----------
@@ -193,17 +199,53 @@ export function deleteList(listId: string, items: Item[]) {
 
 // ---------- Stores ----------
 
-export function createStore(data: { name: string; branch: string; logo: string | null }): string {
-  const id = newId(storesCol());
-  report(setDoc(storeRef(id), {
-    ...data, categoryOrder: null, orderSetAt: null, orderCheckedAt: null, orderSetBy: null,
-    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-  }));
-  return id;
-}
-
 export function updateStore(id: string, patch: Partial<Pick<Store, 'name' | 'branch' | 'logo'>>) {
   report(updateDoc(storeRef(id), { ...patch, ...stamp() }));
+}
+
+// ---------- V1.4 Towns and branches ----------
+
+/** Town ids are used in field paths (branches.<id>.…), so: letters and digits only */
+export const newTownId = () => 't' + Math.random().toString(36).slice(2, 10).replace(/[^a-z0-9]/g, '0');
+
+export function setTowns(towns: Town[]) {
+  report(updateDoc(householdRef(), { towns, ...stamp() }));
+}
+
+const newBranch = (address: string) => ({ address, categoryOrder: null, orderSetAt: null, orderCheckedAt: null, orderSetBy: null });
+
+/** What the store sheet hands back */
+export interface StoreEdit {
+  name: string; branch: string; logo: string | null;
+  /** Town of the store's own branch; null = home town */
+  town: string | null;
+  /** Branches in other towns: town id → address */
+  branches: Record<string, string>;
+  /** The household's full town list, if the sheet added towns */
+  towns: Town[] | null;
+}
+
+/** Create or update a store with its branches. Returns the store id. */
+export function saveStore(v: StoreEdit, before: Store | null): string {
+  if (v.towns) setTowns(v.towns);
+  const base = { name: v.name, branch: v.branch, logo: v.logo };
+  if (!before) {
+    const id = newId(storesCol());
+    report(setDoc(storeRef(id), {
+      ...base, town: v.town, categoryOrder: null, orderSetAt: null, orderCheckedAt: null, orderSetBy: null,
+      branches: Object.fromEntries(Object.entries(v.branches).map(([t, a]) => [t, newBranch(a)])),
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    }));
+    return id;
+  }
+  const patch: Record<string, unknown> = { ...base, ...stamp() };
+  for (const [t, a] of Object.entries(v.branches)) {
+    if (!before.branches[t]) patch['branches.' + t] = newBranch(a);
+    else if (before.branches[t].address !== a) patch['branches.' + t + '.address'] = a;
+  }
+  for (const t of Object.keys(before.branches)) if (!(t in v.branches)) patch['branches.' + t] = deleteField();
+  report(updateDoc(storeRef(before.id), patch));
+  return before.id;
 }
 
 /** deleteStore(): remove the store everywhere; its items fall back to automatic. */

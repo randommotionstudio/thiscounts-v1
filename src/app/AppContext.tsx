@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { User } from 'firebase/auth';
 import { useData, type Data } from '../data/DataProvider';
 import { otherPerson, personFor, type Person } from '../config/household';
-import { guessDeptFromName } from '../lib/logic';
-import type { Item, List, Store } from '../lib/types';
+import { guessDeptFromName, storesInTown } from '../lib/logic';
+import type { Item, List, Store, Town } from '../lib/types';
 import { memoryId } from '../data/refs';
 import { useConnection, type Conn } from './useConnection';
 import { ask, holdForNextTrip } from './shopping';
@@ -46,6 +46,14 @@ export interface AppCtx {
   setCurrentStop: (id: string | null) => void;
   guessDept: (name: string) => string;
   guessStore: (name: string) => string | null;
+  /** V1.4: the household's towns (first = home); fewer than two → no town choice anywhere */
+  towns: Town[];
+  /** V1.4: the town of this trip (per device and list); null without towns */
+  town: string | null;
+  townName: string | null;
+  setTown: (id: string | null) => void;
+  /** V1.4: the stores of the trip's town, each with that town's branch (address, path) */
+  townStores: Store[];
 }
 
 const Ctx = createContext<AppCtx | null>(null);
@@ -57,6 +65,7 @@ export const useApp = () => {
 
 const LS_ACTIVE = 'thisCounts.activeList';
 const LS_CURRENT = 'thisCounts.currentStop.';
+const LS_TOWN = 'thisCounts.town.';
 const lsGet = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 
@@ -71,6 +80,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const [toastLeaving, setToastLeaving] = useState(false);
   const [draft, setDraft] = useState<ListDraft | null>(null);
   const [currentStops, setCurrentStops] = useState<Record<string, string | null>>({});
+  const [townSel, setTownSel] = useState<Record<string, string | null>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const list = data.lists.find(l => l.id === activeId) || data.lists[0];
@@ -94,6 +104,17 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
     setCurrentStops(m => ({ ...m, [list.id]: id }));
     lsSet(LS_CURRENT + list.id, id);
   }, [list.id]);
+
+  // V1.4: the town of this trip. Unknown or deleted towns fall back to the home town.
+  const towns = data.towns;
+  const homeTown = towns.length >= 2 ? towns[0].id : null;
+  const chosenTown = list.id in townSel ? townSel[list.id] : lsGet(LS_TOWN + list.id);
+  const town = homeTown && chosenTown && towns.some(t => t.id === chosenTown) ? chosenTown : homeTown;
+  const setTown = useCallback((id: string | null) => {
+    setTownSel(m => ({ ...m, [list.id]: id }));
+    lsSet(LS_TOWN + list.id, id);
+  }, [list.id]);
+  const townStores = useMemo(() => storesInTown(data.stores, towns, town), [data.stores, towns, town]);
 
   // Someone finished the trip (checked items are gone) → no current stop any more on this phone either
   const checkedCount = items.filter(i => i.checked).length;
@@ -129,8 +150,9 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
       guessDept: name => data.memory[memoryId(name)]?.category || guessDeptFromName(name),
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
+      towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
     };
-  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop]);
+  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

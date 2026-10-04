@@ -58,6 +58,15 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Woanders einkaufen:** Spontan bei einem Laden vorbei, der heute nicht auf der Route ist? Im Plan unten auf **„Woanders einkaufen …“** tippen und den Laden wählen (oder neu anlegen). Ihr seht dann eure ganze Liste, sortiert nach dem Weg durch diesen Laden. Was ihr abhakt, ist erledigt – alles andere bleibt bei seinem gewohnten Laden. Hat der Laden einen eingerichteten Weg, stehen Abteilungen, die es dort nicht gibt, unten unter „Gibt's hier vermutlich nicht“.
 - **Neues App-Symbol:** Das iPhone behält das alte Symbol auf dem Home-Bildschirm. Um das neue zu sehen: App vom Home-Bildschirm entfernen und in Safari über **Teilen → Zum Home-Bildschirm** neu hinzufügen. Eure Listen und Läden bleiben erhalten – sie hängen an eurem Konto.
 
+## Neu in Version 1.4: Einkaufen in mehreren Orten
+
+Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in Frasdorf), braucht ihr keine zweite Liste mehr:
+
+- **Filiale hinzufügen:** Profil → Laden antippen → **„+ Filiale in einem anderen Ort“** → Ort eintragen (beim ersten Mal fragt die App auch nach dem Namen eures bisherigen Orts) → **„Laden speichern“**. Läden, die es nur im anderen Ort gibt (z. B. ein Bäcker), legt ihr ganz normal an und wählt dabei den Ort.
+- **Heute woanders einkaufen:** Im Plan oben rechts auf **„in Prien ▾“** tippen und den Ort wählen. Die Route zeigt dann nur die Läden dort – mit deren Adresse und deren eigenem Weg durch die Filiale. Das gilt nur für euch selbst und nur für diesen Einkauf; danach startet es wieder im Heimatort.
+- **Was es dort nicht gibt** (z. B. DM in Frasdorf), steht im Plan unter **„Gibt’s in Frasdorf nicht“** und bleibt einfach auf der Liste, bis ihr wieder dort einkauft.
+- **Eigener Weg pro Filiale:** Eine neue Filiale startet ohne Weg – im Laden einfach auf „Hilf mit, diese Filiale genauer zu machen“ tippen.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann

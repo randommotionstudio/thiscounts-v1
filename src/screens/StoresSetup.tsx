@@ -107,9 +107,9 @@ export function StoresSetup() {
         <button className={'cta' + (noSel ? ' off' : '')} onClick={cta}>{noSel ? 'Mindestens einen Laden wählen' : isCreate ? '„' + name + '“ erstellen' : 'Fertig'}</button>
       </div>
       {newStore && (
-        <StoreSheet initial={{ mode: 'new', name: '', branch: '', logo: null }} onClose={() => setNewStore(false)}
+        <StoreSheet initial={{ mode: 'new', name: '', branch: '', logo: null }} towns={app.towns} defaultTown={app.town} onClose={() => setNewStore(false)}
           onSave={v => {
-            const id = actions.createStore(v);
+            const id = actions.saveStore(v, null);
             setDraft(d => (d ? { ...d, storeIds: [...d.storeIds, id], mainStoreId: d.mainStoreId || id } : d));
             setNewStore(false);
             toast('„' + v.name + '“ gespeichert und ausgewählt');

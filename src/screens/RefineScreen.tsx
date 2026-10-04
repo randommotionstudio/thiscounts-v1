@@ -53,7 +53,8 @@ function StorePathIllustration() {
 export function RefineScreen({ stopId }: { stopId: string }) {
   const app = useApp();
   const { data, toast, other } = app;
-  const store = data.stores.find(s => s.id === stopId) || null;
+  // V1.4: the branch of the trip's town
+  const store = app.townStores.find(s => s.id === stopId) || null;
   // Opened from a spontaneous trip → back there, not into normal store mode
   const storePath = history.state && history.state.prev === paths.spontan(stopId) ? paths.spontan(stopId) : paths.store(stopId);
   const [headRef, headH] = useHeaderHeight();
@@ -69,6 +70,8 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   // A free-text stop or a deleted store has nothing to set up
   useEffect(() => { if (!store) app.back(storePath); }, [store]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!store) return null;
+  // V1.4: with towns, name the branch ("Netto Frasdorf")
+  const label = store.name + (app.towns.length >= 2 && app.townName ? ' ' + app.townName : '');
 
   const placed = order.length;
   const open = REF_UNIVERSE.filter(d => !order.includes(d));
@@ -90,7 +93,7 @@ export function RefineScreen({ stopId }: { stopId: string }) {
     if (!canSave) return;
     actions.saveStoreOrder(store, order);
     app.back(storePath);
-    toast(isEdit ? 'Weg bei ' + store.name + ' aktualisiert' : store.name + ' nutzt jetzt deinen Weg – auch für ' + other.name);
+    toast(isEdit ? 'Weg bei ' + label + ' aktualisiert' : label + ' nutzt jetzt deinen Weg – auch für ' + other.name);
   };
 
   const chip = (d: string, on: boolean, num: number | '+') => {
@@ -113,7 +116,7 @@ export function RefineScreen({ stopId }: { stopId: string }) {
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 14px) 20px 12px' }}>
         <button className="back-link" style={{ margin: '0 0 2px' }} onClick={() => app.back(storePath)}>‹ Zurück in den Laden</button>
-        <h1 className="h1" style={{ fontSize: 26, margin: '2px 0 2px', textWrap: 'pretty' }}>{isEdit ? 'Was hat sich bei ' + store.name + ' geändert?' : 'Wie läufst du durch ' + store.name + '?'}</h1>
+        <h1 className="h1" style={{ fontSize: 26, margin: '2px 0 2px', textWrap: 'pretty' }}>{isEdit ? 'Was hat sich bei ' + label + ' geändert?' : 'Wie läufst du durch ' + label + '?'}</h1>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D' }}>{store.branch}</div>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: (headH || 150) + 16 }}>

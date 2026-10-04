@@ -12,7 +12,7 @@ import { useCurrentStop } from './StoreScreen';
 export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: string }) {
   const app = useApp();
   const { list, items, toast } = app;
-  const { route } = useTrip();
+  const { route, townStores } = useTrip();
   const cur = useCurrentStop(stopId);
   const [foundRaw, setFound] = useState(0);
   const done = useRef(false); // ignore a double tap while we leave the screen
@@ -25,7 +25,8 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
 
   const curIdx = route.findIndex(s => s.id === cur.id);
   const later = route.slice(curIdx + 1);
-  const others = app.selectedStores.filter(s => s.id !== cur.id).map(storeToStop);
+  // Only stores with a branch in the trip's town
+  const others = townStores.filter(s => list.storeIds.includes(s.id) && s.id !== cur.id).map(storeToStop);
   const primary: Stop | null = later[0] || others[0] || null;
   const q = missingQty(mi, foundRaw);
 

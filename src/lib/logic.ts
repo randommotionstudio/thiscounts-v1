@@ -1,6 +1,6 @@
 // Pure app logic, ported from the design prototype (thisCounts V1.dc.html).
 // Names in comments refer to the prototype's methods so behaviour can be compared.
-import type { HistoryEntry, Item, List, Stop, Store } from './types';
+import type { HistoryEntry, Item, List, Stop, Store, Town } from './types';
 
 export const UNKNOWN = 'Unbekannt';
 
@@ -239,22 +239,75 @@ const sortByOrder = <T extends { id: string }>(arr: T[], ord: string[]) => {
   return arr.map((s, i) => [s, i] as const).sort((a, b) => ix(a[0].id) - ix(b[0].id) || a[1] - b[1]).map(x => x[0]);
 };
 
+// ---------- V1.4 Towns ----------
+
+/** The stores as they exist in one town, each with that town's branch (address, path …). Fewer than two towns → all stores as they are. */
+export function storesInTown(stores: Store[], towns: Town[], townId: string | null): Store[] {
+  if (towns.length < 2 || !townId) return stores;
+  const home = towns[0].id;
+  return stores.flatMap((s): Store[] => {
+    if ((s.town ?? home) === townId) return [{ ...s, branchTown: null }];
+    const b = s.branches[townId];
+    return b ? [{ ...s, branch: b.address, categoryOrder: b.categoryOrder, orderSetAtMs: b.orderSetAtMs, orderCheckedAtMs: b.orderCheckedAtMs, orderSetBy: b.orderSetBy, branchTown: townId }] : [];
+  });
+}
+
+/** A town name guessed from addresses ("…, 83209 Prien am Chiemsee" → "Prien am Chiemsee"): the most frequent one */
+export function guessTownName(addresses: string[]): string {
+  const n = new Map<string, number>();
+  for (const a of addresses) { const m = a.match(/\b\d{5}\s+([^,\d][^,]*)\s*$/); if (m) n.set(m[1].trim(), (n.get(m[1].trim()) || 0) + 1); }
+  return [...n.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] || '';
+}
+
+/** Towns a store has a branch in */
+export function townsOf(s: Store, towns: Town[]): Town[] {
+  if (towns.length < 2) return towns;
+  const own = s.town ?? towns[0].id;
+  return towns.filter(t => t.id === own || !!s.branches[t.id]);
+}
+
+/** The Hauptladen of a trip in this town: the list's Hauptladen if it's there, otherwise the first store of the usual order that is */
+export function mainInTown(list: List, townStores: Store[]): string | null {
+  if (list.mainStoreId && townStores.some(s => s.id === list.mainStoreId)) return list.mainStoreId;
+  return sortByOrder(townStores.filter(s => list.storeIds.includes(s.id)), list.storeOrder)[0]?.id ?? null;
+}
+
+/**
+ * tripPlan(): the trip in one town. `allStores` are all of the household's stores, `townStores` the ones there.
+ * - stopOf(item): where it's picked up – like effStore(), but what would go to the Hauptladen goes to this town's
+ *   Hauptladen. null = its store has no branch here.
+ * - route: the ordered stops (see route())
+ * - unavailable: items on the trip whose store isn't in this town; they stay on the list as they are.
+ */
+export function tripPlan(items: Item[], list: List, allStores: Store[], townStores: Store[]) {
+  const allIds = new Set(allStores.map(s => s.id)), townIds = new Set(townStores.map(s => s.id));
+  const main = townStores === allStores ? list.mainStoreId : mainInTown(list, townStores);
+  const stopOf = (it: Item): string | null => {
+    const e = effStore(it, list, allIds);
+    if (!e || e.startsWith('once:')) return e;
+    if (e === list.mainStoreId) return main;
+    return townIds.has(e) ? e : null;
+  };
+  const trip = items.filter(onTrip);
+  const ids = new Set(trip.map(stopOf).filter((x): x is string => !!x));
+  let o = townStores.filter(s => ids.has(s.id));
+  const ord = list.tripOrder || list.storeOrder;
+  if (ord && ord.length) o = sortByOrder(o, ord);
+  o = [...o.filter(s => s.id === main), ...o.filter(s => s.id !== main)];
+  const d = list.deferred || [];
+  o = [...o.filter(s => !d.includes(s.id)), ...d.map(id => o.find(s => s.id === id)).filter((s): s is Store => !!s)];
+  const custom = [...ids].filter(id => id.startsWith('once:')).map(id => stopById(id, townStores, items)!);
+  const unavailable = list.mainStoreId || list.storeIds.length ? trip.filter(i => !stopOf(i)) : [];
+  return { route: [...o.map(storeToStop), ...custom], stopOf, unavailable, mainId: main };
+}
+
 /**
  * route(): the ordered stops of the current trip.
  * 1. selected stores + stores targeted by one-time items, only those with ≥ 1 non-parked item
  * 2. sorted by tripOrder ?? storeOrder  3. main store first  4. deferred last  5. free-text stops appended
  */
 export function route(items: Item[], list: List, stores: Store[]): Stop[] {
-  const storeIds = new Set(stores.map(s => s.id));
-  const ids = new Set(items.filter(onTrip).map(i => effStore(i, list, storeIds)).filter((x): x is string => !!x));
-  let o = stores.filter(s => ids.has(s.id));
-  const ord = list.tripOrder || list.storeOrder;
-  if (ord && ord.length) o = sortByOrder(o, ord);
-  o = [...o.filter(s => s.id === list.mainStoreId), ...o.filter(s => s.id !== list.mainStoreId)];
-  const d = list.deferred || [];
-  o = [...o.filter(s => !d.includes(s.id)), ...d.map(id => o.find(s => s.id === id)).filter((s): s is Store => !!s)];
-  const custom = [...ids].filter(id => id.startsWith('once:')).map(id => stopById(id, stores, items)!);
-  return [...o.map(storeToStop), ...custom];
+  return tripPlan(items, list, stores, stores).route;
 }
 
 /** setupOrdered(): selected non-main stores in "Meine Reihenfolge" */

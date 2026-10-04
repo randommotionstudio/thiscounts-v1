@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { ALL_DEPTS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from '../lib/logic';
-import type { HistoryEntry, Item, List, MemoryEntry, Session, Store } from '../lib/types';
+import type { Branch, HistoryEntry, Item, List, MemoryEntry, Session, Store, Town } from '../lib/types';
 import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
 import { seedDefaultList, seedHousehold } from './seed';
@@ -16,6 +16,8 @@ export interface Data {
   /** Firestore refused access (account not in the rules) */
   denied: boolean;
   defaultCategoryOrder: string[];
+  /** V1.4: towns the household shops in (first = home town); fewer than two → the feature stays out of sight */
+  towns: Town[];
   stores: Store[];
   lists: List[];
   itemsByList: Record<string, Item[]>;
@@ -46,12 +48,22 @@ const strArr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => 
 const str = (v: unknown) => (typeof v === 'string' ? v : null);
 const opts = { serverTimestamps: 'estimate' as const };
 
+const toBranch = (b: Record<string, unknown>): Branch => ({
+  address: typeof b.address === 'string' ? b.address : '',
+  categoryOrder: Array.isArray(b.categoryOrder) ? upgradeOrder(strArr(b.categoryOrder), !b.pathVersion) : null,
+  orderSetAtMs: b.orderSetAt ? ms(b.orderSetAt, Date.now()) : null, orderCheckedAtMs: b.orderCheckedAt ? ms(b.orderCheckedAt, Date.now()) : null, orderSetBy: str(b.orderSetBy),
+});
 const toStore = (d: DocumentSnapshot<DocumentData>): Store => {
   const x = d.data(opts) || {};
+  const branches: Record<string, Branch> = {};
+  if (x.branches && typeof x.branches === 'object') for (const [t, b] of Object.entries(x.branches)) if (b && typeof b === 'object') branches[t] = toBranch(b as Record<string, unknown>);
   return { id: d.id, name: x.name || '', branch: x.branch || '', logo: str(x.logo), categoryOrder: Array.isArray(x.categoryOrder) ? upgradeOrder(strArr(x.categoryOrder), !x.pathVersion) : null,
     orderSetAtMs: x.orderSetAt ? ms(x.orderSetAt, Date.now()) : null, orderCheckedAtMs: x.orderCheckedAt ? ms(x.orderCheckedAt, Date.now()) : null, orderSetBy: str(x.orderSetBy),
-    createdAtMs: ms(x.createdAt, Date.now()) };
+    createdAtMs: ms(x.createdAt, Date.now()), town: str(x.town), branches, branchTown: null };
 };
+const toTowns = (v: unknown): Town[] => (Array.isArray(v) ? v : [])
+  .filter((t): t is { id: string; name: string } => !!t && typeof t.id === 'string' && typeof t.name === 'string')
+  .map(t => ({ id: t.id, name: t.name }));
 const toList = (d: DocumentSnapshot<DocumentData>): List => {
   const x = d.data(opts) || {};
   return {
@@ -70,7 +82,7 @@ const toItem = (listId: string, d: DocumentSnapshot<DocumentData>): Item => {
 };
 
 export function DataProvider({ user, children }: { user: User; children: ReactNode }) {
-  const [hh, setHh] = useState<{ exists: boolean; order: string[] } | null>(null);
+  const [hh, setHh] = useState<{ exists: boolean; order: string[]; towns: Town[] } | null>(null);
   const [denied, setDenied] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
   const [lists, setLists] = useState<List[]>([]);
@@ -103,7 +115,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       track('household', snap);
       if (snap.exists()) {
         const order = strArr(snap.data()?.defaultCategoryOrder);
-        setHh({ exists: true, order: order.length ? upgradeOrder(order, isLegacyOrder(order)) : ALL_DEPTS });
+        setHh({ exists: true, order: order.length ? upgradeOrder(order, isLegacyOrder(order)) : ALL_DEPTS, towns: toTowns(snap.data()?.towns) });
       } else if (!snap.metadata.fromCache && !seeded.current) {
         // The server confirms there's no household yet → first login ever: set everything up.
         seeded.current = true;
@@ -142,7 +154,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         m[d.id] = {
           uid: d.id, listId: x.listId || '', storeId: x.storeId || '', position: typeof x.position === 'number' ? x.position : 0,
           doneStoreIds: strArr(x.doneStoreIds), stopIndex: x.stopIndex || 0, stopCount: x.stopCount || 0,
-          startedAtMs: ms(x.startedAt, Date.now()), updatedAtMs: ms(x.updatedAt, Date.now()), spontaneous: !!x.spontaneous,
+          startedAtMs: ms(x.startedAt, Date.now()), updatedAtMs: ms(x.updatedAt, Date.now()), spontaneous: !!x.spontaneous, town: str(x.town),
         };
       });
       setSessions(m);
@@ -185,6 +197,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     ready: !!hh && lists.length > 0,
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
+    towns: hh?.towns || [],
     stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
     avatars: { ...otherAvatars, [user.uid]: myAvatar },
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),

@@ -5,15 +5,15 @@ import { useTrip } from '../app/useTrip';
 import { endLocalSession, enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
-  CHECK_AFTER, UNKNOWN, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
+  CHECK_AFTER, UNKNOWN, agoText, ageDays, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
 import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet, useHeaderHeight } from '../ui/kit';
 
 export function useCurrentStop(stopId: string): Stop {
   const app = useApp();
-  const { route } = useTrip();
-  return stopById(stopId, app.data.stores, app.items) || route[0] || (app.mainStore ? storeToStop(app.mainStore) : { id: stopId, name: '–', branch: '', logo: null, categoryOrder: null, custom: true });
+  const { route, townStores } = useTrip();
+  return stopById(stopId, townStores, app.items) || route[0] || (app.mainStore ? storeToStop(app.mainStore) : { id: stopId, name: '–', branch: '', logo: null, categoryOrder: null, custom: true });
 }
 
 /** The route glyph used on the "Filiale einrichten" cards */
@@ -40,20 +40,20 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
   const { list, navigate, toast, data, user, other } = app;
-  const { route, itemsAt, doneOf, goStore, finish, storeIds } = useTrip();
+  const { route, itemsAt, doneOf, goStore, finish, stopOf, townStores } = useTrip();
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headRef, headH] = useHeaderHeight();
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
   const routeStop = useCurrentStop(stopId);
   // A spontaneous trip is always at exactly this store (no fallback to another stop of the route)
-  const spStore = spontaneous ? data.stores.find(s => s.id === stopId) || null : null;
+  const spStore = spontaneous ? townStores.find(s => s.id === stopId) || null : null;
   const cur: Stop = spontaneous ? (spStore ? storeToStop(spStore) : { id: stopId, name: '', branch: '', logo: null, categoryOrder: null, custom: true }) : routeStop;
-  const store = cur.custom ? null : data.stores.find(s => s.id === cur.id) || null;
+  const store = cur.custom ? null : townStores.find(s => s.id === cur.id) || null;
   const waiting = spontaneous && !spStore;
 
   const curIdx = route.findIndex(s => s.id === cur.id);
-  const atThisStop = (i: Item) => (spontaneous ? forSpontaneous(i) : onTrip(i) && effStore(i, list, storeIds) === cur.id);
+  const atThisStop = (i: Item) => (spontaneous ? forSpontaneous(i) : onTrip(i) && stopOf(i) === cur.id);
   const curItems = spontaneous ? app.items.filter(atThisStop) : itemsAt(cur.id);
 
   // A spontaneous trip needs a real store. A store created a moment ago may still be on its way; one that's gone → back to the plan.
@@ -73,12 +73,12 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     if (waiting || !data.sessionsReady || (session && session.storeId === cur.id)) return;
     const doneStops = spontaneous ? [] : route.filter(s => s.id !== cur.id && doneOf(s)).map(s => s.id);
     const r = spontaneous
-      ? enterStore(list.id, cur.id, 1, 1, data.sessions[user.uid], doneStops, orderKey, true)
-      : enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid], doneStops, orderKey);
+      ? enterStore(list.id, cur.id, 1, 1, data.sessions[user.uid], doneStops, orderKey, app.town, true)
+      : enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid], doneStops, orderKey, app.town);
     // A new trip: items held back for "next time" on an earlier, unfinished trip are back on
     if (r.newTrip) app.items.filter(i => i.nextTrip && i.createdAtMs < r.session.startedAtMs).forEach(i => actions.updateItem(i, { nextTrip: false }));
     setSession(r.session);
-  }, [data.sessionsReady, cur.id, waiting]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data.sessionsReady, cur.id, waiting, app.town]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Added by someone else during this trip → "new" (tag + border, maybe a banner)
   const lateFromOther = (i: Item) => !!session && !!i.createdBy && i.createdBy !== user.uid && i.createdAtMs > session.startedAtMs;
@@ -265,7 +265,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { actions.confirmStoreOrder(store.id); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); }} style={{ flex: 1, height: 44, borderRadius: 14, border: '2px solid #F3752E', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Passt noch</button>
+              <button onClick={() => { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); }} style={{ flex: 1, height: 44, borderRadius: 14, border: '2px solid #F3752E', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Passt noch</button>
               <button onClick={goRefine} style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', background: '#F3752E', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Anpassen</button>
             </div>
           </div>

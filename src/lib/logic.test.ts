@@ -6,7 +6,7 @@ import {
 import type { Item, List, Store } from './types';
 import { FORM_AISLES, seedCategoryOrder } from '../config/household';
 
-const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), branch: '', logo: null, categoryOrder: null, orderSetAtMs: null, orderCheckedAtMs: null, orderSetBy: null, createdAtMs: i });
+const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), branch: '', logo: null, categoryOrder: null, orderSetAtMs: null, orderCheckedAtMs: null, orderSetBy: null, createdAtMs: i, town: null, branches: {}, branchTown: null });
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
@@ -275,4 +275,63 @@ describe('storeOrderInfo', () => {
   it('no path → setup offer', () => { expect(storeOrderInfo(base)).toEqual({ isSet: false, checkedAtMs: null }); });
   it('path from the tester form → set up since creation', () => { expect(storeOrderInfo({ ...base, categoryOrder: ['Backwaren'] })).toEqual({ isSet: true, checkedAtMs: 1000 }); });
   it('saved in the app → its own dates', () => { expect(storeOrderInfo({ ...base, categoryOrder: ['Backwaren'], orderSetAtMs: 5000, orderCheckedAtMs: 7000 })).toEqual({ isSet: true, checkedAtMs: 7000 }); });
+});
+
+// ---------- V1.4 Towns ----------
+import { mainInTown, storesInTown, townsOf, tripPlan } from './logic';
+import type { Town } from './types';
+
+describe('towns', () => {
+  const towns: Town[] = [{ id: 'prien', name: 'Prien' }, { id: 'frasdorf', name: 'Frasdorf' }];
+  const mk = (id: string, i: number, p: Partial<Store> = {}): Store => ({ ...store(id, i), ...p });
+  const fr = { address: 'Hauptstr. 1, Frasdorf', categoryOrder: ['Getränke', 'Milchprodukte'], orderSetAtMs: 5, orderCheckedAtMs: 5, orderSetBy: 'u' };
+  const stores = [
+    mk('netto', 0, { branch: 'Prien', categoryOrder: ['Obst & Gemüse'], branches: { frasdorf: fr } }),
+    mk('edeka', 1), mk('dm', 2),
+    mk('baecker', 3, { town: 'frasdorf', branch: 'Bäcker Frasdorf' }),
+  ];
+  const l = list({ storeIds: ['netto', 'edeka', 'dm', 'baecker'], mainStoreId: 'netto', storeOrder: ['edeka', 'dm', 'baecker'] });
+  const its = [item({ name: 'Milch', storeId: null }), item({ name: 'Brot', storeId: 'edeka' }), item({ name: 'Shampoo', storeId: 'dm' }), item({ name: 'Semmel', storeId: 'baecker' })];
+
+  it('without a second town nothing changes', () => {
+    expect(storesInTown(stores, [towns[0]], 'prien')).toBe(stores);
+    expect(storesInTown(stores, [], null)).toBe(stores);
+  });
+  it('each town sees its own branches', () => {
+    expect(storesInTown(stores, towns, 'prien').map(s => s.id)).toEqual(['netto', 'edeka', 'dm']);
+    const f = storesInTown(stores, towns, 'frasdorf');
+    expect(f.map(s => s.id)).toEqual(['netto', 'baecker']);
+    expect(f[0]).toMatchObject({ branch: 'Hauptstr. 1, Frasdorf', categoryOrder: ['Getränke', 'Milchprodukte'], branchTown: 'frasdorf' });
+    expect(f[1]).toMatchObject({ branch: 'Bäcker Frasdorf', branchTown: null });
+  });
+  it('townsOf lists where a store has branches', () => {
+    expect(townsOf(stores[0], towns).map(t => t.id)).toEqual(['prien', 'frasdorf']);
+    expect(townsOf(stores[1], towns).map(t => t.id)).toEqual(['prien']);
+    expect(townsOf(stores[3], towns).map(t => t.id)).toEqual(['frasdorf']);
+  });
+  it('trip in Prien: the bakery items wait', () => {
+    const t = tripPlan(its, l, stores, storesInTown(stores, towns, 'prien'));
+    expect(t.route.map(s => s.id)).toEqual(['netto', 'edeka', 'dm']);
+    expect(t.unavailable.map(i => i.name)).toEqual(['Semmel']);
+  });
+  it('trip in Frasdorf: Netto there, Edeka and DM items wait', () => {
+    const t = tripPlan(its, l, stores, storesInTown(stores, towns, 'frasdorf'));
+    expect(t.route.map(s => s.id)).toEqual(['netto', 'baecker']);
+    expect(t.route[0].categoryOrder).toEqual(['Getränke', 'Milchprodukte']);
+    expect(t.unavailable.map(i => i.name).sort()).toEqual(['Brot', 'Shampoo']);
+    expect(t.stopOf(its[0])).toBe('netto');
+  });
+  it('no Hauptladen in town → the first store of the usual order there takes its items', () => {
+    const noNettoThere = stores.map(s => (s.id === 'netto' ? { ...s, branches: {} } : s));
+    const ts = storesInTown(noNettoThere, towns, 'frasdorf');
+    expect(mainInTown(l, ts)).toBe('baecker');
+    const t = tripPlan(its, l, noNettoThere, ts);
+    expect(t.route.map(s => s.id)).toEqual(['baecker']);
+    expect(t.stopOf(its[0])).toBe('baecker'); // Milch (Hauptladen) → bakery's the main store here
+  });
+  it('one-time free-text stops exist everywhere', () => {
+    const once = item({ name: 'Aspirin', once: true, onceStopName: 'Apotheke' });
+    const t = tripPlan([once], l, stores, storesInTown(stores, towns, 'frasdorf'));
+    expect(t.route.map(s => s.id)).toEqual(['once:apotheke']);
+  });
 });

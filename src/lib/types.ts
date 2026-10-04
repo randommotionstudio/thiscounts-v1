@@ -11,6 +11,30 @@ export interface Store {
   orderCheckedAtMs: number | null;
   orderSetBy: string | null;
   createdAtMs: number;
+  /** V1.4: town of the store's own branch (the fields above); null = the household's home town */
+  town: string | null;
+  /** V1.4: branches in other towns, by town id */
+  branches: Record<string, Branch>;
+  /**
+   * V1.4: only on a store as seen in one town (storesInTown): which branch the fields above are.
+   * null = the store's own branch; a town id = that entry of `branches`.
+   */
+  branchTown: string | null;
+}
+
+/** V1.4: the same store in another town – its own address and its own path through the store */
+export interface Branch {
+  address: string;
+  categoryOrder: string[] | null;
+  orderSetAtMs: number | null;
+  orderCheckedAtMs: number | null;
+  orderSetBy: string | null;
+}
+
+/** V1.4: a town the household shops in. The first one is the home town. */
+export interface Town {
+  id: string;
+  name: string;
 }
 
 export interface List {
@@ -67,6 +91,8 @@ export interface Session {
   updatedAtMs: number;
   /** "Woanders einkaufen": shopping the whole list at one store that isn't a stop of the route */
   spontaneous: boolean;
+  /** V1.4: town of the trip (null without towns) */
+  town: string | null;
 }
 
 export interface MemoryEntry {

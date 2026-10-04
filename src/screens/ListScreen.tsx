@@ -217,7 +217,7 @@ export function ListScreen() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{other.name} kauft gerade ein</div>
               <div className="ellipsis" style={{ fontSize: 12, color: '#C9B8A6' }}>
-                {shopper.spontaneous ? shopperAt.name + ' · spontan, mit der ganzen Liste' : shopperAt.name + ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : '')}
+                {(app.towns.length >= 2 && shopper.town ? shopperAt.name + ' ' + (app.towns.find(t => t.id === shopper.town)?.name || '') : shopperAt.name) + (shopper.spontaneous ? ' · spontan, mit der ganzen Liste' : ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : ''))}
               </div>
             </div>
             <LogoTile store={shopperAt} size={32} radius={9} initialSize={14} bordered={false} />
