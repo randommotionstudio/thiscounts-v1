@@ -142,7 +142,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         m[d.id] = {
           uid: d.id, listId: x.listId || '', storeId: x.storeId || '', position: typeof x.position === 'number' ? x.position : 0,
           doneStoreIds: strArr(x.doneStoreIds), stopIndex: x.stopIndex || 0, stopCount: x.stopCount || 0,
-          startedAtMs: ms(x.startedAt, Date.now()), updatedAtMs: ms(x.updatedAt, Date.now()),
+          startedAtMs: ms(x.startedAt, Date.now()), updatedAtMs: ms(x.updatedAt, Date.now()), spontaneous: !!x.spontaneous,
         };
       });
       setSessions(m);

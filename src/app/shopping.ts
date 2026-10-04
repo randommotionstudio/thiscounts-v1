@@ -18,14 +18,14 @@ export const isLive = (s: Session | undefined | null) => !!s && fresh(s.updatedA
  */
 export function enterStore(
   listId: string, storeId: string, stopIndex: number, stopCount: number,
-  existing: Session | undefined, doneStops: string[], orderKey: string,
+  existing: Session | undefined, doneStops: string[], orderKey: string, spontaneous = false,
 ) {
   const base = local && local.listId === listId && fresh(local.touchedAt)
     ? local
     : existing && existing.listId === listId && fresh(existing.updatedAtMs) ? { ...existing, orderKey: '' } : null;
   const keepPos = !!base && base.storeId === storeId && base.orderKey === orderKey;
   local = {
-    listId, storeId, stopIndex, stopCount, orderKey,
+    listId, storeId, stopIndex, stopCount, orderKey, spontaneous,
     position: keepPos ? base!.position : 0,
     doneStoreIds: [...new Set([...(base ? base.doneStoreIds : []), ...doneStops])].filter(id => id !== storeId),
     startedAtMs: base ? base.startedAtMs : Date.now(),

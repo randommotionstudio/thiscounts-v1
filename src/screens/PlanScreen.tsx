@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../app/AppContext';
+import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
 import * as actions from '../data/actions';
 import { moveInOrder, onTrip, tint } from '../lib/logic';
 import type { Stop } from '../lib/types';
-import { ConnPill, LogoTile, TabBar, UpDown, useHeaderHeight } from '../ui/kit';
+import { StoreSheet } from '../sheets/StoreSheet';
+import { ConnPill, LogoTile, Sheet, TabBar, UpDown, useHeaderHeight } from '../ui/kit';
 
 const ACC = '#F3752E', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 
@@ -25,6 +27,13 @@ export function PlanScreen() {
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [headRef, headH] = useHeaderHeight();
+  const [elsewhere, setElsewhere] = useState<'pick' | 'new' | null>(null);
+
+  // "Woanders einkaufen": the whole list at any store, nothing gets reassigned
+  const openItems = items.filter(i => !i.checked && !i.pendingDecision && !i.nextTrip).length;
+  const startSpontaneous = (storeId: string) => { setElsewhere(null); app.setCurrentStop('spontan:' + storeId); navigate(paths.spontan(storeId)); };
+  const spontaneousId = app.currentStop && app.currentStop.startsWith('spontan:') ? app.currentStop.slice(8) : null;
+  const spontaneousStore = spontaneousId ? app.data.stores.find(s => s.id === spontaneousId) || null : null;
 
   const plannedN = route.filter(s => !s.custom).length;
   const sortMin = route[0] && route[0].id === list.mainStoreId ? 1 : 0;
@@ -154,17 +163,51 @@ export function PlanScreen() {
           )}
           {manual.map(([s, i]) => card(s, i))}
         </div>
+        {openItems > 0 && app.data.stores.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+            <button onClick={() => setElsewhere('pick')} style={{ border: 'none', background: 'none', padding: '12px 8px', minHeight: 44, fontSize: 14, color: '#6F6055', cursor: 'pointer' }}>
+              <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: '#C9B8A6' }}>Woanders einkaufen …</span>
+            </button>
+          </div>
+        )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         {route.length > 0 && (
           <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
-            <button className="cta" onClick={() => (nextStore ? goStore(nextStore.id) : finish())}>
-              {!nextStore ? 'Einkauf abschließen' : app.currentStop ? 'Weiter einkaufen bei ' + nextStore.name : 'Einkauf starten bei ' + nextStore.name}
-            </button>
+            {spontaneousStore ? (
+              <button className="cta" onClick={() => navigate(paths.spontan(spontaneousStore.id))}>Weiter einkaufen bei {spontaneousStore.name}</button>
+            ) : (
+              <button className="cta" onClick={() => (nextStore ? goStore(nextStore.id) : finish())}>
+                {!nextStore ? 'Einkauf abschließen' : app.currentStop ? 'Weiter einkaufen bei ' + nextStore.name : 'Einkauf starten bei ' + nextStore.name}
+              </button>
+            )}
           </div>
         )}
         <TabBar active="plan" go={navigate} />
       </div>
+      {elsewhere === 'pick' && (
+        <Sheet title="Woanders einkaufen" sub="Du siehst deine ganze Liste in diesem Laden. Was du nicht abhakst, bleibt bei seinem Laden." onClose={() => setElsewhere(null)} scrollBody>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+            {app.data.stores.map(s => (
+              <button key={s.id} onClick={() => startSpontaneous(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '10px 12px', minHeight: 60, border: '2px solid #EADCCD', borderRadius: 16, background: '#fff', color: INK, cursor: 'pointer' }}>
+                <LogoTile store={s} size={36} radius={10} initialSize={15} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
+                  <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{s.branch || 'Eigener Laden'}</div>
+                </div>
+                <span style={{ color: '#8A7A6D', fontSize: 20 }}>›</span>
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setElsewhere('new')} style={{ marginTop: 10, border: 'none', background: 'none', padding: '12px 8px', minHeight: 44, fontSize: 14, color: '#6F6055', cursor: 'pointer', alignSelf: 'center' }}>
+            <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, textDecorationColor: '#C9B8A6' }}>Laden fehlt? Neu anlegen</span>
+          </button>
+        </Sheet>
+      )}
+      {elsewhere === 'new' && (
+        <StoreSheet initial={{ mode: 'new', name: '', branch: '', logo: null }} onClose={() => setElsewhere('pick')}
+          onSave={v => { const id = actions.createStore(v); toast('„' + v.name + '“ gespeichert'); startSpontaneous(id); }} />
+      )}
     </div>
   );
 }

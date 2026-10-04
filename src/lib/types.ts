@@ -65,6 +65,8 @@ export interface Session {
   stopCount: number;
   startedAtMs: number;
   updatedAtMs: number;
+  /** "Woanders einkaufen": shopping the whole list at one store that isn't a stop of the route */
+  spontaneous: boolean;
 }
 
 export interface MemoryEntry {

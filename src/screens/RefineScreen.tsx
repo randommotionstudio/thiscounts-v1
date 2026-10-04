@@ -54,7 +54,8 @@ export function RefineScreen({ stopId }: { stopId: string }) {
   const app = useApp();
   const { data, toast, other } = app;
   const store = data.stores.find(s => s.id === stopId) || null;
-  const storePath = paths.store(stopId);
+  // Opened from a spontaneous trip → back there, not into normal store mode
+  const storePath = history.state && history.state.prev === paths.spontan(stopId) ? paths.spontan(stopId) : paths.store(stopId);
   const [headRef, headH] = useHeaderHeight();
 
   const orderInfo = store ? storeOrderInfo(store) : null;

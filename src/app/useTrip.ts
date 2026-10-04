@@ -17,13 +17,13 @@ export function useTrip() {
     const doneOf = (s: Stop) => itemsAt(s.id).every(i => i.checked);
     const nextStore = route.find(s => !doneOf(s)) || null;
     const goStore = (id: string) => { app.setCurrentStop(id); app.navigate(paths.store(id)); };
-    const finish = () => {
+    const finish = (message?: (done: number) => string) => {
       const done = items.filter(i => i.checked).length;
       actions.finishShopping(list, items);
       endLocalSession();
       app.setCurrentStop(null);
       app.navigate(paths.list, true);
-      app.toast('Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
+      app.toast(message ? message(done) : 'Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
     return { route, itemsAt, doneOf, nextStore, goStore, finish, storeIds };
   }, [app, list, items, data.stores]);

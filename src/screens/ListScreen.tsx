@@ -81,7 +81,7 @@ export function ListScreen() {
   const createItem = (data0: { name: string; qty: string | null; category: string; storeId: string | null }): string => {
     const probe = { ...data0, id: '', listId: list.id, once: false, onceStopName: null, parked: false, checked: false, checkedBy: null, createdBy: null, createdAtMs: 0, pendingDecision: false, nextTrip: false };
     const target = effStore(probe, list, storeIdSet);
-    if (shopper && shopperAt && target && shopper.doneStoreIds.includes(target) && target !== shopper.storeId) {
+    if (shopper && shopperAt && !shopper.spontaneous && target && shopper.doneStoreIds.includes(target) && target !== shopper.storeId) {
       const from = stopById(target, data.stores, items);
       if (from) {
         const id = actions.addItem(list.id, { ...data0, pendingDecision: true });
@@ -217,7 +217,7 @@ export function ListScreen() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{other.name} kauft gerade ein</div>
               <div className="ellipsis" style={{ fontSize: 12, color: '#C9B8A6' }}>
-                {shopperAt.name + ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : '')}
+                {shopper.spontaneous ? shopperAt.name + ' · spontan, mit der ganzen Liste' : shopperAt.name + ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : '')}
               </div>
             </div>
             <LogoTile store={shopperAt} size={32} radius={9} initialSize={14} bordered={false} />

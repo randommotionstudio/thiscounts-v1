@@ -83,6 +83,7 @@ function Screens() {
     case 'plan': screen = <PlanScreen />; break;
     case 'profile': screen = <Profile />; break;
     case 'store': screen = <StoreScreen key={r.stopId} stopId={r.stopId} />; break;
+    case 'spontan': screen = <StoreScreen key={'spontan:' + r.storeId} stopId={r.storeId} spontaneous />; break;
     case 'missing': screen = <MissingScreen key={r.itemId} stopId={r.stopId} itemId={r.itemId} />; break;
     case 'refine': screen = <RefineScreen key={r.stopId} stopId={r.stopId} />; break;
     case 'listNew': case 'listEdit': screen = app.draft ? <ListSettings /> : null; break;

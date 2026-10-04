@@ -117,7 +117,7 @@ export function finishShopping(list: List, items: Item[]) {
 
 export interface SessionData {
   listId: string; storeId: string; position: number; doneStoreIds: string[];
-  stopIndex: number; stopCount: number; startedAtMs: number;
+  stopIndex: number; stopCount: number; startedAtMs: number; spontaneous: boolean;
 }
 
 /** Create or overwrite my session (entering store mode, switching stops) */

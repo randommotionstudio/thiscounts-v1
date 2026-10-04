@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
-import { enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
+import { endLocalSession, enterStore, markStoreDone, notifiedItems, reportProgress, seenSet } from '../app/shopping';
 import * as actions from '../data/actions';
 import {
-  CHECK_AFTER, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
+  CHECK_AFTER, UNKNOWN, agoText, ageDays, effStore, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
 import { Avatar, CatIcon, ConnPill, LogoTile, RoundCheck, Sheet, useHeaderHeight } from '../ui/kit';
@@ -29,8 +29,15 @@ export function RouteGlyph() {
   );
 }
 
-/** Im-Laden-Modus: items grouped by the store's fixed path, with check-off and progress. */
-export function StoreScreen({ stopId }: { stopId: string }) {
+/** Open items on the list that a spontaneous trip offers: everything except what waits for a Rückfrage or the next trip */
+const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
+
+/**
+ * Im-Laden-Modus: items grouped by the store's fixed path, with check-off and progress.
+ * `spontaneous` ("Woanders einkaufen"): the whole list at this store. Nothing is reassigned – what isn't
+ * checked off simply stays with its usual store.
+ */
+export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
   const { list, navigate, toast, data, user, other } = app;
   const { route, itemsAt, doneOf, goStore, finish, storeIds } = useTrip();
@@ -38,11 +45,23 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const [leaving, setLeaving] = useState(false);
   const [headRef, headH] = useHeaderHeight();
   const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
-  const cur = useCurrentStop(stopId);
+  const routeStop = useCurrentStop(stopId);
+  // A spontaneous trip is always at exactly this store (no fallback to another stop of the route)
+  const spStore = spontaneous ? data.stores.find(s => s.id === stopId) || null : null;
+  const cur: Stop = spontaneous ? (spStore ? storeToStop(spStore) : { id: stopId, name: '', branch: '', logo: null, categoryOrder: null, custom: true }) : routeStop;
   const store = cur.custom ? null : data.stores.find(s => s.id === cur.id) || null;
+  const waiting = spontaneous && !spStore;
 
   const curIdx = route.findIndex(s => s.id === cur.id);
-  const curItems = itemsAt(cur.id);
+  const atThisStop = (i: Item) => (spontaneous ? forSpontaneous(i) : onTrip(i) && effStore(i, list, storeIds) === cur.id);
+  const curItems = spontaneous ? app.items.filter(atThisStop) : itemsAt(cur.id);
+
+  // A spontaneous trip needs a real store. A store created a moment ago may still be on its way; one that's gone → back to the plan.
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setTimeout(() => navigate(paths.plan, true), 2000);
+    return () => clearTimeout(t);
+  }, [waiting]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const order = cur.categoryOrder || data.defaultCategoryOrder;
   const orderKey = order.join('|');
@@ -51,13 +70,15 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   // Waits for the sessions snapshot, so a reload mid-trip continues the trip instead of starting a new one.
   const [session, setSession] = useState<ReturnType<typeof enterStore>['session'] | null>(null);
   useEffect(() => {
-    if (!data.sessionsReady || (session && session.storeId === cur.id)) return;
-    const doneStops = route.filter(s => s.id !== cur.id && doneOf(s)).map(s => s.id);
-    const r = enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid], doneStops, orderKey);
+    if (waiting || !data.sessionsReady || (session && session.storeId === cur.id)) return;
+    const doneStops = spontaneous ? [] : route.filter(s => s.id !== cur.id && doneOf(s)).map(s => s.id);
+    const r = spontaneous
+      ? enterStore(list.id, cur.id, 1, 1, data.sessions[user.uid], doneStops, orderKey, true)
+      : enterStore(list.id, cur.id, Math.max(curIdx, 0) + 1, route.length, data.sessions[user.uid], doneStops, orderKey);
     // A new trip: items held back for "next time" on an earlier, unfinished trip are back on
     if (r.newTrip) app.items.filter(i => i.nextTrip && i.createdAtMs < r.session.startedAtMs).forEach(i => actions.updateItem(i, { nextTrip: false }));
     setSession(r.session);
-  }, [data.sessionsReady, cur.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data.sessionsReady, cur.id, waiting]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Added by someone else during this trip → "new" (tag + border, maybe a banner)
   const lateFromOther = (i: Item) => !!session && !!i.createdBy && i.createdBy !== user.uid && i.createdAtMs > session.startedAtMs;
@@ -70,10 +91,9 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   // An item counts once it is on the trip *at this stop* — e.g. also after a Rückfrage answered with "mitnehmen".
   useEffect(() => {
     if (!session) return;
-    const here = (i: Item) => onTrip(i) && effStore(i, list, storeIds) === cur.id;
-    const seen = seenSet(session.startedAtMs, cur.id, () => app.items.filter(here).map(i => i.id));
+    const seen = seenSet(session.startedAtMs, (spontaneous ? 'spontan:' : '') + cur.id, () => app.items.filter(atThisStop).map(i => i.id));
     for (const i of app.items) {
-      if (!here(i) || seen.has(i.id)) continue;
+      if (!atThisStop(i) || seen.has(i.id)) continue;
       seen.add(i.id);
       if (notifiedItems.has(i.id) || !lateFromOther(i) || i.checked || !pi.passed(i.category)) continue;
       notifiedItems.add(i.id);
@@ -81,7 +101,12 @@ export function StoreScreen({ stopId }: { stopId: string }) {
     }
   }, [app.items, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const groups = storeGroups(curItems, order);
+  // Spontaneous trip at a store with a set-up path: departments that aren't on its path collect at the bottom
+  const orderInfo = store ? storeOrderInfo(store) : null;
+  const pathKnown = spontaneous && !!orderInfo && orderInfo.isSet;
+  const maybeNotHere = (d: string) => pathKnown && !order.includes(d) && d !== UNKNOWN && d !== 'Sonstiges';
+  const groups = storeGroups(curItems.filter(i => !maybeNotHere(i.category)), order);
+  const notHereGroups = storeGroups(curItems.filter(i => maybeNotHere(i.category)), order);
   const doneCount = curItems.filter(i => i.checked).length;
   const allDone = curItems.length > 0 && doneCount === curItems.length;
   const openAfter = route.slice(curIdx + 1).find(s => !doneOf(s));
@@ -92,6 +117,12 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   const nextLabel = nextStop
     ? (nextIsBack ? 'Zurück zu ' : 'Weiter zu ') + nextStop.name + (nextIsBack ? ' (' + openAtNext + ' offen)' : allDone ? '' : ' (' + openHere + ' hier offen)')
     : allDone ? 'Einkauf abschließen' : 'Einkauf abschließen (' + openHere + ' offen)';
+
+  // Spontaneous trip: finishing ends the whole trip; everything unchecked keeps its usual store
+  const finishSpontaneous = () => {
+    if (!doneCount) { actions.endSession(); endLocalSession(); app.setCurrentStop(null); navigate(paths.plan, true); return; }
+    finish(done => 'Einkauf bei ' + cur.name + ' abgeschlossen · ' + done + ' erledigt' + (openHere ? ' · ' + openHere + ' bleiben auf der Liste' : ''));
+  };
 
   const goNext = () => {
     // Items left unchecked here: ask what should happen to them (also at the last stop, for consistency)
@@ -132,17 +163,53 @@ export function StoreScreen({ stopId }: { stopId: string }) {
   };
 
   // ---- V1.1 Filiale einrichten: which entry to show ----
-  const orderInfo = store ? storeOrderInfo(store) : null;
   const age = orderInfo ? ageDays(orderInfo.checkedAtMs, Date.now()) : null;
   const refineState = !orderInfo ? null : !orderInfo.isSet ? 'offer' : age != null && age >= CHECK_AFTER ? 'check' : 'cooldown';
   const goRefine = () => navigate(paths.refine(cur.id));
+
+  const renderGroup = (g: ReturnType<typeof storeGroups<Item>>[number], n: number) => (
+    <div key={g.dept}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ width: 22, height: 22, borderRadius: '50%', background: tint(g.dept), color: '#2A1F17', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n + 1}</span>
+        <CatIcon src={icon(g.dept)} size={16} opacity={0.7} label={g.label} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#6F6055', textTransform: 'uppercase', letterSpacing: '.05em' }}>{g.label}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {g.items.map(i => {
+          const isNew = lateFromOther(i) && !i.checked;
+          const passed = isNew && pi.passed(i.category);
+          return (
+            <div key={i.id} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', border: `2px solid ${isNew ? '#F3752E' : '#fff'}`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 8px 8px 12px', minHeight: 60 }}>
+              <div onClick={() => actions.setChecked(i, !i.checked)} role="checkbox" aria-checked={i.checked} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minWidth: 0, alignSelf: 'stretch' }}>
+                <RoundCheck on={i.checked} size={28} color="#3E9B5F" />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 17, color: i.checked ? '#8A7A6D' : '#2A1F17', textDecoration: i.checked ? 'line-through' : 'none', overflowWrap: 'break-word', hyphens: 'auto' }}>{i.name}</div>
+                  {i.qty && <div style={{ fontSize: 12, color: '#8A7A6D' }}>{i.qty}</div>}
+                  {isNew && (
+                    <div style={{ display: 'flex', marginTop: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '3px 9px', background: passed ? '#F3752E' : '#FDE4D1', color: passed ? '#2A1F17' : '#9C4412', whiteSpace: 'nowrap', animation: 'pop .25s ease' }}>
+                        {passed ? 'Neu · schon vorbei' : 'Neu von ' + other.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {!spontaneous && <button onClick={e => { e.stopPropagation(); navigate(paths.missing(cur.id, i.id)); }} style={{ height: 40, padding: '0 12px', border: 'none', borderRadius: 12, background: '#F3EADF', color: '#6F6055', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Nicht gefunden</button>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  if (waiting) return null;
 
   return (
     <div className="screen">
       <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>Stopp {Math.max(curIdx, 0) + 1} von {route.length}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>{spontaneous ? 'Spontaner Einkauf' : 'Stopp ' + (Math.max(curIdx, 0) + 1) + ' von ' + route.length}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
           <LogoTile store={cur} size={44} radius={12} initialSize={18} bordered={false} />
@@ -160,44 +227,26 @@ export function StoreScreen({ stopId }: { stopId: string }) {
         {app.conn !== 'online' && <div style={{ display: 'flex', marginTop: 10 }}><ConnPill conn={app.conn} dark /></div>}
       </div>
       <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
-        <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12 }}>Sortiert nach dem Weg durch diese Filiale</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {groups.map((g, n) => (
-            <div key={g.dept}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ width: 22, height: 22, borderRadius: '50%', background: tint(g.dept), color: '#2A1F17', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n + 1}</span>
-                <CatIcon src={icon(g.dept)} size={16} opacity={0.7} label={g.label} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#6F6055', textTransform: 'uppercase', letterSpacing: '.05em' }}>{g.label}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {g.items.map(i => {
-                  const isNew = lateFromOther(i) && !i.checked;
-                  const passed = isNew && pi.passed(i.category);
-                  return (
-                    <div key={i.id} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', border: `2px solid ${isNew ? '#F3752E' : '#fff'}`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 8px 8px 12px', minHeight: 60 }}>
-                      <div onClick={() => actions.setChecked(i, !i.checked)} role="checkbox" aria-checked={i.checked} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minWidth: 0, alignSelf: 'stretch' }}>
-                        <RoundCheck on={i.checked} size={28} color="#3E9B5F" />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 17, color: i.checked ? '#8A7A6D' : '#2A1F17', textDecoration: i.checked ? 'line-through' : 'none', overflowWrap: 'break-word', hyphens: 'auto' }}>{i.name}</div>
-                          {i.qty && <div style={{ fontSize: 12, color: '#8A7A6D' }}>{i.qty}</div>}
-                          {isNew && (
-                            <div style={{ display: 'flex', marginTop: 4 }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '3px 9px', background: passed ? '#F3752E' : '#FDE4D1', color: passed ? '#2A1F17' : '#9C4412', whiteSpace: 'nowrap', animation: 'pop .25s ease' }}>
-                                {passed ? 'Neu · schon vorbei' : 'Neu von ' + other.name}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <button onClick={e => { e.stopPropagation(); navigate(paths.missing(cur.id, i.id)); }} style={{ height: 40, padding: '0 12px', border: 'none', borderRadius: 12, background: '#F3EADF', color: '#6F6055', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Nicht gefunden</button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12, textWrap: 'pretty' }}>
+          {spontaneous ? 'Deine ganze Liste, sortiert nach dem Weg durch diese Filiale. Was du hier nicht abhakst, bleibt bei seinem Laden.' : 'Sortiert nach dem Weg durch diese Filiale'}
         </div>
-        {!curItems.length && <div style={{ textAlign: 'center', color: '#8A7A6D', padding: '30px 0' }}>Hier ist nichts mehr zu holen.</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {groups.map((g, n) => renderGroup(g, n))}
+        </div>
+        {notHereGroups.length > 0 && (
+          <div style={{ marginTop: 26 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 4px 4px' }}>
+              <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D' }}>Gibt's hier vermutlich nicht</span>
+              <span style={{ flex: 1, height: 1, background: '#E3D5C6', display: 'block' }} />
+            </div>
+            <div style={{ fontSize: 12, color: '#8A7A6D', textAlign: 'center', margin: '0 8px 14px' }}>Diese Abteilungen sind nicht auf eurem Weg durch {cur.name}.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: 0.75 }}>
+              {notHereGroups.map((g, n) => renderGroup(g, groups.length + n))}
+            </div>
+          </div>
+        )}
+        {!curItems.length && <div style={{ textAlign: 'center', color: '#8A7A6D', padding: '30px 0' }}>{spontaneous ? 'Deine Liste ist leer.' : 'Hier ist nichts mehr zu holen.'}</div>}
 
         {refineState === 'cooldown' && (
           <div style={{ marginTop: 22, display: 'flex', justifyContent: 'center' }}>
@@ -253,6 +302,11 @@ export function StoreScreen({ stopId }: { stopId: string }) {
             <button onClick={() => navigate(paths.plan)} style={{ textAlign: 'left', height: 48, padding: '0 16px', border: 'none', borderTop: '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: '#2A1F17', cursor: 'pointer' }}>Zum Plan</button>
           </div>
         )}
+        {spontaneous ? (
+          <button onClick={finishSpontaneous} className="ellipsis" style={{ width: '100%', height: 56, borderRadius: 999, border: '1px solid rgba(255,255,255,.55)', background: doneCount ? '#F3752E' : '#F3EADF', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 28px rgba(42,31,23,.18), inset 0 1px 0 rgba(255,255,255,.55)', padding: '0 16px' }}>
+            {doneCount ? 'Einkauf abschließen' : 'Ohne Einkauf zurück'}
+          </button>
+        ) : (
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={goNext} className="ellipsis" style={{ flex: 1, minWidth: 0, height: 56, borderRadius: 999, border: '1px solid rgba(255,255,255,.55)', background: allDone ? '#F3752E' : '#F3EADF', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 28px rgba(42,31,23,.18), inset 0 1px 0 rgba(255,255,255,.55)', padding: '0 16px' }}>{nextLabel}</button>
           <button onClick={() => setMenu(m => !m)} title="Mehr" style={{ width: 56, height: 56, border: '1px solid rgba(255,255,255,.75)', borderRadius: 999, background: 'rgba(255,253,250,.42)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)', backdropFilter: 'blur(18px) saturate(1.5)', boxShadow: '0 10px 30px rgba(42,31,23,.16), inset 0 1px 0 rgba(255,255,255,.9)', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
@@ -261,6 +315,7 @@ export function StoreScreen({ stopId }: { stopId: string }) {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
           </button>
         </div>
+        )}
       </div>
       {leaving && (
         <Sheet
