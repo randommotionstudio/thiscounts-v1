@@ -10,7 +10,7 @@ const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), b
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
-  tripOrder: null, deferred: [], createdAtMs: 0, ...p,
+  tripOrder: null, townOrder: {}, deferred: [], createdAtMs: 0, ...p,
 });
 let n = 0;
 const item = (p: Partial<Item> = {}): Item => ({
@@ -278,7 +278,7 @@ describe('storeOrderInfo', () => {
 });
 
 // ---------- V1.4 Towns ----------
-import { mainInTown, storesInTown, townsOf, tripPlan } from './logic';
+import { carries, standInFor, storesInTown, townsOf, tripPlan } from './logic';
 import type { Town } from './types';
 
 describe('towns', () => {
@@ -321,17 +321,79 @@ describe('towns', () => {
     expect(t.unavailable.map(i => i.name).sort()).toEqual(['Brot', 'Shampoo']);
     expect(t.stopOf(its[0])).toBe('netto');
   });
-  it('no Hauptladen in town → the first store of the usual order there takes its items', () => {
+  it('no Hauptladen in town → its items wait, unless stand-ins are on', () => {
     const noNettoThere = stores.map(s => (s.id === 'netto' ? { ...s, branches: {} } : s));
     const ts = storesInTown(noNettoThere, towns, 'frasdorf');
-    expect(mainInTown(l, ts)).toBe('baecker');
     const t = tripPlan(its, l, noNettoThere, ts);
     expect(t.route.map(s => s.id)).toEqual(['baecker']);
-    expect(t.stopOf(its[0])).toBe('baecker'); // Milch (Hauptladen) → bakery's the main store here
+    expect(t.unavailable.map(i => i.name).sort()).toEqual(['Brot', 'Milch', 'Shampoo']);
+    const t2 = tripPlan(its, l, noNettoThere, ts, { standIn: true });
+    expect(t2.stopOf(its[0])).toBe('baecker'); // the bakery's path isn't set up → it might have everything
+    expect(t2.unavailable).toEqual([]);
+    expect(t2.temp(its[0])).toEqual({ from: 'netto', maybeNot: false });
+    expect(t2.temp(its[3])).toBeNull(); // Semmeln are at their own store
   });
   it('one-time free-text stops exist everywhere', () => {
     const once = item({ name: 'Aspirin', once: true, onceStopName: 'Apotheke' });
     const t = tripPlan([once], l, stores, storesInTown(stores, towns, 'frasdorf'));
     expect(t.route.map(s => s.id)).toEqual(['once:apotheke']);
+  });
+});
+
+describe('stand-in stores (Bernau: DM, ALDI, Denns)', () => {
+  const towns: Town[] = [{ id: 'prien', name: 'Prien' }, { id: 'bernau', name: 'Bernau' }];
+  const mk = (id: string, i: number, p: Partial<Store> = {}): Store => ({ ...store(id, i), ...p });
+  const set = (order: string[]) => ({ categoryOrder: order, orderSetAtMs: 1, orderCheckedAtMs: 1, orderSetBy: 'u' });
+  const stores = [
+    mk('netto', 0), mk('edeka', 1),
+    mk('dm', 2, { ...set(['Drogerie']), branches: { bernau: { address: 'DM Bernau', ...set(['Drogerie', 'Haushalt']) } } }),
+    mk('aldi', 3, { town: 'bernau', ...set(['Obst & Gemüse', 'Milchprodukte', 'Backwaren']) }),
+    mk('denns', 4, { town: 'bernau', ...set(['Kühltheke', 'Milchprodukte']) }),
+  ];
+  const l = list({ storeIds: ['netto', 'edeka', 'dm', 'aldi', 'denns'], mainStoreId: 'netto', storeOrder: ['edeka', 'dm'] });
+  const its = [
+    item({ name: 'Milch', category: 'Milchprodukte' }), // Hauptladen (Netto)
+    item({ name: 'Brot', category: 'Backwaren', storeId: 'edeka' }),
+    item({ name: 'Tofu', category: 'Kühltheke', storeId: 'edeka' }),
+    item({ name: 'Kaffee', category: 'Kaffee & Tee', storeId: 'edeka' }),
+    item({ name: 'Shampoo', category: 'Drogerie', storeId: 'dm' }),
+  ];
+  const ts = storesInTown(stores, towns, 'bernau');
+  const order = ['aldi', 'denns', 'dm'];
+
+  it('carries(): only a set-up path can say no', () => {
+    expect(carries(ts.find(s => s.id === 'aldi')!, 'Kühltheke')).toBe(false);
+    expect(carries(mk('x', 9), 'Kühltheke')).toBe(true);
+    expect(carries(ts.find(s => s.id === 'aldi')!, 'Sonstiges')).toBe(true);
+  });
+  it('without stand-ins: DM items go to DM Bernau, the rest waits', () => {
+    const t = tripPlan(its, l, stores, ts, { order });
+    expect(t.route.map(s => s.id)).toEqual(['dm']);
+    expect(t.unavailable.map(i => i.name)).toEqual(['Milch', 'Brot', 'Tofu', 'Kaffee']);
+  });
+  it('with stand-ins: by department, in the town order (ALDI first, then Denns)', () => {
+    const t = tripPlan(its, l, stores, ts, { order, standIn: true });
+    const at = (n: string) => t.stopOf(its.find(i => i.name === n)!);
+    expect([at('Milch'), at('Brot'), at('Tofu'), at('Shampoo')]).toEqual(['aldi', 'aldi', 'denns', 'dm']);
+    expect(t.route.map(s => s.id)).toEqual(['aldi', 'denns', 'dm']);
+    expect(t.unavailable).toEqual([]);
+  });
+  it('a department nobody here has → first store, flagged "vermutlich nicht"', () => {
+    const t = tripPlan(its, l, stores, ts, { order, standIn: true });
+    const kaffee = its.find(i => i.name === 'Kaffee')!;
+    expect(t.stopOf(kaffee)).toBe('aldi');
+    expect(t.temp(kaffee)).toEqual({ from: 'edeka', maybeNot: true });
+    expect(standInFor('Kaffee & Tee', [])).toBeNull();
+  });
+  it('the order decides: Denns first → Milch to Denns', () => {
+    const t = tripPlan(its, l, stores, ts, { order: ['denns', 'aldi', 'dm'], standIn: true });
+    expect(t.stopOf(its[0])).toBe('denns');
+    expect(t.stopOf(its[1])).toBe('aldi'); // Denns has no Backwaren
+  });
+  it('a temporary move wins and stays temporary', () => {
+    const t = tripPlan(its, l, stores, ts, { order, standIn: true, moves: { [its[1].id]: 'denns' } });
+    expect(t.stopOf(its[1])).toBe('denns');
+    expect(t.temp(its[1])).toEqual({ from: 'edeka', maybeNot: true });
+    expect(its[1].storeId).toBe('edeka');
   });
 });

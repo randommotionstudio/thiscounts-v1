@@ -266,39 +266,72 @@ export function townsOf(s: Store, towns: Town[]): Town[] {
   return towns.filter(t => t.id === own || !!s.branches[t.id]);
 }
 
-/** The Hauptladen of a trip in this town: the list's Hauptladen if it's there, otherwise the first store of the usual order that is */
-export function mainInTown(list: List, townStores: Store[]): string | null {
-  if (list.mainStoreId && townStores.some(s => s.id === list.mainStoreId)) return list.mainStoreId;
-  return sortByOrder(townStores.filter(s => list.storeIds.includes(s.id)), list.storeOrder)[0]?.id ?? null;
+/** Does this store (branch) have the department? Without a set-up path we don't know – then it counts as yes. */
+export function carries(s: Store, category: string): boolean {
+  if (category === UNKNOWN || category === 'Sonstiges' || !storeOrderInfo(s).isSet) return true;
+  return (s.categoryOrder || []).includes(category);
+}
+
+/** V1.4 stand-in: the first store (in the town's order) that has the department; none → the first one, flagged "vermutlich nicht" */
+export function standInFor(category: string, candidates: Store[]): { id: string; maybeNot: boolean } | null {
+  if (!candidates.length) return null;
+  const hit = candidates.find(s => carries(s, category));
+  return hit ? { id: hit.id, maybeNot: false } : { id: candidates[0].id, maybeNot: true };
+}
+
+export interface TripOpts {
+  /** Stop order: default tripOrder ?? storeOrder; in another town its own order */
+  order?: string[];
+  /** Items of stores that aren't in this town go to stand-in stores here (asked when switching town) */
+  standIn?: boolean;
+  /** Temporary moves for this trip: item id → store id ("Alle zu … mitnehmen" for stand-in items) */
+  moves?: Record<string, string>;
 }
 
 /**
  * tripPlan(): the trip in one town. `allStores` are all of the household's stores, `townStores` the ones there.
- * - stopOf(item): where it's picked up – like effStore(), but what would go to the Hauptladen goes to this town's
- *   Hauptladen. null = its store has no branch here.
- * - route: the ordered stops (see route())
- * - unavailable: items on the trip whose store isn't in this town; they stay on the list as they are.
+ * - stopOf(item): where it's picked up. Its own store (or the Hauptladen) if that's in this town; otherwise, with
+ *   stand-ins on, a store here by department and order. null = it waits on the list.
+ * - temp(item): set when the item is only here for this trip (stand-in or moved on): from where, and whether
+ *   the store probably doesn't have it.
+ * - route: the ordered stops (see route()); unavailable: items that wait.
  */
-export function tripPlan(items: Item[], list: List, allStores: Store[], townStores: Store[]) {
+export function tripPlan(items: Item[], list: List, allStores: Store[], townStores: Store[], opts: TripOpts = {}) {
   const allIds = new Set(allStores.map(s => s.id)), townIds = new Set(townStores.map(s => s.id));
-  const main = townStores === allStores ? list.mainStoreId : mainInTown(list, townStores);
-  const stopOf = (it: Item): string | null => {
+  const ord = opts.order || list.tripOrder || list.storeOrder;
+  const main = list.mainStoreId && townIds.has(list.mainStoreId) ? list.mainStoreId : null;
+  const ordered = (arr: Store[]) => {
+    const o = ord && ord.length ? sortByOrder(arr, ord) : arr;
+    return [...o.filter(s => s.id === main), ...o.filter(s => s.id !== main)];
+  };
+  const candidates = ordered(townStores);
+  const byId = new Map(townStores.map(s => [s.id, s]));
+  const own = (it: Item): string | null => {
     const e = effStore(it, list, allIds);
     if (!e || e.startsWith('once:')) return e;
-    if (e === list.mainStoreId) return main;
     return townIds.has(e) ? e : null;
+  };
+  const stopOf = (it: Item): string | null => {
+    const mv = opts.moves && opts.moves[it.id];
+    if (mv && townIds.has(mv)) return mv;
+    const o = own(it);
+    if (o || !opts.standIn) return o;
+    return standInFor(it.category, candidates)?.id ?? null;
+  };
+  const temp = (it: Item): { from: string | null; maybeNot: boolean } | null => {
+    const at = stopOf(it), o = own(it);
+    if (!at || at === o || at.startsWith('once:')) return null;
+    const st = byId.get(at);
+    return { from: effStore(it, list, allIds), maybeNot: !!st && !carries(st, it.category) };
   };
   const trip = items.filter(onTrip);
   const ids = new Set(trip.map(stopOf).filter((x): x is string => !!x));
-  let o = townStores.filter(s => ids.has(s.id));
-  const ord = list.tripOrder || list.storeOrder;
-  if (ord && ord.length) o = sortByOrder(o, ord);
-  o = [...o.filter(s => s.id === main), ...o.filter(s => s.id !== main)];
+  let o = ordered(townStores.filter(s => ids.has(s.id)));
   const d = list.deferred || [];
   o = [...o.filter(s => !d.includes(s.id)), ...d.map(id => o.find(s => s.id === id)).filter((s): s is Store => !!s)];
   const custom = [...ids].filter(id => id.startsWith('once:')).map(id => stopById(id, townStores, items)!);
   const unavailable = list.mainStoreId || list.storeIds.length ? trip.filter(i => !stopOf(i)) : [];
-  return { route: [...o.map(storeToStop), ...custom], stopOf, unavailable, mainId: main };
+  return { route: [...o.map(storeToStop), ...custom], stopOf, temp, unavailable, mainId: main, candidates };
 }
 
 /**

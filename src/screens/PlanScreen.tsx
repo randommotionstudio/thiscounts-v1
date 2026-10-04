@@ -23,13 +23,15 @@ function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 export function PlanScreen() {
   const app = useApp();
   const { list, items, navigate, toast } = app;
-  const { route, itemsAt, doneOf, nextStore, goStore, finish, unavailable } = useTrip();
+  const { route, itemsAt, doneOf, nextStore, goStore, finish, unavailable, temp, previewIn, orderIn } = useTrip();
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [headRef, headH] = useHeaderHeight();
   const [elsewhere, setElsewhere] = useState<'pick' | 'new' | null>(null);
   const [townPick, setTownPick] = useState(false);
+  const [askStandIn, setAskStandIn] = useState<string | null>(null);
   const multiTown = app.towns.length >= 2;
+  const awayTown = multiTown && app.town !== app.towns[0]?.id ? app.town : null;
 
   // "Woanders einkaufen": the whole list at any store, nothing gets reassigned
   const openItems = items.filter(i => !i.checked && !i.pendingDecision && !i.nextTrip).length;
@@ -43,11 +45,19 @@ export function PlanScreen() {
     setTownPick(false); setMenu(null); setPlanSort(false);
     if (id === app.town) return;
     app.setTown(id);
-    toast('Heute in ' + (app.towns.find(t => t.id === id)?.name || ''));
+    const p = previewIn(id);
+    // Stores missing there: ask whether their items should go to stores in that town for this trip
+    if (p.missing.length && p.stores.length) setAskStandIn(id);
+    else toast('Heute in ' + (app.towns.find(t => t.id === id)?.name || ''));
   };
 
   // V1.4: items whose store has no branch in this town, grouped by store
   const allIds = new Set(app.data.stores.map(s => s.id));
+  const storeName = (id: string | null) => app.data.stores.find(s => s.id === id)?.name || '';
+  const tempItems = items.filter(i => onTrip(i) && temp(i));
+  // Store names in the household's store order ("Netto, Edeka"), not in the order the items came in
+  const inStoreOrder = (ids: (string | null)[]) => app.data.stores.filter(s => ids.includes(s.id)).map(s => s.name);
+  const tempFrom = inStoreOrder(tempItems.map(i => temp(i)!.from));
   const waiting = app.data.stores
     .map(s => ({ store: s, items: unavailable.filter(i => effStore(i, list, allIds) === s.id) }))
     .filter(g => g.items.length);
@@ -62,7 +72,10 @@ export function PlanScreen() {
   const moveTrip = (id: string, dir: -1 | 1) => {
     const ids = route.filter(s => !s.custom).map(s => s.id);
     const next = moveInOrder(ids, id, dir, ids[0] === list.mainStoreId ? 1 : 0);
-    if (next) actions.updateList(list.id, { tripOrder: next, deferred: [] });
+    if (!next) return;
+    // In another town the order is remembered for that town (it also decides where stand-in items go)
+    if (awayTown) actions.setTownOrder(list.id, awayTown, [...next, ...(orderIn(awayTown) || []).filter(x => !next.includes(x))]);
+    else actions.updateList(list.id, { tripOrder: next, deferred: [] });
   };
   const allHere = (s: Stop) => {
     const n = items.filter(onTrip).length;
@@ -87,9 +100,12 @@ export function PlanScreen() {
     const status = (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
         <span style={{ fontSize: 13, fontWeight: 600, padding: '3.5px 10px', borderRadius: 999, border: `1.5px solid ${done ? '#B9DFC4' : LINE}`, color: done ? '#2E6B41' : '#6F6055', whiteSpace: 'nowrap' }}>{done ? 'Erledigt' : its.length + ' Artikel'}</span>
-        {its.map(i => (
-          <span key={i.id} style={{ fontSize: 13, padding: '5px 10px', borderRadius: 999, background: i.checked ? PALE : tint(i.category), color: i.checked ? '#8A7A6D' : INK, textDecoration: i.checked ? 'line-through' : 'none' }}>{i.name}</span>
-        ))}
+        {its.map(i => {
+          const t = temp(i);
+          return (
+            <span key={i.id} title={t ? 'statt ' + storeName(t.from) : undefined} style={{ fontSize: 13, padding: t ? '3.5px 8.5px' : '5px 10px', borderRadius: 999, background: i.checked ? PALE : tint(i.category), color: i.checked ? '#8A7A6D' : INK, textDecoration: i.checked ? 'line-through' : 'none', border: t ? '1.5px dashed rgba(42,31,23,.35)' : 'none' }}>{i.name}</span>
+          );
+        })}
       </div>
     );
     if (s.custom) {
@@ -172,8 +188,11 @@ export function PlanScreen() {
         )}
         {canSortPlan && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 4px 0' }}>
-            <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6F6055' }}>Reihenfolge · <span style={{ fontWeight: 600, color: INK }}>{list.tripOrder ? 'nur für diesen Einkauf' : 'deine Reihenfolge'}</span></div>
-            {list.tripOrder && (
+            <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6F6055' }}>Reihenfolge · <span style={{ fontWeight: 600, color: INK }}>{awayTown ? 'für ' + app.townName : list.tripOrder ? 'nur für diesen Einkauf' : 'deine Reihenfolge'}</span></div>
+            {awayTown && list.townOrder[awayTown] && (
+              <button onClick={() => { actions.setTownOrder(list.id, awayTown, null); setPlanSort(false); toast('Reihenfolge zurückgesetzt'); }} style={{ border: 'none', background: 'none', padding: '6px 0', color: '#8A7A6D', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Zurücksetzen</button>
+            )}
+            {!awayTown && list.tripOrder && (
               <button onClick={() => { actions.updateList(list.id, { tripOrder: null }); setPlanSort(false); toast('Reihenfolge zurückgesetzt'); }} style={{ border: 'none', background: 'none', padding: '6px 0', color: '#8A7A6D', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Zurücksetzen</button>
             )}
             <button onClick={() => { setPlanSort(v => !v); setMenu(null); }} style={{ border: 'none', background: planSort ? ACC : PALE, color: INK, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, minHeight: 36 }}>{planSort ? 'Fertig' : 'Ändern'}</button>
@@ -190,6 +209,13 @@ export function PlanScreen() {
           )}
           {manual.map(([s, i]) => card(s, i))}
         </div>
+        {app.standIn && tempItems.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 4px 0', fontSize: 13, color: '#6F6055' }}>
+            <span style={{ width: 16, height: 10, border: '1.5px dashed rgba(42,31,23,.45)', borderRadius: 999, flexShrink: 0, display: 'block' }} />
+            <span style={{ flex: 1, minWidth: 0, textWrap: 'pretty' }}>Heute statt {tempFrom.join(', ')} – ihr gewohnter Laden bleibt.</span>
+            <button onClick={() => { app.setStandIn(false); toast('Ersatz aufgehoben'); }} style={{ border: 'none', background: 'none', padding: '6px 0', color: '#8A7A6D', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Aufheben</button>
+          </div>
+        )}
         {waiting.length > 0 && (
           <div style={{ marginTop: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 4px 10px' }}>
@@ -216,6 +242,9 @@ export function PlanScreen() {
                 );
               })}
               <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>Bleiben auf der Liste, bis du wieder dort einkaufst.</div>
+              {app.town && previewIn(app.town).stores.length > 0 && (
+                <button onClick={() => setAskStandIn(app.town)} style={{ height: 40, border: '2px solid #EADCCD', borderRadius: 12, background: '#fff', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Heute in {app.townName} ersetzen …</button>
+              )}
             </div>
           </div>
         )}
@@ -263,6 +292,38 @@ export function PlanScreen() {
           </button>
         </Sheet>
       )}
+      {askStandIn && (() => {
+        const p = previewIn(askStandIn);
+        const tName = app.towns.find(t => t.id === askStandIn)?.name || '';
+        const from = inStoreOrder(p.missing.map(i => effStore(i, list, allIds)));
+        const groups = p.stores.map(s => ({ store: s, items: p.missing.filter(i => p.stopOf(i) === s.id) })).filter(g => g.items.length);
+        const close = () => { setAskStandIn(null); };
+        return (
+          <Sheet title={from.join(' und ') + ' gibt’s in ' + tName + ' nicht'} sub={'Sollen ' + (p.missing.length === 1 ? 'der Artikel' : 'die ' + p.missing.length + ' Artikel') + ' bei diesem Einkauf in ' + tName + ' mit? Ihr gewohnter Laden bleibt.'} onClose={close} scrollBody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+              {groups.map(g => (
+                <div key={g.store.id}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <LogoTile store={g.store} size={28} radius={8} initialSize={12} />
+                    <div className="ellipsis" style={{ fontWeight: 600, fontSize: 14 }}>{g.store.name}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {g.items.map(i => {
+                      const maybe = p.temp(i)?.maybeNot;
+                      return <span key={i.id} style={{ fontSize: 13, padding: '5px 10px', borderRadius: 999, background: maybe ? 'transparent' : tint(i.category), border: maybe ? '1.5px dashed #D8CBBD' : 'none', color: maybe ? '#8A7A6D' : INK }}>{i.name}</span>;
+                    })}
+                  </div>
+                </div>
+              ))}
+              {groups.some(g => g.items.some(i => p.temp(i)?.maybeNot)) && (
+                <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>Gestrichelt: gibt’s dort laut eurem Weg vermutlich nicht – steht im Laden ganz unten.</div>
+              )}
+            </div>
+            <button onClick={() => { app.setStandIn(true); close(); toast('Heute in ' + tName + ' · ' + p.missing.length + ' Artikel woanders'); }} style={{ marginTop: 20, width: '100%', height: 52, border: 'none', borderRadius: 999, background: ACC, color: INK, fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Ja, heute dort einkaufen</button>
+            <button onClick={() => { app.setStandIn(false); close(); toast('Heute in ' + tName); }} style={{ marginTop: 10, width: '100%', minHeight: 52, border: '2px solid #2A1F17', borderRadius: 999, background: 'transparent', color: INK, fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Nein, auf der Liste lassen</button>
+          </Sheet>
+        );
+      })()}
       {townPick && (
         <Sheet title="Wo kaufst du heute ein?" sub={'Gilt nur für dich und nur für diesen Einkauf. Danach geht’s wieder in ' + app.towns[0]?.name + ' los.'} onClose={() => setTownPick(false)} scrollBody>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>

@@ -47,6 +47,8 @@ export interface List {
   storeOrder: string[];
   /** Per-trip override from the plan ("nur für diesen Einkauf") */
   tripOrder: string[] | null;
+  /** V1.4: standing stop order per town (other than the home town), set in the plan */
+  townOrder: Record<string, string[]>;
   /** Stops pushed to the end ("Später erledigen" / "überspringen") */
   deferred: string[];
   createdAtMs: number;

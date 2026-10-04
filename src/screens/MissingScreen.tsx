@@ -12,7 +12,7 @@ import { useCurrentStop } from './StoreScreen';
 export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: string }) {
   const app = useApp();
   const { list, items, toast } = app;
-  const { route, townStores } = useTrip();
+  const { route, townStores, temp } = useTrip();
   const cur = useCurrentStop(stopId);
   const [foundRaw, setFound] = useState(0);
   const done = useRef(false); // ignore a double tap while we leave the screen
@@ -34,6 +34,15 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
     if (!target || done.current) return;
     done.current = true;
     const split = q.found > 0 && q.found < q.qtyNum;
+    // V1.4: a stand-in item (only here for this trip) moves on for this trip too – its usual store stays
+    if (temp(mi) && !target.custom) {
+      const keep = { storeId: mi.storeId, once: mi.once, onceStopName: mi.onceStopName, parked: false };
+      const restId = actions.moveItem(mi, split ? keep : { checked: false, checkedBy: null }, split ? { foundQty: q.foundQtyText, restQty: q.restText } : null);
+      app.moveForTrip([restId || mi.id], target.id);
+      app.back(storePath);
+      toast(split ? 'Rest von ' + mi.name + ' (' + q.restText + ') heute bei ' + target.name : mi.name + ' heute bei ' + target.name);
+      return;
+    }
     const patch = movePatch(target, list);
     // A moved item is still to be bought at its new stop
     actions.moveItem(mi, split ? patch : { ...patch, checked: false, checkedBy: null }, split ? { foundQty: q.foundQtyText, restQty: q.restText } : null);
@@ -43,7 +52,8 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
   const park = () => {
     if (done.current) return;
     done.current = true;
-    actions.parkItem(mi);
+    // A stand-in item keeps its usual store and simply waits for the next trip
+    if (temp(mi)) actions.keepOpenItemsOnList([mi]); else actions.parkItem(mi);
     app.back(storePath);
     toast(mi.name + ' ist zurück auf der Einkaufsliste');
   };

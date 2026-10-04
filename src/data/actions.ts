@@ -64,8 +64,9 @@ export function assignOnce(item: Item, target: { text: string } | { storeId: str
 }
 
 /** "Artikel fehlt": move to another stop, optionally splitting off the rest. */
-export function moveItem(item: Item, patch: ItemPatch, split: { foundQty: string; restQty: string } | null) {
-  if (!split) { updateItem(item, patch); return; }
+/** Returns the id of the new item holding the rest (on a split), otherwise null */
+export function moveItem(item: Item, patch: ItemPatch, split: { foundQty: string; restQty: string } | null): string | null {
+  if (!split) { updateItem(item, patch); return null; }
   const batch = writeBatch(db);
   batch.update(itemRef(item.listId, item.id), { qty: split.foundQty, checked: true, checkedBy: uid(), ...stamp() });
   const id = newId(itemsCol(item.listId));
@@ -75,6 +76,7 @@ export function moveItem(item: Item, patch: ItemPatch, split: { foundQty: string
     createdBy: uid(), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
   report(batch.commit());
+  return id;
 }
 
 /** Leaving a stop with open items: take them along to the next stop … */
@@ -188,6 +190,11 @@ export function createList(data: ListDraftData): string {
 
 export function updateList(listId: string, patch: Partial<Pick<List, 'name' | 'storeIds' | 'mainStoreId' | 'storeOrder' | 'tripOrder' | 'deferred'>>) {
   report(updateDoc(listRef(listId), { ...patch, ...stamp() }));
+}
+
+/** V1.4: standing stop order for a town other than home (null = back to the usual order) */
+export function setTownOrder(listId: string, town: string, order: string[] | null) {
+  report(updateDoc(listRef(listId), { ['townOrder.' + town]: order ?? deleteField(), ...stamp() }));
 }
 
 export function deleteList(listId: string, items: Item[]) {

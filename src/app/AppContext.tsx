@@ -54,6 +54,12 @@ export interface AppCtx {
   setTown: (id: string | null) => void;
   /** V1.4: the stores of the trip's town, each with that town's branch (address, path) */
   townStores: Store[];
+  /** V1.4: this trip, items of stores missing in the town go to stand-in stores there */
+  standIn: boolean;
+  setStandIn: (on: boolean) => void;
+  /** V1.4: temporary moves for this trip (item id → store id); never changes the item itself */
+  tripMoves: Record<string, string>;
+  moveForTrip: (itemIds: string[], storeId: string) => void;
 }
 
 const Ctx = createContext<AppCtx | null>(null);
@@ -66,6 +72,10 @@ export const useApp = () => {
 const LS_ACTIVE = 'thisCounts.activeList';
 const LS_CURRENT = 'thisCounts.currentStop.';
 const LS_TOWN = 'thisCounts.town.';
+const LS_TRIPX = 'thisCounts.tripExtra.';
+type TripExtra = { standIn: boolean; moves: Record<string, string> };
+const NO_EXTRA: TripExtra = { standIn: false, moves: {} };
+const readExtra = (k: string): TripExtra => { try { const v = JSON.parse(lsGet(k) || 'null'); return v && typeof v === 'object' ? { standIn: !!v.standIn, moves: v.moves && typeof v.moves === 'object' ? v.moves : {} } : NO_EXTRA; } catch { return NO_EXTRA; } };
 const lsGet = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k: string, v: string | null) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 
@@ -81,6 +91,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const [draft, setDraft] = useState<ListDraft | null>(null);
   const [currentStops, setCurrentStops] = useState<Record<string, string | null>>({});
   const [townSel, setTownSel] = useState<Record<string, string | null>>({});
+  const [tripX, setTripX] = useState<Record<string, TripExtra>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const list = data.lists.find(l => l.id === activeId) || data.lists[0];
@@ -110,10 +121,23 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const homeTown = towns.length >= 2 ? towns[0].id : null;
   const chosenTown = list.id in townSel ? townSel[list.id] : lsGet(LS_TOWN + list.id);
   const town = homeTown && chosenTown && towns.some(t => t.id === chosenTown) ? chosenTown : homeTown;
+  // Stand-ins and temporary moves belong to one trip in one town: a new town (or the end of the trip) clears them
+  const storedExtra = useMemo(() => readExtra(LS_TRIPX + list.id), [list.id]);
+  const extra = list.id in tripX ? tripX[list.id] : storedExtra;
+  const setExtra = useCallback((f: (x: TripExtra) => TripExtra) => {
+    setTripX(m => {
+      const next = f(list.id in m ? m[list.id] : readExtra(LS_TRIPX + list.id));
+      lsSet(LS_TRIPX + list.id, next.standIn || Object.keys(next.moves).length ? JSON.stringify(next) : null);
+      return { ...m, [list.id]: next };
+    });
+  }, [list.id]);
   const setTown = useCallback((id: string | null) => {
     setTownSel(m => ({ ...m, [list.id]: id }));
     lsSet(LS_TOWN + list.id, id);
-  }, [list.id]);
+    setExtra(() => NO_EXTRA);
+  }, [list.id, setExtra]);
+  const setStandIn = useCallback((on: boolean) => setExtra(x => ({ standIn: on, moves: on ? x.moves : {} })), [setExtra]);
+  const moveForTrip = useCallback((itemIds: string[], storeId: string) => setExtra(x => ({ ...x, moves: { ...x.moves, ...Object.fromEntries(itemIds.map(id => [id, storeId])) } })), [setExtra]);
   const townStores = useMemo(() => storesInTown(data.stores, towns, town), [data.stores, towns, town]);
 
   // Someone finished the trip (checked items are gone) → no current stop any more on this phone either
@@ -151,8 +175,9 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       guessDept: name => data.memory[memoryId(name)]?.category || guessDeptFromName(name),
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
+      standIn: extra.standIn, setStandIn, tripMoves: extra.moves, moveForTrip,
     };
-  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores]);
+  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, extra, setStandIn, moveForTrip]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

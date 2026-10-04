@@ -69,6 +69,7 @@ const toList = (d: DocumentSnapshot<DocumentData>): List => {
   return {
     id: d.id, name: x.name || '', storeIds: strArr(x.storeIds), mainStoreId: str(x.mainStoreId), storeOrder: strArr(x.storeOrder),
     tripOrder: Array.isArray(x.tripOrder) ? strArr(x.tripOrder) : null, deferred: strArr(x.deferred), createdAtMs: ms(x.createdAt, Date.now()),
+    townOrder: x.townOrder && typeof x.townOrder === 'object' ? Object.fromEntries(Object.entries(x.townOrder).map(([t, o]) => [t, strArr(o)])) : {},
   };
 };
 const toItem = (listId: string, d: DocumentSnapshot<DocumentData>): Item => {

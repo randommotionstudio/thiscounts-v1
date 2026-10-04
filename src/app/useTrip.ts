@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as actions from '../data/actions';
-import { onTrip, tripPlan } from '../lib/logic';
+import { onTrip, storesInTown, tripPlan } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
 import { useApp } from './AppContext';
 import { paths } from './router';
@@ -13,10 +13,19 @@ import { endLocalSession } from './shopping';
  */
 export function useTrip() {
   const app = useApp();
-  const { list, items, data, townStores } = app;
+  const { list, items, data, townStores, town, towns, standIn, tripMoves } = app;
   return useMemo(() => {
-    const plan = tripPlan(items, list, data.stores, townStores);
+    // Another town than home: its own stop order (set in the plan), falling back to the usual one
+    const orderIn = (t: string | null) => (t && towns.length >= 2 && t !== towns[0].id ? list.townOrder[t] || list.storeOrder : undefined);
+    const plan = tripPlan(items, list, data.stores, townStores, { order: orderIn(town), standIn, moves: tripMoves });
     const { route, stopOf } = plan;
+    /** What a trip in another town would look like with stand-ins – for the question when switching */
+    const previewIn = (t: string) => {
+      const ts = storesInTown(data.stores, towns, t);
+      const without = tripPlan(items, list, data.stores, ts, { order: orderIn(t) });
+      const withIn = tripPlan(items, list, data.stores, ts, { order: orderIn(t), standIn: true });
+      return { missing: without.unavailable, stopOf: withIn.stopOf, temp: withIn.temp, stores: ts };
+    };
     const itemsAt = (id: string): Item[] => items.filter(i => onTrip(i) && stopOf(i) === id);
     const doneOf = (s: Stop) => itemsAt(s.id).every(i => i.checked);
     const nextStore = route.find(s => !doneOf(s)) || null;
@@ -30,6 +39,6 @@ export function useTrip() {
       app.navigate(paths.list, true);
       app.toast(message ? message(done) : 'Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
-    return { route, itemsAt, doneOf, nextStore, goStore, finish, stopOf, unavailable: plan.unavailable, townStores };
-  }, [app, list, items, data.stores, townStores]);
+    return { route, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
+  }, [app, list, items, data.stores, townStores, town, towns, standIn, tripMoves]);
 }

@@ -40,7 +40,7 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
   const { list, navigate, toast, data, user, other } = app;
-  const { route, itemsAt, doneOf, goStore, finish, stopOf, townStores } = useTrip();
+  const { route, itemsAt, doneOf, goStore, finish, stopOf, temp, townStores } = useTrip();
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headRef, headH] = useHeaderHeight();
@@ -104,9 +104,13 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   // Spontaneous trip at a store with a set-up path: departments that aren't on its path collect at the bottom
   const orderInfo = store ? storeOrderInfo(store) : null;
   const pathKnown = spontaneous && !!orderInfo && orderInfo.isSet;
-  const maybeNotHere = (d: string) => pathKnown && !order.includes(d) && d !== UNKNOWN && d !== 'Sonstiges';
-  const groups = storeGroups(curItems.filter(i => !maybeNotHere(i.category)), order);
-  const notHereGroups = storeGroups(curItems.filter(i => maybeNotHere(i.category)), order);
+  // … and V1.4 stand-in items (only here for this trip) whose department isn't on this store's path
+  const maybeNotHere = (i: Item) => spontaneous
+    ? pathKnown && !order.includes(i.category) && i.category !== UNKNOWN && i.category !== 'Sonstiges'
+    : !!temp(i)?.maybeNot;
+  const groups = storeGroups(curItems.filter(i => !maybeNotHere(i)), order);
+  const notHereGroups = storeGroups(curItems.filter(i => maybeNotHere(i)), order);
+  const insteadOf = (i: Item) => { const t = spontaneous ? null : temp(i); return t ? data.stores.find(s => s.id === t.from)?.name || null : null; };
   const doneCount = curItems.filter(i => i.checked).length;
   const allDone = curItems.length > 0 && doneCount === curItems.length;
   const openAfter = route.slice(curIdx + 1).find(s => !doneOf(s));
@@ -144,7 +148,10 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     const open = curItems.filter(i => !i.checked);
     const n = open.length, one = n === 1 ? open[0].name : null;
     if (takeAlong) {
-      actions.moveOpenItems(open, movePatch(nextStop, list));
+      // Stand-in items only move on for this trip; the others move for good, as before
+      const tempOpen = nextStop.custom ? [] : open.filter(i => temp(i));
+      if (tempOpen.length) app.moveForTrip(tempOpen.map(i => i.id), nextStop.id);
+      actions.moveOpenItems(open.filter(i => !tempOpen.includes(i)), movePatch(nextStop, list));
       toast(one ? one + ' wandert zu ' + nextStop.name : n + ' Artikel wandern zu ' + nextStop.name);
     } else {
       actions.keepOpenItemsOnList(open);
@@ -184,7 +191,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
                 <RoundCheck on={i.checked} size={28} color="#3E9B5F" />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 17, color: i.checked ? '#8A7A6D' : '#2A1F17', textDecoration: i.checked ? 'line-through' : 'none', overflowWrap: 'break-word', hyphens: 'auto' }}>{i.name}</div>
-                  {i.qty && <div style={{ fontSize: 12, color: '#8A7A6D' }}>{i.qty}</div>}
+                  {(i.qty || insteadOf(i)) && <div style={{ fontSize: 12, color: '#8A7A6D' }}>{[i.qty, insteadOf(i) && 'statt ' + insteadOf(i)].filter(Boolean).join(' · ')}</div>}
                   {isNew && (
                     <div style={{ display: 'flex', marginTop: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '3px 9px', background: passed ? '#F3752E' : '#FDE4D1', color: passed ? '#2A1F17' : '#9C4412', whiteSpace: 'nowrap', animation: 'pop .25s ease' }}>
