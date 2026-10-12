@@ -179,7 +179,7 @@ export function confirmStoreOrder(store: Store) {
 
 // ---------- Lists ----------
 
-export interface ListDraftData { name: string; storeIds: string[]; mainStoreId: string | null; storeOrder: string[] }
+export interface ListDraftData { name: string; storeIds: string[]; mainStoreId: string | null; storeOrder: string[]; without: string[] }
 
 export function createList(data: ListDraftData): string {
   const id = newId(listsCol());
@@ -189,7 +189,7 @@ export function createList(data: ListDraftData): string {
   return id;
 }
 
-export function updateList(listId: string, patch: Partial<Pick<List, 'name' | 'storeIds' | 'mainStoreId' | 'storeOrder' | 'tripOrder' | 'deferred'>>) {
+export function updateList(listId: string, patch: Partial<Pick<List, 'name' | 'storeIds' | 'mainStoreId' | 'storeOrder' | 'tripOrder' | 'deferred' | 'without'>>) {
   report(updateDoc(listRef(listId), { ...patch, ...stamp() }));
 }
 

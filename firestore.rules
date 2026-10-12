@@ -37,20 +37,46 @@ service cloud.firestore {
         && d.name is string && d.name.size() > 0 && d.name.size() <= 40;
     }
 
+    // V1.6: a list's "without" names the people who are not on it; everyone else is (also people who join later).
+    function listPath(hid, listId) {
+      return /databases/$(db)/documents/households/$(hid)/lists/$(listId);
+    }
+    function onList(hid, listId) {
+      // A list that doesn't exist yet (just created offline, still on its way) doesn't lock anyone out
+      return !exists(listPath(hid, listId))
+        || !(request.auth.uid in get(listPath(hid, listId)).data.get('without', []));
+    }
+
     match /households/{hid} {
       allow read, write: if isMember(hid);
     }
-    // Lists, items, stores, memory, history …
-    match /households/{hid}/{coll}/{rest=**} {
+    // Shared by the whole household: stores (and their paths), remembered store/category per item, shopping history
+    match /households/{hid}/stores/{id} {
+      allow read, write: if isMember(hid);
+    }
+    match /households/{hid}/memory/{id} {
+      allow read, write: if isMember(hid);
+    }
+    match /households/{hid}/history/{id} {
+      allow read, write: if isMember(hid);
+    }
+    // Lists: everyone in the household sees which lists exist; only people on a list change it or see its items.
+    match /households/{hid}/lists/{listId} {
       allow read: if isMember(hid);
-      allow write: if isMember(hid) && !(coll in ['sessions', 'members', 'invites']);
+      allow create: if isMember(hid) && !(request.auth.uid in request.resource.data.get('without', []));
+      allow update, delete: if isMember(hid) && !(request.auth.uid in resource.data.get('without', []));
+    }
+    match /households/{hid}/lists/{listId}/items/{itemId} {
+      allow read, write: if isMember(hid) && onList(hid, listId);
     }
     // Shopping sessions: everyone in the household reads them, each person writes only their own.
     match /households/{hid}/sessions/{uid} {
+      allow read: if isMember(hid);
       allow write: if isMember(hid) && request.auth.uid == uid;
     }
     // Members: joining needs a valid invite (or one of the two original accounts); afterwards only the own name changes.
     match /households/{hid}/members/{uid} {
+      allow read: if isMember(hid);
       allow create: if signedIn() && request.auth.uid == uid && validMember(request.resource.data)
         && (isTester() || redeemsInvite(hid, request.resource.data.invite, uid));
       allow update: if signedIn() && request.auth.uid == uid && isMember(hid) && validMember(request.resource.data)
@@ -58,7 +84,7 @@ service cloud.firestore {
     }
     // Invites: created and withdrawn by members; redeemed once by the new person (see members above).
     match /households/{hid}/invites/{code} {
-      allow delete: if isMember(hid);
+      allow read, delete: if isMember(hid);
       allow create: if isMember(hid)
         && request.resource.data.keys().hasOnly(['createdBy', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
         && request.resource.data.createdBy == request.auth.uid

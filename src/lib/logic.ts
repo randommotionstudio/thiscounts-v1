@@ -437,7 +437,8 @@ export function usualChips(history: HistoryEntry[], now: number): { usual: Chip[
   const often = ranked.filter(e => e.trips.size >= OFTEN_TRIPS).map(chip);
   const once = ranked.filter(e => e.trips.size < OFTEN_TRIPS).map(chip);
   const seen = new Set(ranked.map(e => normName(e.name)));
-  const defaults = USUAL.filter(u => !seen.has(normName(u.name))).map(u => ({ name: u.name, qty: qtyStr(u.qty, u.unit) }));
+  // Starter suggestions only until a list has its own usual items (V1.6: history is per list – no Milch on "Baumarkt" for good)
+  const defaults = often.length ? [] : USUAL.filter(u => !seen.has(normName(u.name))).map(u => ({ name: u.name, qty: qtyStr(u.qty, u.unit) }));
   return { usual: [...often, ...defaults], all: [...often, ...once, ...defaults] };
 }
 

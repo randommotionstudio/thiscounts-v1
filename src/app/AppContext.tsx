@@ -20,6 +20,8 @@ export interface ListDraft {
   storeIds: string[];
   mainStoreId: string | null;
   storeOrder: string[];
+  /** V1.6: who is not on the list */
+  without: string[];
 }
 
 export interface AppCtx {
@@ -29,6 +31,8 @@ export interface AppCtx {
   others: Person[];
   /** "Anna", "Anna und Tom", "Anna, Tom und Lea" */
   othersLabel: string;
+  /** V1.6: everyone else on a list (people the app can't tell apart yet count as on it) */
+  othersOn: (list: Pick<List, 'without'>) => Person[];
   /** V1.5: who someone is, by account (e.g. who added an item) */
   personOf: (uid: string | null | undefined) => Person;
   /** V1.5: someone else shopping on the active list right now (only one person shops at a time) */
@@ -171,6 +175,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
     return {
       user, data,
       me, others, othersLabel: joinNames(others.map(o => o.name)), personOf,
+      othersOn: l => others.filter(o => !o.uid || !l.without.includes(o.uid)),
       shopper: live ? { ...live, person: personOf(live.uid) } : null,
       list, items, allItems,
       mainStore, mainName: mainStore ? mainStore.name : (data.stores[0]?.name || '–'),

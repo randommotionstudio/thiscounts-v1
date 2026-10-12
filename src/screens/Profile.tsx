@@ -69,7 +69,7 @@ export function Profile() {
   const del = () => {
     const s = sheet && data.stores.find(x => x.id === sheet.id);
     if (!s) return;
-    const block = data.lists.find(l => l.storeIds.length === 1 && l.storeIds[0] === s.id);
+    const block = data.allLists.find(l => l.storeIds.length === 1 && l.storeIds[0] === s.id);
     setSheet(null);
     if (block) { toast(s.name + ' ist der einzige Laden von „' + block.name + '“'); return; }
     actions.deleteStore(s.id, data.lists, data.itemsByList, data.memory);
@@ -97,7 +97,7 @@ export function Profile() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, paddingTop: 14, borderTop: '1px solid #4A3B2E' }}>
             {others.length > 0 && <AvatarStack people={others} onDark ring="#2A1F17" />}
-            <span style={{ fontSize: 14, color: '#C9B8A6', minWidth: 0 }}>{others.length ? <>Teilt alle Listen mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{othersLabel}</span></> : 'Noch teilst du die Listen mit niemandem.'}</span>
+            <span style={{ fontSize: 14, color: '#C9B8A6', minWidth: 0 }}>{others.length ? <>Im Haushalt mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{othersLabel}</span></> : 'Noch bist du allein im Haushalt.'}</span>
           </div>
         </div>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Mitglieder</div>
@@ -127,7 +127,7 @@ export function Profile() {
           })}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={newInvite}><span className="plus-ring" /><span>Jemanden einladen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und 7 Tage. Wer dabei ist, sieht alle Listen.</p>
+        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und 7 Tage. Wer neu dazukommt, ist bei allen Listen dabei – wer bei welcher Liste ist, legst du in der Liste fest.</p>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Deine Läden</div>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
           {data.stores.map((s, i) => (

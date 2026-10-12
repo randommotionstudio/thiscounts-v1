@@ -3,6 +3,7 @@ import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
 import { moveInOrder, setupOrdered } from '../lib/logic';
+import { joinNames } from '../lib/people';
 import type { Store } from '../lib/types';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { LogoTile, RoundCheck, UpDown, useHeaderHeight } from '../ui/kit';
@@ -37,11 +38,12 @@ export function StoresSetup() {
   const cta = () => {
     if (noSel) return;
     if (!isCreate) { back(); return; }
-    const id = actions.createList({ name, storeIds: draft.storeIds, mainStoreId: draft.mainStoreId, storeOrder: setupOrd.map(s => s.id) });
+    const id = actions.createList({ name, storeIds: draft.storeIds, mainStoreId: draft.mainStoreId, storeOrder: setupOrd.map(s => s.id), without: draft.without });
     app.setActiveList(id);
     setDraft(null);
     navigate(paths.list, true);
-    toast('„' + name + '“ ist startklar' + (app.others.length ? ' · geteilt mit ' + app.othersLabel : ''));
+    const on = app.othersOn(draft);
+    toast('„' + name + '“ ist startklar' + (on.length ? ' · geteilt mit ' + joinNames(on.map(p => p.name)) : ' · nur für dich'));
   };
 
   const rows = [...(mainS ? [{ s: mainS, isMain: true }] : []), ...setupOrd.map(s => ({ s, isMain: false }))];

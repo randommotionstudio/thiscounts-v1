@@ -51,6 +51,8 @@ export interface List {
   townOrder: Record<string, string[]>;
   /** Stops pushed to the end ("Später erledigen" / "überspringen") */
   deferred: string[];
+  /** V1.6: people (uids) who are NOT on this list. Everyone else is – also anyone who joins the household later. */
+  without: string[];
   createdAtMs: number;
 }
 

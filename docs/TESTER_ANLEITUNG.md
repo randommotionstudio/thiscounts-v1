@@ -77,6 +77,14 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 - **Namen überall:** Statt „Anna“ steht jetzt immer, wer es war – „Neu von Tom“, „Lea kauft gerade ein“.
 - **Nur eine Person kauft ein:** Kauft jemand gerade mit einer Liste ein, können die anderen keinen Einkauf starten. Der Knopf im Plan ist dann grau, darüber steht z. B. „Anna kauft gerade ein. Du kannst starten, sobald der Einkauf abgeschlossen ist.“ Sobald Anna auf „Einkauf abschließen“ tippt, geht es wieder. Vergisst sie das, gibt die App den Einkauf nach 90 Minuten ohne Abhaken von selbst frei. Etwas auf die Liste setzen geht natürlich jederzeit.
 
+## Neu in Version 1.6: Wer ist bei welcher Liste
+
+- **Personen pro Liste:** Beim Erstellen oder Bearbeiten einer Liste gibt es den Abschnitt **„Wer ist dabei“**. Ein Haken heißt: diese Person sieht die Liste. Ihr selbst seid immer dabei. Nur wer dabei ist, sieht die Liste und ihre Artikel.
+- **Neue Leute:** Wer neu in den Haushalt kommt, ist automatisch bei allen Listen dabei. Soll jemand eine Liste nicht sehen, nehmt den Haken in der Liste wieder raus.
+- **Vorschläge pro Liste:** „Üblich auf deiner Liste“ zeigt jetzt nur, was ihr mit genau dieser Liste gekauft habt – auf der Baumarkt-Liste also keine Milch. Die Start-Vorschläge (Milch, Brot …) erscheinen nur, solange eine Liste noch keine eigenen üblichen Artikel hat.
+- **Gemerkt für alle Listen:** Welcher Laden und welche Kategorie zu einem Artikel gehören, merkt sich die App weiterhin für alle Listen gemeinsam.
+- Im Listen-Menü steht bei jeder Liste, mit wem ihr sie teilt – oder „nur für dich“.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann

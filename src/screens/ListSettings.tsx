@@ -3,7 +3,8 @@ import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
 import { setupOrdered } from '../lib/logic';
-import { LogoTile, useHeaderHeight } from '../ui/kit';
+import { joinNames } from '../lib/people';
+import { Avatar, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
 
 /** Liste einrichten: create (step 1 of 2) or edit a list. */
 export function ListSettings() {
@@ -37,6 +38,7 @@ export function ListSettings() {
     if (!same(storeIds, editList.storeIds)) patch.storeIds = storeIds;
     if (mainStoreId !== editList.mainStoreId) patch.mainStoreId = mainStoreId;
     if (!same(storeOrder, setupOrdered(data.stores, editList.storeIds, editList.mainStoreId, editList.storeOrder).map(s => s.id))) patch.storeOrder = storeOrder;
+    if (!same([...draft.without].sort(), [...editList.without].sort())) patch.without = draft.without;
     if (Object.keys(patch).length) actions.updateList(editList.id, patch);
     app.setDraft(null);
     navigate(paths.list, true);
@@ -51,6 +53,11 @@ export function ListSettings() {
     navigate(paths.list, true);
     toast('„' + editList.name + '“ gelöscht');
   };
+
+  // V1.6: who is on the list (you always are)
+  const toggleWho = (uid: string) => app.setDraft(d => (d ? { ...d, without: d.without.includes(uid) ? d.without.filter(x => x !== uid) : [...d.without, uid] } : d));
+  const people = [app.me, ...app.others];
+  const deleteFor = editList ? app.othersOn(editList) : [];
 
   const off = (!isEdit && !name) || noStores;
   return (
@@ -67,6 +74,25 @@ export function ListSettings() {
         <div className="section-label">Name</div>
         <input className="field" value={draft.name} onChange={e => { const v = e.target.value; app.setDraft(d => (d ? { ...d, name: v } : d)); }}
           onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="z. B. Auf dem Heimweg" enterKeyHint="done" />
+        {people.length > 1 && (
+          <>
+            <div className="section-label" style={{ margin: '24px 0 8px' }}>Wer ist dabei</div>
+            <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
+              {people.map((p, i) => {
+                const fixed = i === 0 || !p.uid, on = fixed || !draft.without.includes(p.uid!);
+                return (
+                  <div key={p.uid || p.email} role="checkbox" aria-checked={on} aria-label={p.name} aria-disabled={fixed || undefined} onClick={() => { if (!fixed) toggleWho(p.uid!); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', minHeight: 56, boxSizing: 'border-box', borderTop: i ? '1px solid #F3EADF' : 'none', cursor: fixed ? 'default' : 'pointer' }}>
+                    <Avatar person={p} size={34} />
+                    <div style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 15 }}>{p.name}{i === 0 && <span style={{ fontWeight: 500, color: '#8A7A6D' }}> · Du</span>}</div>
+                    {i === 0 ? <span style={{ fontSize: 12, color: '#8A7A6D', flexShrink: 0 }}>immer dabei</span> : <RoundCheck on={on} />}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="hint" style={{ marginTop: 10 }}>Nur wer dabei ist, sieht die Liste. Wer neu in den Haushalt kommt, ist bei allen Listen dabei.</p>
+          </>
+        )}
         {isEdit && (
           <>
             <div className="section-label" style={{ margin: '24px 0 8px' }}>Läden</div>
@@ -87,7 +113,7 @@ export function ListSettings() {
               {!lastList && confirmDelete && (
                 <div className="card" style={{ border: '2px solid #E7C6B2', animation: 'toastIn .2s ease' }}>
                   <div style={{ fontWeight: 600 }}>„{editList?.name}“ löschen?</div>
-                  <div style={{ fontSize: 13, color: '#8A7A6D', marginTop: 2 }}>{(editItems.length ? editItems.length + ' Artikel gehen verloren.' : 'Die Liste ist leer.') + (app.others.length ? ' Auch für ' + app.othersLabel + '.' : '')}</div>
+                  <div style={{ fontSize: 13, color: '#8A7A6D', marginTop: 2 }}>{(editItems.length ? editItems.length + ' Artikel gehen verloren.' : 'Die Liste ist leer.') + (deleteFor.length ? ' Auch für ' + joinNames(deleteFor.map(p => p.name)) + '.' : '')}</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, height: 46, border: 'none', borderRadius: 999, background: '#F3EADF', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Behalten</button>
                     <button onClick={del} style={{ flex: 1, height: 46, border: 'none', borderRadius: 999, background: '#B23A12', color: '#FBF5EE', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Löschen</button>

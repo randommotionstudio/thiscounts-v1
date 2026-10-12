@@ -46,7 +46,7 @@ async function newInvite(P) {
   await A.click('.tab:has-text("Profil")');
   await waitText(A, 'Mitglieder');
   ok(await A.getByText('Michi · Du').count() === 1, 'profile lists "Michi · Du"');
-  ok(await A.getByText('Teilt alle Listen mit Anna').count() === 1, 'still shared with Anna (before Anna opens the new version)');
+  ok(await A.getByText('Im Haushalt mit Anna').count() === 1, 'still shared with Anna (before Anna opens the new version)');
   const code1 = await newInvite(A);
   ok(/^[A-Z2-9]{6}$/.test(code1 || ''), 'invite sheet shows a 6-character code (' + code1 + ')');
   ok(await A.getByText(code1.slice(0, 3) + '-' + code1.slice(3)).count() >= 1, 'code shown as XXX-XXX');
@@ -95,7 +95,7 @@ async function newInvite(P) {
   ok(await C.getByText('keinen Zugriff').count() === 0, 'no "kein Zugriff" flash');
   await A.waitForTimeout(800);
   ok(await A.locator('[data-invite="' + code1 + '"]').count() === 0, 'used invite disappears from the profile');
-  ok(await A.getByText('Teilt alle Listen mit Anna und Tom').count() === 1, 'Michi now shares with "Anna und Tom"');
+  ok(await A.getByText('Im Haushalt mit Anna und Tom').count() === 1, 'Michi now shares with "Anna und Tom"');
   await A.screenshot({ path: SHOTS + 'inv-03-profile.png', fullPage: true });
 
   // Tom's items carry his name
@@ -152,7 +152,7 @@ async function newInvite(P) {
   await F.click('button:has-text("Beitreten")');
   await F.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 20000 }).then(() => ok(true, 'existing account joins with a code'), () => ok(false, 'existing account joins with a code'));
   await A.waitForTimeout(800);
-  ok(await A.getByText('Teilt alle Listen mit Anna, Tom, Lea und Fremd').count() === 1, 'Michi shares with "Anna, Tom, Lea und Fremd"');
+  ok(await A.getByText('Im Haushalt mit Anna, Tom, Lea und Fremd').count() === 1, 'Michi shares with "Anna, Tom, Lea und Fremd"');
   await A.screenshot({ path: SHOTS + 'inv-06-four.png', fullPage: true });
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

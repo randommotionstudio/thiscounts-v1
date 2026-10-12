@@ -15,6 +15,7 @@ import { QtySheet } from '../sheets/QtySheet';
 import { Avatar, AvatarStack, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useMarkSince } from '../app/markSince';
+import { joinNames } from '../lib/people';
 import { ask as askState, holdForNextTrip } from '../app/shopping';
 import type { Stop } from '../lib/types';
 import type { Person } from '../config/household';
@@ -23,7 +24,7 @@ const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK
 
 export function ListScreen() {
   const app = useApp();
-  const { list, items, data, others, othersLabel, personOf, shopper, mainName, selectedStores, navigate, toast, guessDept, guessStore } = app;
+  const { list, items, data, othersOn, personOf, shopper, mainName, selectedStores, navigate, toast, guessDept, guessStore } = app;
 
   const [newItem, setNewItem] = useState('');
   const [inFocus, setInFocus] = useState(false);
@@ -41,6 +42,10 @@ export function ListScreen() {
   const inRef = useRef<HTMLInputElement>(null);
   const focusAt = useRef(0);
   const [headRef, headH] = useHeaderHeight();
+
+  // V1.6: who else is on this list (and on each list in the list menu)
+  const listOthers = othersOn(list);
+  const withLabel = (l: typeof list) => { const o = othersOn(l); return o.length ? 'mit ' + joinNames(o.map(p => p.name)) : 'nur für dich'; };
 
   const storeIdSet = useMemo(() => new Set(data.stores.map(s => s.id)), [data.stores]);
   const markSince = useMarkSince();
@@ -140,7 +145,7 @@ export function ListScreen() {
   };
   const openCreate = () => {
     setListMenu(false);
-    app.setDraft({ mode: 'create', name: '', storeIds: [], mainStoreId: null, storeOrder: [] });
+    app.setDraft({ mode: 'create', name: '', storeIds: [], mainStoreId: null, storeOrder: [], without: [] });
     navigate(paths.listNew);
   };
   const openEdit = (id: string) => {
@@ -148,7 +153,7 @@ export function ListScreen() {
     if (!l) return;
     setListMenu(false);
     app.setActiveList(id);
-    app.setDraft({ mode: 'edit', listId: id, name: l.name, storeIds: l.storeIds, mainStoreId: l.mainStoreId, storeOrder: l.storeOrder });
+    app.setDraft({ mode: 'edit', listId: id, name: l.name, storeIds: l.storeIds, mainStoreId: l.mainStoreId, storeOrder: l.storeOrder, without: l.without });
     navigate(paths.listEdit);
   };
 
@@ -171,7 +176,8 @@ export function ListScreen() {
   }
 
   // ---- Chips ----
-  const chipSets = useMemo(() => usualChips(data.history, Date.now()), [data.history]);
+  // V1.6: suggestions come from what was bought with this list
+  const chipSets = useMemo(() => usualChips(data.history.filter(h => h.listId === list.id), Date.now()), [data.history, list.id]);
   const onList = (n: string) => items.some(i => normName(i.name) === normName(n));
   // Typing searches everything bought lately; otherwise only the often-bought ones, capped
   const pool = searching
@@ -203,7 +209,7 @@ export function ListScreen() {
               <span style={{ width: 7, height: 7, borderRight: '2px solid #2A1F17', borderBottom: '2px solid #2A1F17', transform: listMenu ? 'translateY(2px) rotate(-135deg)' : 'translateY(-2px) rotate(45deg)', display: 'block', transition: 'transform .2s' }} />
             </span>
           </button>
-          {others.length > 0 && <span title={'Geteilt mit ' + othersLabel} style={{ display: 'flex' }}><AvatarStack people={others} /></span>}
+          {listOthers.length > 0 && <span title={'Geteilt mit ' + joinNames(listOthers.map(p => p.name))} style={{ display: 'flex' }}><AvatarStack people={listOthers} /></span>}
         </div>
         {shopper && shopperAt && (
           <div style={{ marginTop: 12, background: '#2A1F17', color: '#FBF5EE', borderRadius: 16, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, animation: 'toastIn .25s ease' }}>
@@ -347,7 +353,7 @@ export function ListScreen() {
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span className="ellipsis" style={{ display: 'block', fontWeight: 600, fontSize: 16 }}>{l.name}</span>
-                      <span className="ellipsis" style={{ display: 'block', fontSize: 12, color: '#8A7A6D' }}>{cnt} Artikel{others.length ? ' · mit ' + othersLabel : ''}</span>
+                      <span className="ellipsis" style={{ display: 'block', fontSize: 12, color: '#8A7A6D' }}>{cnt} Artikel · {withLabel(l)}</span>
                     </span>
                   </button>
                   <button onClick={e => { e.stopPropagation(); openEdit(l.id); }} title="Liste bearbeiten" style={{ width: 44, height: 44, marginRight: 8, border: 'none', borderRadius: '50%', background: 'rgba(42,31,23,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>

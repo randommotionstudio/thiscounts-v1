@@ -10,7 +10,7 @@ const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), b
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
-  tripOrder: null, townOrder: {}, deferred: [], createdAtMs: 0, ...p,
+  tripOrder: null, townOrder: {}, deferred: [], without: [], createdAtMs: 0, ...p,
 });
 let n = 0;
 const item = (p: Partial<Item> = {}): Item => ({
@@ -191,7 +191,7 @@ describe('store groups', () => {
 describe('usual chips', () => {
   const now = Date.now(), DAY = 86400000;
   const h = (name: string, qty: string, ago: number) => ({ id: name + ago + Math.random(), name, qty, storeId: null, listId: 'l', completedAtMs: now - ago });
-  it('only items bought on 2+ trips, most trips first, latest quantity; then defaults', () => {
+  it('only items bought on 2+ trips, most trips first, latest quantity; no starter suggestions any more', () => {
     const { usual } = usualChips([
       h('Hafermilch', '1 l', 9 * DAY), h('Hafermilch', '2 l', 2 * DAY), h('Hafermilch', '1 l', 20 * DAY),
       h('Kiwi', '3 Stück', 3 * DAY), h('Kiwi', '3 Stück', 10 * DAY),
@@ -200,7 +200,11 @@ describe('usual chips', () => {
     expect(usual[0]).toEqual({ name: 'Hafermilch', qty: '2 l' });
     expect(usual[1]).toEqual({ name: 'Kiwi', qty: '3 Stück' });
     expect(usual.some(c => c.name === 'Kondome')).toBe(false);
-    expect(usual[2].name).toBe('Milch'); // first default
+    expect(usual).toHaveLength(2); // the list has its own usual items → no starters
+  });
+  it('a list without usual items yet gets the starter suggestions', () => {
+    const { usual } = usualChips([h('Dübel', '1 Pck.', 4 * DAY)], now);
+    expect(usual[0].name).toBe('Milch');
   });
   it('one trip counts once, even if the item was split across two stores', () => {
     const { usual } = usualChips([h('Käse', '100 g', DAY), h('Käse', '100 g', DAY)], now);

@@ -7,7 +7,7 @@ import { ALL_DEPTS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from
 import type { Branch, HistoryEntry, Invite, Item, List, Member, MemoryEntry, Session, Store, Town } from '../lib/types';
 import { historyCol, householdRef, invitesCol, itemsCol, listsCol, membersCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
-import { joinAsTester, seedDefaultList, seedHousehold } from './seed';
+import { joinAsTester, seedDefaultList, seedHousehold, seedOwnList } from './seed';
 import { onWritesChange, writesInFlight } from './write';
 
 export interface Data {
@@ -19,7 +19,10 @@ export interface Data {
   /** V1.4: towns the household shops in (first = home town); fewer than two → the feature stays out of sight */
   towns: Town[];
   stores: Store[];
+  /** V1.6: the lists you're on */
   lists: List[];
+  /** V1.6: all of the household's lists, also those you're not on (only for checks like "last list of a store") */
+  allLists: List[];
   itemsByList: Record<string, Item[]>;
   memory: Record<string, MemoryEntry & { id: string }>;
   history: HistoryEntry[];
@@ -72,7 +75,7 @@ const toList = (d: DocumentSnapshot<DocumentData>): List => {
   const x = d.data(opts) || {};
   return {
     id: d.id, name: x.name || '', storeIds: strArr(x.storeIds), mainStoreId: str(x.mainStoreId), storeOrder: strArr(x.storeOrder),
-    tripOrder: Array.isArray(x.tripOrder) ? strArr(x.tripOrder) : null, deferred: strArr(x.deferred), createdAtMs: ms(x.createdAt, Date.now()),
+    tripOrder: Array.isArray(x.tripOrder) ? strArr(x.tripOrder) : null, deferred: strArr(x.deferred), without: strArr(x.without), createdAtMs: ms(x.createdAt, Date.now()),
     townOrder: x.townOrder && typeof x.townOrder === 'object' ? Object.fromEntries(Object.entries(x.townOrder).map(([t, o]) => [t, strArr(o)])) : {},
   };
 };
@@ -90,7 +93,10 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [hh, setHh] = useState<{ exists: boolean; order: string[]; towns: Town[] } | null>(null);
   const [denied, setDenied] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
-  const [lists, setLists] = useState<List[]>([]);
+  const [allLists, setLists] = useState<List[]>([]);
+  const [membersReady, setMembersReady] = useState(false);
+  const ownSeeded = useRef(false);
+  const lists = useMemo(() => allLists.filter(l => !l.without.includes(user.uid)), [allLists, user.uid]);
   const [itemsByList, setItemsByList] = useState<Record<string, Item[]>>({});
   const [memory, setMemory] = useState<Data['memory']>({});
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -106,6 +112,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const seeded = useRef(false);
   const listSeeded = useRef(false);
   const [listsGone, setListsGone] = useState(false);
+  const [listsServer, setListsServer] = useState(false);
   const openWrites = useSyncExternalStore(onWritesChange, writesInFlight);
 
   const track = (key: string, snap: QuerySnapshot | DocumentSnapshot) => {
@@ -137,6 +144,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     const u3 = onSnapshot(listsCol(), { includeMetadataChanges: true }, snap => {
       track('lists', snap);
       setListsGone(snap.empty && !snap.metadata.fromCache);
+      if (!snap.metadata.fromCache) setListsServer(true);
       setLists(snap.docs.map(toList).sort((a, b) => a.createdAtMs - b.createdAtMs || a.id.localeCompare(b.id)));
     }, onErr);
     const u4 = onSnapshot(memoryCol(), { includeMetadataChanges: true }, snap => {
@@ -148,7 +156,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       });
       setMemory(m);
     }, onErr);
-    const u5 = onSnapshot(query(historyCol(), orderBy('completedAt', 'desc'), limit(500)), { includeMetadataChanges: true }, snap => {
+    const u5 = onSnapshot(query(historyCol(), orderBy('completedAt', 'desc'), limit(1500)), { includeMetadataChanges: true }, snap => {
       track('history', snap);
       setHistory(snap.docs.map(d => {
         const x = d.data(opts);
@@ -187,6 +195,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         m[d.id] = { uid: d.id, name: str(x.name) || '', email: str(x.email) || '', joinedAtMs: ms(x.joinedAt, Date.now()) };
       });
       setMembers(m);
+      if (!snap.metadata.fromCache) setMembersReady(true);
       // The two original testers get their entry the first time they open this version
       if (!snap.metadata.fromCache && !m[user.uid] && !joined.current) { joined.current = true; joinAsTester(user); }
     }, e => console.warn('[thisCounts] members not readable (update firestore.rules)', e));
@@ -203,6 +212,13 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   useEffect(() => {
     if (hh?.exists && listsGone && !listSeeded.current) { listSeeded.current = true; seedDefaultList(); }
   }, [hh, listsGone]);
+  // V1.6: lists exist, but you're on none of them → a list of your own (only you on it)
+  const onNone = hh?.exists && listsServer && allLists.length > 0 && lists.length === 0;
+  useEffect(() => {
+    if (!onNone || !membersReady || ownSeeded.current) return;
+    ownSeeded.current = true;
+    seedOwnList(user.uid, Object.keys(members).filter(id => id !== user.uid));
+  }, [onNone, membersReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Items: one listener per list
   const listIds = lists.map(l => l.id).join('|');
@@ -212,7 +228,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       track('items:' + id, snap);
       const items = snap.docs.map(d => toItem(id, d)).sort((a, b) => b.createdAtMs - a.createdAtMs || a.id.localeCompare(b.id));
       setItemsByList(m => ({ ...m, [id]: items }));
-    }, onErr));
+    }, e => console.warn('[thisCounts] items not readable (taken off the list?)', id, e)));
     setItemsByList(m => Object.fromEntries(Object.entries(m).filter(([k]) => ids.includes(k))));
     setPendingMap(m => Object.fromEntries(Object.entries(m).filter(([k]) => !k.startsWith('items:') || ids.includes(k.slice(6)))));
     return () => unsubs.forEach(u => u());
@@ -223,11 +239,11 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
     towns: hh?.towns || [],
-    stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
+    stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
     avatars: { ...otherAvatars, [user.uid]: myAvatar },
     members, invites,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [members, invites, hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
+  }), [members, invites, hh, denied, stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
