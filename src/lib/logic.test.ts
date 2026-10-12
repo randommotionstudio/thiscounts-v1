@@ -289,10 +289,11 @@ describe('V1.1 markSince', () => {
 
 import { normalizeAvatar } from './avatar';
 describe('V1.2 avatar', () => {
-  it('missing → initial on orange', () => { expect(normalizeAvatar(undefined)).toEqual({ kind: 'initial', icon: null, color: 0 }); });
-  it('keeps a valid icon and color', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'pizza', color: 3 })).toEqual({ kind: 'icon', icon: 'pizza', color: 3 }); });
-  it('initial keeps the last icon (harmless)', () => { expect(normalizeAvatar({ kind: 'initial', icon: 'egg', color: 2 })).toEqual({ kind: 'initial', icon: 'egg', color: 2 }); });
-  it('rejects junk', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'rocket', color: 9 })).toEqual({ kind: 'initial', icon: null, color: 0 }); });
+  it('missing → initial on orange', () => { expect(normalizeAvatar(undefined)).toEqual({ kind: 'initial', icon: null, color: 'orange' }); });
+  it('keeps a valid icon and color', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'pizza', color: 'espresso' })).toEqual({ kind: 'icon', icon: 'pizza', color: 'espresso' }); });
+  it('initial keeps the last icon (harmless)', () => { expect(normalizeAvatar({ kind: 'initial', icon: 'egg', color: 'mint' })).toEqual({ kind: 'initial', icon: 'egg', color: 'mint' }); });
+  it('rejects junk', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'rocket', color: 'neon' })).toEqual({ kind: 'initial', icon: null, color: 'orange' }); });
+  it('an old color number (before V1.7) shows orange', () => { expect(normalizeAvatar({ kind: 'icon', icon: 'pizza', color: 3 }).color).toBe('orange'); });
 });
 
 import { movePatch } from './logic';

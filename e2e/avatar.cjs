@@ -1,4 +1,4 @@
-const { chromium, SHOTS, phone, login, resetDb, waitText } = require('./lib.cjs');
+const { chromium, SHOTS, phone, login, resetDb, waitText, DOCS, idToken } = require('./lib.cjs');
 const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
 const IN = 'input[placeholder^="z. B. 5 Bananen"]';
 const add = async (P, t) => { await P.fill(IN, t); await P.press(IN, 'Enter'); await P.waitForTimeout(80); await P.locator(IN).blur(); };
@@ -82,6 +82,9 @@ const avatarsOf = P => P.evaluate(() => [...document.querySelectorAll('span')].f
   await B.screenshot({ path: SHOTS + '105-B-avatar-v17.png' });
   const big = (await avatarsOf(B)).find(x => x.size === '96px');
   ok(big && big.bg === 'rgb(235, 227, 252)', 'Flieder background');
+  const anna = await idToken('annacvetkov@posteo.de');
+  const saved = await (await fetch(DOCS + '/users/' + anna.uid, { headers: { Authorization: 'Bearer owner' } })).json();
+  ok(saved.fields.avatar.mapValue.fields.color.stringValue === 'flieder', 'saved by name: color "flieder"');
   const eis = await B.evaluate(() => [...document.querySelectorAll('span[style*="mask"]')].some(s => (s.style.webkitMaskImage || s.style.maskImage || '').includes('ice-cream-cone')));
   ok(eis, 'Eis icon shown');
   ok((await (await fetch('http://127.0.0.1:4173/icons/ice-cream-cone.svg')).text()).includes('<svg'), 'icon file is served');

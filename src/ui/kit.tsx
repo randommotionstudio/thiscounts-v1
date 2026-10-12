@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { LOGOS, logoUrl } from '../lib/logic';
 import type { Conn } from '../app/useConnection';
-import { AV_COLORS, DEFAULT_AVATAR, avatarIconUrl, type AvatarPref } from '../lib/avatar';
+import { DEFAULT_AVATAR, avColor, avatarIconUrl, type AvatarPref } from '../lib/avatar';
 
 /** Store logo in a white tile, or the store's initial when there's no logo. */
 export function LogoTile({ store, size, radius, initialSize, bordered = true, style }: {
@@ -86,7 +86,7 @@ export function Avatar({ person, size = 28, iconScale = 0.55, shadow, label, onD
   onDark?: boolean;
 }) {
   const av = person.avatar || DEFAULT_AVATAR;
-  const c = AV_COLORS[av.color] || AV_COLORS[0];
+  const c = avColor(av.color);
   if (onDark && c.bg === '#2A1F17' && !shadow) shadow = '0 0 0 1.5px rgba(251,245,238,.3)';
   return (
     <span title={label ?? person.name} aria-label={label} role={label ? 'img' : undefined} style={{

@@ -1,5 +1,5 @@
 import * as actions from '../data/actions';
-import { AV_COLORS, AV_COLOR_ORDER, AV_ICONS, AV_ICON_DE, DEFAULT_AVATAR, type AvatarPref } from '../lib/avatar';
+import { AV_COLORS, AV_ICONS, AV_ICON_DE, DEFAULT_AVATAR, avColor, type AvatarPref } from '../lib/avatar';
 import { Avatar, IconGlyph, Sheet } from '../ui/kit';
 
 const RING = '0 0 0 2px #FBF5EE, 0 0 0 4px #F3752E', NO_RING = '0 0 0 1px #EADCCD';
@@ -8,7 +8,7 @@ const label = { fontSize: 13, fontWeight: 600, color: '#8A7A6D', textTransform: 
 /** V1.2 "Profilbild": initials or an icon, plus a color. Every tap saves right away. */
 export function AvatarSheet({ person, onClose }: { person: { name: string; avatar?: AvatarPref }; onClose: () => void }) {
   const av = person.avatar || DEFAULT_AVATAR;
-  const col = AV_COLORS[av.color] || AV_COLORS[0];
+  const col = avColor(av.color);
   const save = (patch: Partial<AvatarPref>) => actions.setAvatar({ ...av, ...patch });
   const isInit = av.kind !== 'icon';
   const cell = (on: boolean) => ({
@@ -38,9 +38,9 @@ export function AvatarSheet({ person, onClose }: { person: { name: string; avata
       </div>
       <div style={label}>Farbe</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 44px))', justifyContent: 'space-between', gap: 10, padding: '0 2px' }}>
-        {AV_COLOR_ORDER.map(i => (
-          <button key={i} onClick={() => save({ color: i })} title={AV_COLORS[i].name} aria-label={AV_COLORS[i].name} aria-pressed={av.color === i}
-            style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', border: 'none', padding: 0, backgroundColor: AV_COLORS[i].bg, boxShadow: av.color === i ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
+        {AV_COLORS.map(c => (
+          <button key={c.id} onClick={() => save({ color: c.id })} title={c.name} aria-label={c.name} aria-pressed={col.id === c.id}
+            style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', border: 'none', padding: 0, backgroundColor: c.bg, boxShadow: col.id === c.id ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
         ))}
       </div>
       <button onClick={onClose} style={{ marginTop: 22, width: '100%', height: 54, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Fertig</button>
