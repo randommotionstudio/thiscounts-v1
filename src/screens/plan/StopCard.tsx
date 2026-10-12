@@ -22,7 +22,8 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
   menuOpen: boolean; onToggleMenu: () => void;
   /** While sorting the route: the arrows (null = not sorting) */
   sort: { isMain: boolean; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
-  onStart: () => void; onAllHere: (() => void) | null; onDefer: () => void;
+  /** null while someone else is shopping (V1.5: one person at a time) */
+  onStart: (() => void) | null; onAllHere: (() => void) | null; onDefer: () => void;
 }) {
   const toggle = (e: React.MouseEvent) => { e.stopPropagation(); onToggleMenu(); };
   const status = (
@@ -45,9 +46,9 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
             <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
             <div style={{ fontSize: 12, color: '#8A7A6D' }}>Einmaliger Stopp</div>
           </div>
-          <Dots onClick={toggle} />
+          {onStart && <Dots onClick={toggle} />}
         </div>
-        {menuOpen && (
+        {menuOpen && onStart && (
           <div style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <button onClick={onStart} style={menuBtn(true)}>Mit diesem Stopp starten</button>
           </div>
@@ -71,7 +72,7 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
       </div>
       {menuOpen && !sort && (
         <div style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <button onClick={onStart} style={menuBtn(true)}>Mit diesem Laden starten</button>
+          {onStart && <button onClick={onStart} style={menuBtn(true)}>Mit diesem Laden starten</button>}
           {onAllHere && (
             <button onClick={onAllHere} style={menuBtn(false)}>Alles hier einkaufen <span style={{ color: '#8A7A6D', fontWeight: 500 }}>· nur ein Stopp</span></button>
           )}
@@ -79,7 +80,7 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
         </div>
       )}
       {status}
-      {!done && !isNext && (
+      {!done && !isNext && onStart && (
         <button onClick={onStart} style={{ marginTop: 12, width: '100%', height: 44, border: '2px solid #EADCCD', borderRadius: 14, background: '#fff', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Stattdessen hier starten</button>
       )}
     </div>

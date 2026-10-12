@@ -100,6 +100,25 @@ export function Avatar({ person, size = 28, iconScale = 0.55, shadow, label, onD
   );
 }
 
+/** V1.5: several people, overlapping (at most `max`, then "+n") */
+export function AvatarStack({ people, size = 28, max = 3, onDark, ring = '#FBF5EE' }: {
+  people: { name: string; avatar?: AvatarPref }[]; size?: number; max?: number; onDark?: boolean; ring?: string;
+}) {
+  const shown = people.slice(0, people.length > max ? max - 1 : max), more = people.length - shown.length;
+  return (
+    <span style={{ display: 'flex', alignItems: 'center' }}>
+      {shown.map((p, i) => (
+        <span key={i} style={{ marginLeft: i ? -size * 0.3 : 0, borderRadius: '50%', boxShadow: i ? '0 0 0 2px ' + ring : undefined, display: 'flex' }}>
+          <Avatar person={p} size={size} onDark={onDark} />
+        </span>
+      ))}
+      {more > 0 && (
+        <span style={{ marginLeft: -size * 0.3, width: size, height: size, borderRadius: '50%', background: '#EADCCD', color: '#6F6055', boxShadow: '0 0 0 2px ' + ring, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(size * 0.38), fontWeight: 700, flexShrink: 0 }}>+{more}</span>
+      )}
+    </span>
+  );
+}
+
 /** A line icon tinted with any color (CSS mask). */
 export function IconGlyph({ icon, color, size }: { icon: string; color: string; size: number | string }) {
   const url = `url(${avatarIconUrl(icon)}) center/contain no-repeat`;

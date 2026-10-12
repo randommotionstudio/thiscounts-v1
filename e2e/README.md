@@ -44,3 +44,5 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | towns | Branches in Prien and Frasdorf, choosing the town, the trip there |
 | stand-ins | Bernau: items of missing stores go to stand-in stores by department and town order |
 | once-stop-other-town | A one-time stop at a store in another town waits and is never replaced |
+| invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
+| shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |

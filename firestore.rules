@@ -1,28 +1,81 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
-    // Only the two test accounts can read or write anything.
+    function signedIn() { return request.auth != null; }
+
+    // The two original test accounts: always in, even before their member entry exists.
     function isTester() {
-      return request.auth != null
+      return signedIn()
         && request.auth.token.email in ['michael@rieplhuber.com', 'annacvetkov@posteo.de'];
     }
 
+    // V1.5: everyone who joined with an invite has an entry in households/{hid}/members/{uid}.
+    function isMember(hid) {
+      return isTester()
+        || (signedIn() && exists(/databases/$(db)/documents/households/$(hid)/members/$(request.auth.uid)));
+    }
+
+    function invitePath(hid, code) {
+      return /databases/$(db)/documents/households/$(hid)/invites/$(code);
+    }
+    function memberPath(hid, uid) {
+      return /databases/$(db)/documents/households/$(hid)/members/$(uid);
+    }
+
+    // An invite can be redeemed once, before it expires, and only together with the new member entry
+    // (both are written in one batch: the invite gets usedBy = the new person).
+    function redeemsInvite(hid, code, uid) {
+      return code is string
+        && exists(invitePath(hid, code))
+        && get(invitePath(hid, code)).data.usedBy == null
+        && get(invitePath(hid, code)).data.expiresAt > request.time
+        && getAfter(invitePath(hid, code)).data.usedBy == uid;
+    }
+
+    function validMember(d) {
+      return d.keys().hasOnly(['name', 'email', 'joinedAt', 'invite'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 40;
+    }
+
     match /households/{hid} {
-      allow read, write: if isTester();
+      allow read, write: if isMember(hid);
     }
     // Lists, items, stores, memory, history …
     match /households/{hid}/{coll}/{rest=**} {
-      allow read: if isTester();
-      allow write: if isTester() && coll != 'sessions';
+      allow read: if isMember(hid);
+      allow write: if isMember(hid) && !(coll in ['sessions', 'members', 'invites']);
     }
     // Shopping sessions: everyone in the household reads them, each person writes only their own.
     match /households/{hid}/sessions/{uid} {
-      allow write: if isTester() && request.auth.uid == uid;
+      allow write: if isMember(hid) && request.auth.uid == uid;
+    }
+    // Members: joining needs a valid invite (or one of the two original accounts); afterwards only the own name changes.
+    match /households/{hid}/members/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid && validMember(request.resource.data)
+        && (isTester() || redeemsInvite(hid, request.resource.data.invite, uid));
+      allow update: if signedIn() && request.auth.uid == uid && isMember(hid) && validMember(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+    }
+    // Invites: created and withdrawn by members; redeemed once by the new person (see members above).
+    match /households/{hid}/invites/{code} {
+      allow delete: if isMember(hid);
+      allow create: if isMember(hid)
+        && request.resource.data.keys().hasOnly(['createdBy', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.usedBy == null
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt < request.time + duration.value(8, 'd');
+      allow update: if signedIn()
+        && resource.data.usedBy == null
+        && resource.data.expiresAt > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy', 'usedAt'])
+        && request.resource.data.usedBy == request.auth.uid
+        && getAfter(memberPath(hid, request.auth.uid)).data.invite == code;
     }
     // Personal settings and profile picture: everyone in the household sees them, each person changes only their own.
     match /users/{uid} {
-      allow read: if isTester();
-      allow write: if isTester() && request.auth.uid == uid;
+      allow read: if isMember('main');
+      allow write: if isMember('main') && request.auth.uid == uid;
     }
   }
 }

@@ -8,8 +8,9 @@ import { PATH_VERSION, normName, onTrip } from '../lib/logic';
 import type { Item, List, MemoryEntry, Store, Town } from '../lib/types';
 import type { AvatarPref } from '../lib/avatar';
 import {
-  historyCol, householdRef, itemRef, itemsCol, listRef, listsCol, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
+  historyCol, householdRef, inviteRef, itemRef, itemsCol, listRef, listsCol, memberRef, memoryCol, memoryRef, newId, sessionRef, storeRef, storesCol, userRef,
 } from './refs';
+import { INVITE_DAYS, newInviteCode } from '../lib/people';
 import { report } from './write';
 
 const uid = () => auth.currentUser?.uid ?? null;
@@ -272,4 +273,30 @@ export function deleteStore(storeId: string, lists: List[], itemsByList: Record<
   }
   Object.values(memory).filter(m => m.storeId === storeId).forEach(m => report(updateDoc(doc(memoryCol(), m.id), { storeId: null })));
   report(deleteDoc(storeRef(storeId)));
+}
+
+// ---------- V1.5: invites ----------
+
+/** "Jemanden einladen": a fresh code, valid once and for 7 days. Returns the code. */
+export function createInvite(): string {
+  const code = newInviteCode();
+  report(setDoc(inviteRef(code), {
+    createdBy: uid(), createdAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + INVITE_DAYS * 24 * 60 * 60 * 1000), usedBy: null, usedAt: null,
+  }));
+  return code;
+}
+
+export function withdrawInvite(code: string) {
+  report(deleteDoc(inviteRef(code)));
+}
+
+/**
+ * Joining with an invite: the member entry and "invite used" in one batch – the rules accept it only
+ * if the code exists, is unused and not expired. Needs a connection; resolves once the server agreed.
+ */
+export function redeemInvite(userId: string, email: string, name: string, code: string): Promise<void> {
+  const batch = writeBatch(db);
+  batch.set(memberRef(userId), { name, email: email.toLowerCase(), joinedAt: serverTimestamp(), invite: code });
+  batch.update(inviteRef(code), { usedBy: userId, usedAt: serverTimestamp() });
+  return batch.commit();
 }

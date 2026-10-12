@@ -41,7 +41,7 @@ export function StoresSetup() {
     app.setActiveList(id);
     setDraft(null);
     navigate(paths.list, true);
-    toast('„' + name + '“ ist startklar · geteilt mit ' + app.other.name);
+    toast('„' + name + '“ ist startklar' + (app.others.length ? ' · geteilt mit ' + app.othersLabel : ''));
   };
 
   const rows = [...(mainS ? [{ s: mainS, isMain: true }] : []), ...setupOrd.map(s => ({ s, isMain: false }))];

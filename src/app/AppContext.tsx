@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from 'firebase/auth';
 import { useData, type Data } from '../data/DataProvider';
-import { otherPerson, personFor, type Person } from '../config/household';
+import { otherTester, personFor, type Person } from '../config/household';
+import { SESSION_STALE_MS } from '../lib/logic';
+import { joinNames } from '../lib/people';
 import { guessDeptFromName, storesInTown } from '../lib/logic';
-import type { Item, List, Store, Town } from '../lib/types';
+import type { Item, List, Session, Store, Town } from '../lib/types';
 import { memoryId } from '../data/refs';
 import { useConnection, type Conn } from './useConnection';
 import { ask, holdForNextTrip } from './shopping';
@@ -23,7 +25,14 @@ export interface ListDraft {
 export interface AppCtx {
   user: User;
   me: Person;
-  other: Person;
+  /** V1.5: everyone else in the household */
+  others: Person[];
+  /** "Anna", "Anna und Tom", "Anna, Tom und Lea" */
+  othersLabel: string;
+  /** V1.5: who someone is, by account (e.g. who added an item) */
+  personOf: (uid: string | null | undefined) => Person;
+  /** V1.5: someone else shopping on the active list right now (only one person shops at a time) */
+  shopper: (Session & { person: Person }) | null;
   data: Data;
   /** The active list (per device) and its items */
   list: List;
@@ -127,18 +136,42 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       .forEach(i => holdForNextTrip(i, data.sessions, user.uid));
   }, [data.itemsByList, data.sessions, user.uid]);
 
+  // A live session counts for SESSION_STALE_MS after its last activity: re-check every minute
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
+
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();
-    // Two people share the household: the other one is whoever isn't me
-    const otherUid = Object.keys(data.avatars).find(id => id !== user.uid)
-      || Object.keys(data.sessions).find(id => id !== user.uid)
-      || allItems.find(i => i.createdBy && i.createdBy !== user.uid)?.createdBy || null;
+    // V1.5: names come from the member entries. Until both original testers have one, the other tester
+    // is whoever else shows up (avatar, session, items) – as before, when there were only two people.
+    const me: Person = { ...personFor(user.email), ...(data.members[user.uid] ? { name: data.members[user.uid].name } : {}), uid: user.uid, avatar: data.avatars[user.uid] };
+    const known = Object.values(data.members).filter(m => m.uid !== user.uid)
+      .sort((a, b) => a.joinedAtMs - b.joinedAtMs)
+      .map((m): Person => ({ uid: m.uid, email: m.email, name: m.name, avatar: data.avatars[m.uid] }));
+    const tester = otherTester(user.email);
+    const legacy = tester && !known.some(p => p.email === tester.email) ? tester : null;
+    const legacyUid = legacy ? (Object.keys(data.avatars).find(id => id !== user.uid && !data.members[id])
+      || Object.keys(data.sessions).find(id => id !== user.uid && !data.members[id])
+      || allItems.find(i => i.createdBy && i.createdBy !== user.uid && !data.members[i.createdBy])?.createdBy || undefined) : undefined;
+    const others = legacy ? [{ ...legacy, uid: legacyUid, avatar: legacyUid ? data.avatars[legacyUid] : undefined }, ...known] : known;
+    const personOf = (id: string | null | undefined): Person => {
+      if (!id) return { email: '', name: 'Jemand' };
+      if (id === user.uid) return me;
+      const p = others.find(o => o.uid === id);
+      if (p) return p;
+      // Not known yet (e.g. a tester without a member entry, before their first change shows up)
+      if (legacy) return { ...legacy, uid: id, avatar: data.avatars[id] };
+      return { uid: id, email: '', name: 'Jemand', avatar: data.avatars[id] };
+    };
+    const live = Object.values(data.sessions)
+      .filter(s => s.uid !== user.uid && s.listId === list.id && now - s.updatedAtMs < SESSION_STALE_MS)
+      .sort((a, b) => a.startedAtMs - b.startedAtMs)[0];
     const byId = new Map(data.stores.map(s => [s.id, s]));
     const mainStore = (list.mainStoreId && byId.get(list.mainStoreId)) || null;
     return {
       user, data,
-      me: { ...personFor(user.email), avatar: data.avatars[user.uid] },
-      other: { ...otherPerson(user.email), avatar: otherUid ? data.avatars[otherUid] : undefined },
+      me, others, othersLabel: joinNames(others.map(o => o.name)), personOf,
+      shopper: live ? { ...live, person: personOf(live.uid) } : null,
       list, items, allItems,
       mainStore, mainName: mainStore ? mainStore.name : (data.stores[0]?.name || '–'),
       selectedStores: data.stores.filter(s => list.storeIds.includes(s.id)),
@@ -148,7 +181,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
       standIn: trip.standIn, setStandIn, tripMoves: trip.moves, moveForTrip,
     };
-  }, [user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip]);
+  }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -28,12 +28,12 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
  */
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
-  const { list, navigate, toast, data, user, other } = app;
+  const { list, navigate, toast, data, user, personOf } = app;
   const { route, itemsAt, doneOf, goStore, finish, stopOf, temp, townStores } = useTrip();
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headRef, headH] = useHeaderHeight();
-  const [notif, setNotif] = useState<{ title: string; body: string } | null>(null);
+  const [notif, setNotif] = useState<{ title: string; body: string; by: string | null } | null>(null);
   const routeStop = useCurrentStop(stopId);
   // A spontaneous trip is always at exactly this store (no fallback to another stop of the route)
   const spStore = spontaneous ? townStores.find(s => s.id === stopId) || null : null;
@@ -86,7 +86,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       seen.add(i.id);
       if (notifiedItems.has(i.id) || !lateFromOther(i) || i.checked || !pi.passed(i.category)) continue;
       notifiedItems.add(i.id);
-      if (data.notifyWhileShopping) setNotif({ title: other.name + ' hat ' + i.name + ' hinzugefügt', body: i.category + ' hast du schon hinter dir – noch mal kurz zurück?' });
+      if (data.notifyWhileShopping) setNotif({ title: personOf(i.createdBy).name + ' hat ' + i.name + ' hinzugefügt', body: i.category + ' hast du schon hinter dir – noch mal kurz zurück?', by: i.createdBy });
     }
   }, [app.items, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -184,7 +184,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
                   {isNew && (
                     <div style={{ display: 'flex', marginTop: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '3px 9px', background: passed ? '#F3752E' : '#FDE4D1', color: passed ? '#2A1F17' : '#9C4412', whiteSpace: 'nowrap', animation: 'pop .25s ease' }}>
-                        {passed ? 'Neu · schon vorbei' : 'Neu von ' + other.name}
+                        {passed ? 'Neu · schon vorbei' : 'Neu von ' + personOf(i.createdBy).name}
                       </span>
                     </div>
                   )}
@@ -247,7 +247,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>
-            <Avatar person={other} size={36} onDark />
+            <Avatar person={personOf(notif.by)} size={36} onDark />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{notif.title}</div>
               <div style={{ fontSize: 13, color: '#C9B8A6', marginTop: 2, textWrap: 'pretty' }}>{notif.body}</div>

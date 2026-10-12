@@ -12,18 +12,18 @@ import { OnceSheet } from '../sheets/OnceSheet';
 import { AskSheet } from '../sheets/AskSheet';
 import { UsualChips } from './list/UsualChips';
 import { QtySheet } from '../sheets/QtySheet';
-import { Avatar, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
+import { Avatar, AvatarStack, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useMarkSince } from '../app/markSince';
 import { ask as askState, holdForNextTrip } from '../app/shopping';
-import { SESSION_STALE_MS } from '../lib/logic';
-import type { Session, Stop } from '../lib/types';
+import type { Stop } from '../lib/types';
+import type { Person } from '../config/household';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 
 export function ListScreen() {
   const app = useApp();
-  const { list, items, data, other, mainName, selectedStores, navigate, toast, guessDept, guessStore } = app;
+  const { list, items, data, others, othersLabel, personOf, shopper, mainName, selectedStores, navigate, toast, guessDept, guessStore } = app;
 
   const [newItem, setNewItem] = useState('');
   const [inFocus, setInFocus] = useState(false);
@@ -45,16 +45,12 @@ export function ListScreen() {
   const storeIdSet = useMemo(() => new Set(data.stores.map(s => s.id)), [data.stores]);
   const markSince = useMarkSince();
 
-  // ---- V1.1: the other person is shopping on this list right now ----
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
-  const shopper: Session | undefined = Object.values(data.sessions)
-    .find(s => s.uid !== app.user.uid && s.listId === list.id && now - s.updatedAtMs < SESSION_STALE_MS);
+  // ---- V1.1: someone else is shopping on this list right now ----
   const shopperAt = shopper ? stopById(shopper.storeId, data.stores, items) : null;
   const shopperDone = shopper ? shopper.doneStoreIds.map(id => stopById(id, data.stores, items)?.name).filter(Boolean) : [];
 
   // ---- V1.1 Rückfrage (R5): added for a store the shopper has already finished today ----
-  const [ask, setAsk] = useState<{ itemId: string; name: string; from: Stop; at: Stop } | null>(null);
+  const [ask, setAsk] = useState<{ itemId: string; name: string; from: Stop; at: Stop; who: Person } | null>(null);
   const resolveAsk = (take: boolean) => {
     if (!ask) return;
     const it = items.find(i => i.id === ask.itemId);
@@ -88,7 +84,7 @@ export function ListScreen() {
         const id = actions.addItem(list.id, { ...data0, pendingDecision: true });
         askState.openItemId = id;
         inRef.current?.blur();
-        setAsk({ itemId: id, name: data0.name, from, at: shopperAt });
+        setAsk({ itemId: id, name: data0.name, from, at: shopperAt, who: shopper.person });
         return id;
       }
     }
@@ -207,16 +203,16 @@ export function ListScreen() {
               <span style={{ width: 7, height: 7, borderRight: '2px solid #2A1F17', borderBottom: '2px solid #2A1F17', transform: listMenu ? 'translateY(2px) rotate(-135deg)' : 'translateY(-2px) rotate(45deg)', display: 'block', transition: 'transform .2s' }} />
             </span>
           </button>
-          <span title={'Geteilt mit ' + other.name} style={{ display: 'flex' }}><Avatar person={other} /></span>
+          {others.length > 0 && <span title={'Geteilt mit ' + othersLabel} style={{ display: 'flex' }}><AvatarStack people={others} /></span>}
         </div>
         {shopper && shopperAt && (
           <div style={{ marginTop: 12, background: '#2A1F17', color: '#FBF5EE', borderRadius: 16, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, animation: 'toastIn .25s ease' }}>
             <span style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
-              <Avatar person={other} size={32} onDark />
+              <Avatar person={shopper.person} size={32} onDark />
               <span style={{ position: 'absolute', right: -2, bottom: -2, width: 11, height: 11, borderRadius: '50%', background: '#3E9B5F', border: '2px solid #2A1F17', display: 'block' }} />
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{other.name} kauft gerade ein</div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{shopper.person.name} kauft gerade ein</div>
               <div className="ellipsis" style={{ fontSize: 12, color: '#C9B8A6' }}>
                 {(app.towns.length >= 2 && shopper.town ? shopperAt.name + ' ' + (app.towns.find(t => t.id === shopper.town)?.name || '') : shopperAt.name) + (shopper.spontaneous ? ' · spontan, mit der ganzen Liste' : ' · Stopp ' + shopper.stopIndex + ' von ' + shopper.stopCount + (shopperDone.length ? ' · ' + shopperDone.join(', ') + ' erledigt' : ''))}
               </div>
@@ -270,7 +266,7 @@ export function ListScreen() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                           <span className="ellipsis" style={{ fontWeight: 600 }}>{it.name}</span>
                           {it.createdBy && it.createdBy !== app.user.uid && it.createdAtMs > markSince && (
-                            <Avatar person={other} size={20} label={'Neu von ' + other.name} />
+                            <Avatar person={personOf(it.createdBy)} size={20} label={'Neu von ' + personOf(it.createdBy).name} />
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: 12, color: it.category === UNKNOWN ? '#C9581A' : '#8A7A6D' }}>
@@ -351,7 +347,7 @@ export function ListScreen() {
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span className="ellipsis" style={{ display: 'block', fontWeight: 600, fontSize: 16 }}>{l.name}</span>
-                      <span className="ellipsis" style={{ display: 'block', fontSize: 12, color: '#8A7A6D' }}>{cnt} Artikel · mit {other.name}</span>
+                      <span className="ellipsis" style={{ display: 'block', fontSize: 12, color: '#8A7A6D' }}>{cnt} Artikel{others.length ? ' · mit ' + othersLabel : ''}</span>
                     </span>
                   </button>
                   <button onClick={e => { e.stopPropagation(); openEdit(l.id); }} title="Liste bearbeiten" style={{ width: 44, height: 44, marginRight: 8, border: 'none', borderRadius: '50%', background: 'rgba(42,31,23,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -383,7 +379,7 @@ export function ListScreen() {
           onStore={s => { actions.assignOnce(onceItem, { storeId: s.id }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + s.name); }}
         />
       )}
-      {ask && <AskSheet other={other} itemName={ask.name} from={ask.from} at={ask.at} onAnswer={resolveAsk} />}
+      {ask && <AskSheet other={ask.who} itemName={ask.name} from={ask.from} at={ask.at} onAnswer={resolveAsk} />}
       {pick && (
         <QtySheet key={pick.editId} initial={pick} dept={guessDept(pick.name)} onClose={() => setPick(null)}
           onSave={q => { const it = items.find(i => i.id === pick.editId); if (it) actions.updateItem(it, { qty: q }); setPick(null); }} />

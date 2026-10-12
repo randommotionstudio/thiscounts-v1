@@ -79,7 +79,7 @@ export function RefineScreen({ stopId, town }: { stopId: string; town?: string }
 /** The editor itself – only mounted once the store (branch) is there, so it starts from its saved path */
 function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; storePath: string; fromProfile: boolean; label: string }) {
   const app = useApp();
-  const { data, toast, other } = app;
+  const { data, toast } = app;
   const [headRef, headH] = useHeaderHeight();
 
   const orderInfo = storeOrderInfo(store);
@@ -110,7 +110,7 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
     if (!canSave) return;
     actions.saveStoreOrder(store, order);
     app.back(storePath);
-    toast(isEdit ? 'Weg bei ' + label + ' aktualisiert' : label + ' nutzt jetzt deinen Weg – auch für ' + other.name);
+    toast(isEdit ? 'Weg bei ' + label + ' aktualisiert' : label + ' nutzt jetzt deinen Weg' + (app.others.length ? ' – auch für ' + app.othersLabel : ''));
   };
 
   const chip = (d: string, on: boolean, num: number | '+') => {

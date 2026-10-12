@@ -4,13 +4,15 @@ import { ALL_DEPTS, upgradeOrder } from '../lib/logic';
 export const HOUSEHOLD_ID = 'main';
 
 export interface Person {
+  /** V1.5: the account, when known */
+  uid?: string;
   email: string;
   name: string;
   /** V1.2: chosen profile picture (set at runtime from users/{uid}.avatar) */
   avatar?: import('../lib/avatar').AvatarPref;
 }
 
-/** The two test accounts. Must match firestore.rules. */
+/** The two original test accounts. Must match firestore.rules. Everyone else joins with an invite (V1.5). */
 export const PEOPLE: Person[] = [
   { email: 'michael@rieplhuber.com', name: 'Michi' },
   { email: 'annacvetkov@posteo.de', name: 'Anna' },
@@ -25,8 +27,12 @@ export function personFor(email: string | null | undefined): Person {
   return { email: email || '', name: name.charAt(0).toUpperCase() + name.slice(1) };
 }
 
-export function otherPerson(email: string | null | undefined): Person {
-  return PEOPLE.find(x => x.email !== norm(email)) || PEOPLE[0];
+/** One of the two original test accounts (always allowed in by firestore.rules) */
+export const isTesterEmail = (email: string | null | undefined) => PEOPLE.some(p => p.email === norm(email));
+
+/** For a tester: the other tester (before everyone has a member entry with a name) */
+export function otherTester(email: string | null | undefined): Person | null {
+  return isTesterEmail(email) ? PEOPLE.find(x => x.email !== norm(email)) || null : null;
 }
 
 // ---------- Seed data (written once, the first time someone logs in) ----------

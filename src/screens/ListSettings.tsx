@@ -87,7 +87,7 @@ export function ListSettings() {
               {!lastList && confirmDelete && (
                 <div className="card" style={{ border: '2px solid #E7C6B2', animation: 'toastIn .2s ease' }}>
                   <div style={{ fontWeight: 600 }}>„{editList?.name}“ löschen?</div>
-                  <div style={{ fontSize: 13, color: '#8A7A6D', marginTop: 2 }}>{(editItems.length ? editItems.length + ' Artikel gehen verloren.' : 'Die Liste ist leer.') + ' Auch für ' + app.other.name + '.'}</div>
+                  <div style={{ fontSize: 13, color: '#8A7A6D', marginTop: 2 }}>{(editItems.length ? editItems.length + ' Artikel gehen verloren.' : 'Die Liste ist leer.') + (app.others.length ? ' Auch für ' + app.othersLabel + '.' : '')}</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, height: 46, border: 'none', borderRadius: 999, background: '#F3EADF', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Behalten</button>
                     <button onClick={del} style={{ flex: 1, height: 46, border: 'none', borderRadius: 999, background: '#B23A12', color: '#FBF5EE', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Löschen</button>

@@ -35,4 +35,21 @@ const resetDb = async () => { await fetch('http://127.0.0.1:8080/emulator/v1/pro
 
 const waitText = async (page, text, timeout = 10000) => { const t0 = Date.now(); await page.getByText(text, { exact: false }).first().waitFor({ timeout }); return Date.now() - t0; };
 
-module.exports = { chromium, BASE, SHOTS, phone, login, resetDb, waitText };
+// Direct database access. "owner" skips the rules (test setup); a user's token goes through firestore.rules.
+const DOCS = 'http://127.0.0.1:8080/v1/projects/demo-thiscounts/databases/(default)/documents';
+const REST = DOCS + '/households/main';
+const AUTH = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts';
+
+/** An ID token for an account, as the app would have it */
+async function idToken(email, password = 'test1234') {
+  const r = await (await fetch(AUTH + ':signInWithPassword?key=fake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true }) })).json();
+  return r.idToken ? { token: r.idToken, uid: r.localId } : null;
+}
+/** A batch write (Firestore REST :commit); resolves to the HTTP status */
+async function commit(token, writes) {
+  const r = await fetch(DOCS + ':commit', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ writes }) });
+  return r.status;
+}
+const getStatus = async (token, path) => (await fetch(REST + path, { headers: { Authorization: 'Bearer ' + token } })).status;
+
+module.exports = { chromium, BASE, SHOTS, phone, login, resetDb, waitText, DOCS, REST, AUTH, idToken, commit, getStatus };

@@ -12,6 +12,12 @@ export const historyCol = () => collection(db, 'households', HOUSEHOLD_ID, 'hist
 /** V1.1: one live shopping session per person */
 export const sessionsCol = () => collection(db, 'households', HOUSEHOLD_ID, 'sessions');
 export const sessionRef = (uid: string) => doc(sessionsCol(), uid);
+/** V1.5: who belongs to the household (name, email); joining needs an invite */
+export const membersCol = () => collection(db, 'households', HOUSEHOLD_ID, 'members');
+export const memberRef = (uid: string) => doc(membersCol(), uid);
+/** V1.5: invite codes (doc id = the code without the dash) */
+export const invitesCol = () => collection(db, 'households', HOUSEHOLD_ID, 'invites');
+export const inviteRef = (code: string) => doc(invitesCol(), code);
 /** V1.1: per-person settings */
 export const usersCol = () => collection(db, 'users');
 export const userRef = (uid: string) => doc(usersCol(), uid);

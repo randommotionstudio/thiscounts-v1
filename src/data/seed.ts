@@ -1,9 +1,10 @@
 import { Timestamp, getDocsFromServer, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
+import type { User } from 'firebase/auth';
 import {
-  DEFAULT_CATEGORY_ORDER, PEOPLE, SEED_MAIN_STORE, SEED_STORES, seedCategoryOrder,
+  DEFAULT_CATEGORY_ORDER, PEOPLE, SEED_MAIN_STORE, SEED_STORES, isTesterEmail, personFor, seedCategoryOrder,
 } from '../config/household';
-import { householdRef, listRef, storeRef, storesCol } from './refs';
+import { householdRef, listRef, memberRef, storeRef, storesCol } from './refs';
 import { PATH_VERSION } from '../lib/logic';
 import { report } from './write';
 
@@ -54,4 +55,10 @@ export function seedDefaultList() {
       tripOrder: null, deferred: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     }));
   }).catch(e => console.warn('[thisCounts] could not create a list', e));
+}
+
+/** V1.5: the two original testers get a member entry (with their name) without an invite */
+export function joinAsTester(user: User) {
+  if (!isTesterEmail(user.email)) return;
+  report(setDoc(memberRef(user.uid), { name: personFor(user.email).name, email: (user.email || '').toLowerCase(), joinedAt: serverTimestamp(), invite: null }));
 }

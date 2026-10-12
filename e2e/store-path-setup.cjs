@@ -12,10 +12,17 @@ const cta = P => P.locator('.bottom-fade > button').last();
   await login(B, 'annacvetkov@posteo.de'); await B.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 20000 });
   for (const t of ['Bananen', 'Brot', 'Milch', 'Wasser']) { await A.fill(IN, t); await A.press(IN, 'Enter'); }
   await waitText(B, 'Wasser');
+  // Only one person shops a list at a time (V1.5) → Anna shops the same items with a second list at Netto
+  await fetch(REST + '/lists/zweite', { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: {
+    name: { stringValue: 'Zweite' }, storeIds: { arrayValue: { values: [{ stringValue: 'netto' }] } }, mainStoreId: { stringValue: 'netto' }, storeOrder: { arrayValue: {} },
+    tripOrder: { nullValue: null }, deferred: { arrayValue: {} }, createdAt: { timestampValue: new Date().toISOString() } } }) });
+  await B.evaluate(() => localStorage.setItem('thisCounts.activeList', 'zweite'));
+  await B.reload(); await B.waitForSelector('h1:has-text("Zweite")', { timeout: 20000 });
+  for (const t of ['Bananen', 'Brot', 'Milch', 'Wasser']) { await B.fill(IN, t); await B.press(IN, 'Enter'); }
   // Seeded stores count as set up since V1.3 → give Netto no path, so the setup flow is tested
   await fetch(REST + '/stores/netto?updateMask.fieldPaths=categoryOrder&updateMask.fieldPaths=orderSetAt&updateMask.fieldPaths=orderCheckedAt', { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { categoryOrder: { nullValue: null }, orderSetAt: { nullValue: null }, orderCheckedAt: { nullValue: null } } }) });
   await A.waitForTimeout(600);
-  for (const P of [A, B]) { await P.click('.tab:has-text("Plan")'); await P.click('button:has-text("Einkauf starten bei Netto")'); }
+  for (const P of [B, A]) { await P.click('.tab:has-text("Plan")'); await P.click('button:has-text("Einkauf starten bei Netto")'); }
   const groupsOf = P => P.locator('span[style*="uppercase"]').allTextContents();
   console.log('   Netto groups before:', (await groupsOf(B)).join(' → '));
   await A.click('text=Hilf mit, diese Filiale genauer zu machen');

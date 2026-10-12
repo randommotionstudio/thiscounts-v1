@@ -4,6 +4,8 @@ import { auth, isConfigured } from './firebase';
 import { DataProvider, useData } from './data/DataProvider';
 import { AppProvider, useApp } from './app/AppContext';
 import { useRouter } from './app/router';
+import { joinError, joinWithCode, useJoining } from './app/join';
+import { normalizeCode } from './lib/people';
 import { Login } from './screens/Login';
 import { ListScreen } from './screens/ListScreen';
 import { PlanScreen } from './screens/PlanScreen';
@@ -32,6 +34,7 @@ function Loading() {
 export function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const router = useRouter();
+  const joining = useJoining();
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   if (!isConfigured) {
@@ -39,7 +42,7 @@ export function App() {
   }
   return (
     <Frame>
-      {user === undefined ? null : user === null ? <Login /> : (
+      {user === undefined ? null : user === null || joining ? <Login /> : (
         <DataProvider key={user.uid} user={user}>
           <Main user={user} {...router} />
         </DataProvider>
@@ -50,14 +53,7 @@ export function App() {
 
 function Main({ user, route, navigate, back }: { user: User } & ReturnType<typeof useRouter>) {
   const data = useData();
-  if (data.denied) {
-    return (
-      <Centered>
-        <div>Das Konto {user.email} hat keinen Zugriff auf die Listen.</div>
-        <button className="outline-danger" style={{ maxWidth: 280 }} onClick={() => signOut(auth)}>Abmelden</button>
-      </Centered>
-    );
-  }
+  if (data.denied) return <Denied user={user} />;
   if (!data.ready) return <Loading />;
   return (
     <AppProvider user={user} route={route} navigate={navigate} back={back}>
@@ -95,5 +91,37 @@ function Screens() {
       {screen}
       {floatToast && <div className={'toast-float' + (app.toastLeaving ? ' toast-leaving' : '')}>{app.toastText}</div>}
     </>
+  );
+}
+
+/** Signed in, but not (yet) in the household: join with an invite code, or sign out. */
+function Denied({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const join = () => {
+    const c = normalizeCode(code);
+    if (!name.trim()) return setErr('Bitte gib deinen Namen ein.');
+    if (!c) return setErr('Der Einladungscode hat 6 Zeichen, z. B. K7M-4QX.');
+    setErr(''); setBusy(true);
+    joinWithCode(user, name.trim().slice(0, 40), c).catch((x: { code?: string }) => { setBusy(false); setErr(joinError(x && x.code)); });
+  };
+  return (
+    <Centered>
+      <div style={{ textWrap: 'pretty' }}>Das Konto {user.email} hat keinen Zugriff auf die Listen.</div>
+      {open ? (
+        <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+          <input className="field" value={name} onChange={e => { setName(e.target.value); setErr(''); }} placeholder="Dein Name" aria-label="Dein Name" maxLength={40} />
+          <input className="field" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setErr(''); }} placeholder="Einladungscode, z. B. K7M-4QX" aria-label="Einladungscode" autoCapitalize="characters" spellCheck={false} />
+          {err && <div role="alert" style={{ fontSize: 13, color: '#B23A12', margin: '0 4px' }}>{err}</div>}
+          <button className="cta" onClick={join} disabled={busy}>{busy ? 'Beitreten …' : 'Beitreten'}</button>
+        </div>
+      ) : (
+        <button className="cta" style={{ maxWidth: 320 }} onClick={() => setOpen(true)}>Mit Einladungscode beitreten</button>
+      )}
+      <button className="outline-danger" style={{ maxWidth: 320 }} onClick={() => signOut(auth)}>Abmelden</button>
+    </Centered>
   );
 }

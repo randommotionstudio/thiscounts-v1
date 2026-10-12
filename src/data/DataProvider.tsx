@@ -4,10 +4,10 @@ import {
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { ALL_DEPTS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from '../lib/logic';
-import type { Branch, HistoryEntry, Item, List, MemoryEntry, Session, Store, Town } from '../lib/types';
-import { historyCol, householdRef, itemsCol, listsCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
+import type { Branch, HistoryEntry, Invite, Item, List, Member, MemoryEntry, Session, Store, Town } from '../lib/types';
+import { historyCol, householdRef, invitesCol, itemsCol, listsCol, membersCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
-import { seedDefaultList, seedHousehold } from './seed';
+import { joinAsTester, seedDefaultList, seedHousehold } from './seed';
 import { onWritesChange, writesInFlight } from './write';
 
 export interface Data {
@@ -31,6 +31,10 @@ export interface Data {
   notifyWhileShopping: boolean;
   /** V1.2: everyone's profile picture by uid (missing → initial on orange) */
   avatars: Record<string, AvatarPref>;
+  /** V1.5: everyone in the household by uid (the two original testers may still be missing) */
+  members: Record<string, Member>;
+  /** V1.5: invites that haven't been used yet (expired ones included) */
+  invites: Invite[];
   /** Local changes that haven't reached the server yet */
   pending: boolean;
 }
@@ -95,6 +99,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [notifyWhileShopping, setNotify] = useState(true);
   const [myAvatar, setMyAvatar] = useState<AvatarPref>(normalizeAvatar(null));
   const [otherAvatars, setOtherAvatars] = useState<Record<string, AvatarPref>>({});
+  const [members, setMembers] = useState<Record<string, Member>>({});
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const joined = useRef(false);
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
   const seeded = useRef(false);
   const listSeeded = useRef(false);
@@ -172,7 +179,24 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       snap.docs.forEach(d => { m[d.id] = normalizeAvatar(d.get('avatar')); });
       setOtherAvatars(m);
     }, e => console.warn('[thisCounts] avatars not readable (update firestore.rules)', e));
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); };
+    // V1.5: members and invites. Needs the V1.5 rules; with older ones this fails quietly (names fall back to the testers).
+    const u9 = onSnapshot(membersCol(), snap => {
+      const m: Record<string, Member> = {};
+      snap.docs.forEach(d => {
+        const x = d.data(opts);
+        m[d.id] = { uid: d.id, name: str(x.name) || '', email: str(x.email) || '', joinedAtMs: ms(x.joinedAt, Date.now()) };
+      });
+      setMembers(m);
+      // The two original testers get their entry the first time they open this version
+      if (!snap.metadata.fromCache && !m[user.uid] && !joined.current) { joined.current = true; joinAsTester(user); }
+    }, e => console.warn('[thisCounts] members not readable (update firestore.rules)', e));
+    const u10 = onSnapshot(invitesCol(), snap => {
+      setInvites(snap.docs.map(d => {
+        const x = d.data(opts);
+        return { code: d.id, createdBy: str(x.createdBy) || '', createdAtMs: ms(x.createdAt, Date.now()), expiresAtMs: ms(x.expiresAt), usedBy: str(x.usedBy) };
+      }).filter(i => !i.usedBy).sort((a, b) => a.createdAtMs - b.createdAtMs));
+    }, e => console.warn('[thisCounts] invites not readable (update firestore.rules)', e));
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); u10(); };
   }, [user.uid]);
 
   // Every list got deleted (e.g. on both phones while offline) → start a fresh one instead of hanging.
@@ -201,8 +225,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     towns: hh?.towns || [],
     stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
     avatars: { ...otherAvatars, [user.uid]: myAvatar },
+    members, invites,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
+  }), [members, invites, hh, denied, stores, lists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

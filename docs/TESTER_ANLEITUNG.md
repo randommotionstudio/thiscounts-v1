@@ -70,6 +70,13 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 - **Weg auch ohne Einkauf bearbeiten:** Profil → Laden antippen → **„Weg durch die Filiale“**. Dort steht für jede Filiale, ob ihr Weg schon eingerichtet ist; antippen öffnet ihn. Im Laden geht es weiterhin über „Aufbau der Filiale geändert?“.
 - **Eigener Weg pro Filiale:** Eine neue Filiale startet ohne Weg – im Laden einfach auf „Hilf mit, diese Filiale genauer zu machen“ tippen.
 
+## Neu in Version 1.5: Jemanden einladen
+
+- **Einladen:** Profil → **„Jemanden einladen“**. Die App zeigt einen Code wie **K7M-4QX**. Über **„Link teilen“** schickt ihr den Link per WhatsApp, SMS oder Mail – oder ihr gebt den Code einfach weiter. Jeder Code gilt **für eine Person** und **7 Tage**. Offene Einladungen stehen im Profil unter „Mitglieder“; antippen → **„Einladung zurückziehen“**.
+- **Registrieren:** Wer eingeladen wird, öffnet den Link (der Code ist dann schon eingetragen) – oder tippt auf der Anmeldeseite auf **„Neu hier? Mit Einladung registrieren“** und gibt den Code selbst ein. Dazu Name, E-Mail und ein Passwort. Danach sieht die Person alle Listen und Läden, genau wie ihr. Für die Registrierung braucht man Internet.
+- **Namen überall:** Statt „Anna“ steht jetzt immer, wer es war – „Neu von Tom“, „Lea kauft gerade ein“.
+- **Nur eine Person kauft ein:** Kauft jemand gerade mit einer Liste ein, können die anderen keinen Einkauf starten. Der Knopf im Plan ist dann grau, darüber steht z. B. „Anna kauft gerade ein. Du kannst starten, sobald der Einkauf abgeschlossen ist.“ Sobald Anna auf „Einkauf abschließen“ tippt, geht es wieder. Vergisst sie das, gibt die App den Einkauf nach 90 Minuten ohne Abhaken von selbst frei. Etwas auf die Liste setzen geht natürlich jederzeit.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann

@@ -120,3 +120,21 @@ export interface Stop {
   categoryOrder: string[] | null;
   custom: boolean;
 }
+
+/** V1.5: someone in the household (households/{hid}/members/{uid}) */
+export interface Member {
+  uid: string;
+  name: string;
+  email: string;
+  joinedAtMs: number;
+}
+
+/** V1.5: an invite code, valid once and for 7 days (households/{hid}/invites/{code}) */
+export interface Invite {
+  /** The code without the dash, e.g. "K7M4QX" */
+  code: string;
+  createdBy: string;
+  createdAtMs: number;
+  expiresAtMs: number;
+  usedBy: string | null;
+}

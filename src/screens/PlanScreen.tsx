@@ -9,7 +9,7 @@ import { ElsewhereSheet } from '../sheets/ElsewhereSheet';
 import { StandInSheet } from '../sheets/StandInSheet';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { TownSheet } from '../sheets/TownSheet';
-import { ConnPill, LabeledRule, TabBar, TextLink, useHeaderHeight } from '../ui/kit';
+import { Avatar, ConnPill, LabeledRule, TabBar, TextLink, useHeaderHeight } from '../ui/kit';
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 
@@ -29,6 +29,8 @@ export function PlanScreen() {
   const [townPick, setTownPick] = useState(false);
   const [askStandIn, setAskStandIn] = useState<string | null>(null);
   const multiTown = app.towns.length >= 2;
+  // V1.5: one person shops at a time – while someone else is on a trip with this list, nobody else starts one
+  const locked = !!app.shopper && !app.currentStop;
   const awayTown = multiTown && app.town !== app.towns[0]?.id ? app.town : null;
 
   // Store names in the household's store order ("Netto, Edeka"), not in the order the items came in
@@ -107,7 +109,7 @@ export function PlanScreen() {
         isCur={s.id === app.currentStop} isNext={!!nextStore && s.id === nextStore.id} insteadOf={insteadOf}
         menuOpen={menu === key} onToggleMenu={() => setMenu(m => (m === key ? null : key))}
         sort={sorting ? { isMain: idx === 0 && s.id === list.mainStoreId, onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: idx <= sortMin, noDown: idx >= plannedN - 1 } : null}
-        onStart={() => goStore(s.id)} onAllHere={!done && route.length > 1 ? () => allHere(s) : null} onDefer={() => defer(s)} />
+        onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && route.length > 1 ? () => allHere(s) : null} onDefer={() => defer(s)} />
     );
   };
 
@@ -168,7 +170,7 @@ export function PlanScreen() {
             elsewhere={s => townsOf(s, app.towns).filter(t => t.id !== app.town).map(t => t.name)}
             onReplace={app.town && !app.standIn && herePreview && herePreview.stores.length > 0 && herePreview.missing.length > 0 ? () => setAskStandIn(app.town) : null} />
         )}
-        {openItems > 0 && data.stores.length > 0 && (
+        {openItems > 0 && data.stores.length > 0 && !locked && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
             <TextLink onClick={() => setElsewhere('pick')}>Woanders einkaufen …</TextLink>
           </div>
@@ -177,7 +179,22 @@ export function PlanScreen() {
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         {route.length > 0 && (
           <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
-            {spontaneousStore ? (
+            {locked && app.shopper && (
+              <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 4px 10px', padding: '10px 12px', background: 'rgba(255,253,250,.82)', WebkitBackdropFilter: 'blur(18px)', backdropFilter: 'blur(18px)', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD' }}>
+                <span style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
+                  <Avatar person={app.shopper.person} size={28} />
+                  <span style={{ position: 'absolute', right: -2, bottom: -2, width: 10, height: 10, borderRadius: '50%', background: '#3E9B5F', border: '2px solid #FFFDFA', display: 'block' }} />
+                </span>
+                <span style={{ fontSize: 13, color: '#6F6055', textWrap: 'pretty' }}>
+                  <span style={{ fontWeight: 600, color: INK }}>{app.shopper.person.name} kauft gerade ein.</span> Du kannst starten, sobald der Einkauf abgeschlossen ist.
+                </span>
+              </div>
+            )}
+            {locked ? (
+              <button className="cta off" disabled aria-disabled="true" style={{ color: '#8A7A6D', cursor: 'default' }}>
+                {nextStore ? 'Einkauf starten bei ' + nextStore.name : 'Einkauf abschließen'}
+              </button>
+            ) : spontaneousStore ? (
               <button className="cta" onClick={() => navigate(paths.spontan(spontaneousStore.id))}>Weiter einkaufen bei {spontaneousStore.name}</button>
             ) : (
               <button className="cta" onClick={() => (nextStore ? goStore(nextStore.id) : finish())}>

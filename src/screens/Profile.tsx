@@ -5,15 +5,18 @@ import { paths } from '../app/router';
 import { auth } from '../firebase';
 import * as actions from '../data/actions';
 import { StoreSheet, type StoreSheetState } from '../sheets/StoreSheet';
+import { InviteSheet, inviteMessage } from '../sheets/InviteSheet';
 import { AvatarSheet } from '../sheets/AvatarSheet';
-import { Avatar, LogoTile, Sheet, TabBar } from '../ui/kit';
+import { Avatar, AvatarStack, LogoTile, Sheet, TabBar } from '../ui/kit';
 import { guessTownName, townsOf } from '../lib/logic';
+import { INVITE_DAYS, formatCode, untilLabel } from '../lib/people';
 import type { Town } from '../lib/types';
 
 /** Profil (reduced for V1): who you are, who you share with, and the household's stores. */
 export function Profile() {
   const app = useApp();
-  const { me, other, data, toast, navigate } = app;
+  const { me, others, othersLabel, data, toast, navigate } = app;
+  const [invite, setInvite] = useState<{ code: string; expiresAtMs: number } | null>(null);
   const [sheet, setSheet] = useState<StoreSheetState | null>(null);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [townEdit, setTownEdit] = useState<{ town: Town; name: string } | null>(null);
@@ -45,6 +48,24 @@ export function Profile() {
     toast('„' + townEdit.town.name + '“ entfernt');
     setTownEdit(null);
   };
+  // V1.5: invites
+  const newInvite = () => setInvite({ code: actions.createInvite(), expiresAtMs: Date.now() + INVITE_DAYS * 24 * 60 * 60 * 1000 });
+  const copyInvite = (msg: string, done: string) => {
+    navigator.clipboard.writeText(msg).then(() => toast(done), () => toast('Kopieren ging nicht – der Code steht oben'));
+  };
+  const shareInvite = () => {
+    if (!invite) return;
+    const msg = inviteMessage(invite.code, invite.expiresAtMs);
+    if (navigator.share) navigator.share({ title: 'Einladung zu thisCounts', text: msg }).catch(() => {});
+    else copyInvite(msg, 'Einladung kopiert – füg sie in eine Nachricht ein');
+  };
+  const withdraw = () => {
+    if (!invite) return;
+    actions.withdrawInvite(invite.code);
+    toast('Einladung ' + formatCode(invite.code) + ' zurückgezogen');
+    setInvite(null);
+  };
+
   const del = () => {
     const s = sheet && data.stores.find(x => x.id === sheet.id);
     if (!s) return;
@@ -75,10 +96,38 @@ export function Profile() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, paddingTop: 14, borderTop: '1px solid #4A3B2E' }}>
-            <Avatar person={other} onDark />
-            <span style={{ fontSize: 14, color: '#C9B8A6' }}>Teilt alle Listen mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{other.name}</span></span>
+            {others.length > 0 && <AvatarStack people={others} onDark ring="#2A1F17" />}
+            <span style={{ fontSize: 14, color: '#C9B8A6', minWidth: 0 }}>{others.length ? <>Teilt alle Listen mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{othersLabel}</span></> : 'Noch teilst du die Listen mit niemandem.'}</span>
           </div>
         </div>
+        <div className="section-label" style={{ margin: '24px 0 8px' }}>Mitglieder</div>
+        <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
+          {[me, ...others].map((p, i) => (
+            <div key={p.uid || p.email} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', minHeight: 56, boxSizing: 'border-box', borderTop: i ? '1px solid #F3EADF' : 'none' }}>
+              <Avatar person={p} size={34} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{p.name}{i === 0 && <span style={{ fontWeight: 500, color: '#8A7A6D' }}> · Du</span>}</div>
+                {p.email && <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{p.email}</div>}
+              </div>
+            </div>
+          ))}
+          {data.invites.map(inv => {
+            const expired = inv.expiresAtMs <= Date.now();
+            return (
+              <div key={inv.code} onClick={() => setInvite({ code: inv.code, expiresAtMs: inv.expiresAtMs })} data-invite={inv.code}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', minHeight: 56, boxSizing: 'border-box', borderTop: '1px solid #F3EADF', cursor: 'pointer' }}>
+                <span style={{ width: 34, height: 34, borderRadius: '50%', border: '1.5px dashed #C9B8A6', boxSizing: 'border-box', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: '.04em' }}>{formatCode(inv.code)}</div>
+                  <div style={{ fontSize: 12, color: expired ? '#B23A12' : '#8A7A6D' }}>{expired ? 'Einladung abgelaufen' : 'Offene Einladung · gültig ' + untilLabel(inv.expiresAtMs)}</div>
+                </div>
+                <span style={{ color: '#B9AA9C', fontSize: 22, lineHeight: 1, flexShrink: 0 }}>›</span>
+              </div>
+            );
+          })}
+        </div>
+        <button className="dashed-btn" style={{ marginTop: 12 }} onClick={newInvite}><span className="plus-ring" /><span>Jemanden einladen</span></button>
+        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und 7 Tage. Wer dabei ist, sieht alle Listen.</p>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Deine Läden</div>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
           {data.stores.map((s, i) => (
@@ -133,6 +182,10 @@ export function Profile() {
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>
         <TabBar active="profile" go={navigate} />
       </div>
+      {invite && (
+        <InviteSheet code={invite.code} expiresAtMs={invite.expiresAtMs} onShare={shareInvite} onWithdraw={withdraw} onClose={() => setInvite(null)}
+          onCopy={() => copyInvite(formatCode(invite.code), 'Code ' + formatCode(invite.code) + ' kopiert')} />
+      )}
       {avatarOpen && <AvatarSheet person={me} onClose={() => setAvatarOpen(false)} />}
       {sheet && <StoreSheet key={sheet.id || 'new'} initial={sheet} towns={app.towns} defaultTown={app.town} homeGuess={guessTownName(data.stores.map(s => s.branch))}
         store={sheet.id ? data.stores.find(s => s.id === sheet.id) || null : null} onClose={() => setSheet(null)} onSave={save} onDelete={del}
