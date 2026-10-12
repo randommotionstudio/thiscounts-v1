@@ -71,5 +71,26 @@ const avatarsOf = P => P.evaluate(() => [...document.querySelectorAll('span')].f
   await B.goto('http://127.0.0.1:4173/profil'); await B.waitForTimeout(800);
   const me = (await avatarsOf(B)).find(x => x.size === '54px');
   ok(me && me.icon && me.bg === 'rgb(42, 31, 23)', 'choice persists after reload');
+
+  // V1.7: 17 icons + initials (three full rows) and 6 colors; Eis on Flieder
+  await B.click('button[aria-label="Profilbild ändern"]'); await B.waitForTimeout(300);
+  for (const n of ['Zitrone', 'Trauben', 'Croissant', 'Kuchen', 'Eis', 'Popcorn', 'Himmel', 'Flieder']) ok(await B.locator('button[aria-label="' + n + '"]').count() === 1, 'picker has "' + n + '"');
+  ok(await B.locator('.sheet button[aria-pressed]').count() === 18 + 6, '18 icon cells + 6 colors');
+  await B.click('button[aria-label="Eis"]'); await B.click('button[aria-label="Flieder"]'); await B.waitForTimeout(300);
+  await B.screenshot({ path: SHOTS + '105-B-avatar-v17.png' });
+  const big = (await avatarsOf(B)).find(x => x.size === '96px');
+  ok(big && big.bg === 'rgb(235, 227, 252)', 'Flieder background');
+  const eis = await B.evaluate(() => [...document.querySelectorAll('span[style*="mask"]')].some(s => (s.style.webkitMaskImage || s.style.maskImage || '').includes('ice-cream-cone')));
+  ok(eis, 'Eis icon shown');
+  ok((await (await fetch('http://127.0.0.1:4173/icons/ice-cream-cone.svg')).text()).includes('<svg'), 'icon file is served');
+  await B.click('button:has-text("Fertig")');
+  // Small phone (iPhone SE 1): six colors fit without sideways scrolling
+  const small = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, locale: 'de-DE' });
+  const S = await small.newPage();
+  await login(S, 'michael@rieplhuber.com'); await S.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 20000 });
+  await S.goto('http://127.0.0.1:4173/profil'); await S.click('button[aria-label="Profilbild ändern"]'); await S.waitForTimeout(400);
+  const fl = await S.locator('button[aria-label="Flieder"]').boundingBox();
+  ok(fl && fl.x + fl.width <= 320 && fl.width >= 36, 'all six colors fit on a 320px screen (' + Math.round(fl.x + fl.width) + 'px, ' + Math.round(fl.width) + 'px wide)');
+  await S.screenshot({ path: SHOTS + '106-avatar-small.png' });
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

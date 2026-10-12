@@ -1,15 +1,22 @@
-// V1.2 profile picture: initials or one of 11 icons, in one of 4 colors. No photo upload.
+// V1.2 profile picture: initials or one of 17 icons (V1.7: +6), in one of 6 colors (V1.7: +2). No photo upload.
 
-export const AV_ICONS = ['apple', 'carrot', 'cherry', 'egg', 'fish', 'pizza', 'cookie', 'coffee', 'cup-soda', 'soup', 'milk'] as const;
+export const AV_ICONS = [
+  'apple', 'carrot', 'cherry', 'egg', 'fish', 'pizza', 'cookie', 'coffee', 'cup-soda', 'soup', 'milk',
+  'citrus', 'grape', 'croissant', 'cake-slice', 'ice-cream-cone', 'popcorn',
+] as const;
 export const AV_ICON_DE: Record<string, string> = {
   apple: 'Apfel', carrot: 'Karotte', cherry: 'Kirschen', egg: 'Ei', fish: 'Fisch', pizza: 'Pizza',
   cookie: 'Keks', coffee: 'Kaffee', 'cup-soda': 'Limo', soup: 'Suppe', milk: 'Milch',
+  citrus: 'Zitrone', grape: 'Trauben', croissant: 'Croissant', 'cake-slice': 'Kuchen', 'ice-cream-cone': 'Eis', popcorn: 'Popcorn',
 };
 export const AV_COLORS = [
   { bg: '#F3752E', fg: '#2A1F17', name: 'Orange' },
   { bg: '#FDE4D1', fg: '#9C4412', name: 'Pfirsich' },
   { bg: '#DDF0E3', fg: '#1E5A34', name: 'Mint' },
   { bg: '#2A1F17', fg: '#FBF5EE', name: 'Espresso' },
+  // V1.7: the blue and purple of the categories
+  { bg: '#D2ECFC', fg: '#00496F', name: 'Himmel' },
+  { bg: '#EBE3FC', fg: '#4B346F', name: 'Flieder' },
 ];
 
 /** users/{uid}.avatar */

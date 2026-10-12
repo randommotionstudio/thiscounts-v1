@@ -37,10 +37,10 @@ export function AvatarSheet({ person, onClose }: { person: { name: string; avata
         })}
       </div>
       <div style={label}>Farbe</div>
-      <div style={{ display: 'flex', gap: 14, paddingLeft: 2 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 44px))', justifyContent: 'space-between', gap: 10, padding: '0 2px' }}>
         {AV_COLORS.map((c, i) => (
           <button key={c.name} onClick={() => save({ color: i })} title={c.name} aria-label={c.name} aria-pressed={av.color === i}
-            style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', padding: 0, backgroundColor: c.bg, boxShadow: av.color === i ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
+            style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', border: 'none', padding: 0, backgroundColor: c.bg, boxShadow: av.color === i ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
         ))}
       </div>
       <button onClick={onClose} style={{ marginTop: 22, width: '100%', height: 54, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Fertig</button>
