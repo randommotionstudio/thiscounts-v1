@@ -76,6 +76,8 @@ const avatarsOf = P => P.evaluate(() => [...document.querySelectorAll('span')].f
   await B.click('button[aria-label="Profilbild ändern"]'); await B.waitForTimeout(300);
   for (const n of ['Zitrone', 'Trauben', 'Croissant', 'Kuchen', 'Eis', 'Popcorn', 'Himmel', 'Flieder']) ok(await B.locator('button[aria-label="' + n + '"]').count() === 1, 'picker has "' + n + '"');
   ok(await B.locator('.sheet button[aria-pressed]').count() === 18 + 6, '18 icon cells + 6 colors');
+  const order = await B.evaluate(() => [...document.querySelectorAll('.sheet button[aria-pressed]')].slice(18).map(b => b.getAttribute('aria-label')));
+  ok(order.join(',') === 'Orange,Pfirsich,Mint,Himmel,Flieder,Espresso', 'color order, Espresso last: ' + order.join(', '));
   await B.click('button[aria-label="Eis"]'); await B.click('button[aria-label="Flieder"]'); await B.waitForTimeout(300);
   await B.screenshot({ path: SHOTS + '105-B-avatar-v17.png' });
   const big = (await avatarsOf(B)).find(x => x.size === '96px');

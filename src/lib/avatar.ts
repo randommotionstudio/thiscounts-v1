@@ -18,6 +18,8 @@ export const AV_COLORS = [
   { bg: '#D2ECFC', fg: '#00496F', name: 'Himmel' },
   { bg: '#EBE3FC', fg: '#4B346F', name: 'Flieder' },
 ];
+/** Order in the picker (Espresso last). The stored color is the index into AV_COLORS, so that order never changes. */
+export const AV_COLOR_ORDER = [0, 1, 2, 4, 5, 3];
 
 /** users/{uid}.avatar */
 export interface AvatarPref {

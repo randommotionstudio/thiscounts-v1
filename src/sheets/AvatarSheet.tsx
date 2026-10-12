@@ -1,5 +1,5 @@
 import * as actions from '../data/actions';
-import { AV_COLORS, AV_ICONS, AV_ICON_DE, DEFAULT_AVATAR, type AvatarPref } from '../lib/avatar';
+import { AV_COLORS, AV_COLOR_ORDER, AV_ICONS, AV_ICON_DE, DEFAULT_AVATAR, type AvatarPref } from '../lib/avatar';
 import { Avatar, IconGlyph, Sheet } from '../ui/kit';
 
 const RING = '0 0 0 2px #FBF5EE, 0 0 0 4px #F3752E', NO_RING = '0 0 0 1px #EADCCD';
@@ -38,9 +38,9 @@ export function AvatarSheet({ person, onClose }: { person: { name: string; avata
       </div>
       <div style={label}>Farbe</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 44px))', justifyContent: 'space-between', gap: 10, padding: '0 2px' }}>
-        {AV_COLORS.map((c, i) => (
-          <button key={c.name} onClick={() => save({ color: i })} title={c.name} aria-label={c.name} aria-pressed={av.color === i}
-            style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', border: 'none', padding: 0, backgroundColor: c.bg, boxShadow: av.color === i ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
+        {AV_COLOR_ORDER.map(i => (
+          <button key={i} onClick={() => save({ color: i })} title={AV_COLORS[i].name} aria-label={AV_COLORS[i].name} aria-pressed={av.color === i}
+            style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', border: 'none', padding: 0, backgroundColor: AV_COLORS[i].bg, boxShadow: av.color === i ? RING : NO_RING, cursor: 'pointer', flexShrink: 0 }} />
         ))}
       </div>
       <button onClick={onClose} style={{ marginTop: 22, width: '100%', height: 54, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Fertig</button>
