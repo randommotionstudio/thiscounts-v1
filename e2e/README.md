@@ -31,6 +31,7 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | swipe-delete | Swipe to delete on the list |
 | avatar | Profile picture picker and its colours everywhere |
 | markers-and-offline-path | "Neu von …" markers survive app restarts; a store path saved offline reaches the server |
+| units | "2 Liter Laktosefreie Milch" and other written-out units; 1 Glas / 2 Gläser |
 | category-upgrade | Data in the pre-V1.3 format (Gewürze & Saucen …) shows the new categories and store paths |
 | category-picker | 24 categories, nothing cut off or on 3 lines (also on a 4" phone) |
 | usual-chips | Suggestions: only often-bought, at most 12, never covering the navigation |

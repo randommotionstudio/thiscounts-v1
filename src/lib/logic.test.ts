@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ALL_DEPTS, UNKNOWN, effStore, guessDeptFromName, missingQty, moveInOrder, parseEntry, pickFor, route,
+  ALL_DEPTS, UNKNOWN, effStore, guessDeptFromName, missingQty, moveInOrder, parseEntry, pickFor, qtyStr, route,
   stepQ, storeGroups, usualChips,
 } from './logic';
 import type { Item, List, Store } from './types';
@@ -19,6 +19,39 @@ const item = (p: Partial<Item> = {}): Item => ({
 });
 
 describe('parseEntry', () => {
+  it('understands written-out units (testers: "2 Liter Laktosefreie Milch")', () => {
+    expect(parseEntry('2 Liter Laktosefreie Milch')).toEqual({ name: 'Laktosefreie Milch', qty: '2 l' });
+    expect(parseEntry('1,5 Liter Saft')).toEqual({ name: 'Saft', qty: '1,5 l' });
+    expect(parseEntry('Milch 2 Liter')).toEqual({ name: 'Milch', qty: '2 l' });
+    expect(parseEntry('500 Gramm Mehl')).toEqual({ name: 'Mehl', qty: '500 g' });
+    expect(parseEntry('1500 gr Zucker')).toEqual({ name: 'Zucker', qty: '1,5 kg' });
+    expect(parseEntry('1 Kilo Äpfel')).toEqual({ name: 'Äpfel', qty: '1 kg' });
+    expect(parseEntry('250 Milliliter Sahne')).toEqual({ name: 'Sahne', qty: '250 ml' });
+    expect(parseEntry('2 Gläser Gurken')).toEqual({ name: 'Gurken', qty: '2 Gläser' });
+    expect(parseEntry('1 Glas Honig')).toEqual({ name: 'Honig', qty: '1 Glas' });
+    expect(parseEntry('1 Kasten Bier')).toEqual({ name: 'Bier', qty: '1 Kasten' });
+    expect(parseEntry('1 Flaschen Wasser')).toEqual({ name: 'Wasser', qty: '1 Flasche' });
+    expect(parseEntry('4 Rollen Klopapier')).toEqual({ name: 'Klopapier', qty: '4 Rollen' });
+    expect(parseEntry('1 Bund Petersilie')).toEqual({ name: 'Petersilie', qty: '1 Bund' });
+    expect(parseEntry('2 Päckchen Hefe')).toEqual({ name: 'Hefe', qty: '2 Pck.' });
+    expect(parseEntry('3 Tafeln Schokolade')).toEqual({ name: 'Schokolade', qty: '3 Tafeln' });
+    expect(parseEntry('2 LITER Milch')).toEqual({ name: 'Milch', qty: '2 l' });
+  });
+  it('1 → singular, otherwise plural – also when stepping the amount', () => {
+    const p = pickFor({ id: 'x', name: 'Honig', qty: '1 Glas' });
+    expect(p.unit).toBe('Gläser');
+    expect(qtyStr(stepQ(p, 1), p.unit)).toBe('2 Gläser');
+    expect(qtyStr(1, 'Gläser')).toBe('1 Glas');
+    expect(qtyStr(1.5, 'Flaschen')).toBe('1,5 Flaschen');
+    expect(qtyStr(1, 'Becher')).toBe('1 Becher');
+    expect(missingQty({ name: 'Wasser', qty: '3 Flaschen' }, 1).restText).toBe('2 Flaschen');
+    expect(missingQty({ name: 'Wasser', qty: '3 Flaschen' }, 2).restText).toBe('1 Flasche');
+  });
+  it('a word that only starts like a unit stays part of the name', () => {
+    expect(parseEntry('2 Glasreiniger')).toEqual({ name: 'Glasreiniger', qty: '2 Stück' });
+    expect(parseEntry('2 Grapefruits')).toEqual({ name: 'Grapefruits', qty: '2 Stück' });
+    expect(parseEntry('1 Literflasche Wasser')).toEqual({ name: 'Literflasche Wasser', qty: '1 Stück' });
+  });
   it('parses leading and trailing quantities', () => {
     expect(parseEntry('5 Bananen')).toEqual({ name: 'Bananen', qty: '5 Stück' });
     expect(parseEntry('500 g Mehl')).toEqual({ name: 'Mehl', qty: '500 g' });

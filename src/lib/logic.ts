@@ -34,21 +34,53 @@ export const logoUrl = (key: string) => '/logos/' + key + '.png';
 
 // ---------- Quantities ----------
 
-const UNIT_RE = '(g|kg|l|ml|st(?:ü|ue)ck|stk|pck|packung(?:en)?|becher|flaschen?|dosen?|x)';
-const UNIT_MAP: Record<string, string> = {
-  g: 'g', kg: 'kg', l: 'l', ml: 'ml', stk: 'Stück', 'stück': 'Stück', stueck: 'Stück', pck: 'Pck.',
-  packung: 'Pck.', packungen: 'Pck.', becher: 'Becher', flasche: 'Flaschen', flaschen: 'Flaschen',
-  dose: 'Dosen', dosen: 'Dosen', x: 'Stück', '': 'Stück',
-};
+/**
+ * Units understood when typing an item ("2 Liter Milch", "Mehl 500 g", "1 Kasten Bier"):
+ * spellings (regex, case-insensitive, without the trailing dot) → how the amount is shown.
+ */
+const UNITS: [string, string][] = [
+  ['l|ltr|liter|litre', 'l'],
+  ['ml|milliliter', 'ml'],
+  ['g|gr|gramm', 'g'],
+  ['kg|kilo|kilos|kilogramm', 'kg'],
+  ['st(?:ü|ue)ck|stk|x', 'Stück'],
+  ['pck|pkg|packung(?:en)?|päckchen', 'Pck.'],
+  ['becher', 'Becher'],
+  ['flaschen?', 'Flaschen'],
+  ['dosen?', 'Dosen'],
+  ['glas|gläser', 'Gläser'],
+  ['tüten?', 'Tüten'],
+  ['beutel', 'Beutel'],
+  ['bund', 'Bund'],
+  ['kasten|kästen', 'Kästen'],
+  ['kisten?', 'Kisten'],
+  ['rollen?', 'Rollen'],
+  ['tafeln?', 'Tafeln'],
+  ['netze?', 'Netze'],
+  ['schalen?', 'Schalen'],
+  ['scheiben?', 'Scheiben'],
+];
+// A unit only counts as one when a space (or the end) follows: "2 Glasreiniger" stays an item name
+const UNIT_RE = '(' + UNITS.map(u => u[0]).join('|') + ')';
+const unitOf = (u: string | undefined) => (u ? UNITS.find(([re]) => new RegExp('^(?:' + re + ')$', 'i').test(u))?.[1] : undefined);
 
 export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export const fmtNum = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
-export const qtyStr = (q: number, u: string) => (u === 'g' && q >= 1000 ? fmtNum(q / 1000) + ' kg' : fmtNum(q) + ' ' + u);
+/** Countable units: plural (as stored) → singular, for exactly 1 ("1 Glas", "2 Gläser") */
+const SINGULAR: Record<string, string> = {
+  Flaschen: 'Flasche', Dosen: 'Dose', Gläser: 'Glas', Tüten: 'Tüte', Kästen: 'Kasten', Kisten: 'Kiste',
+  Rollen: 'Rolle', Tafeln: 'Tafel', Netze: 'Netz', Schalen: 'Schale', Scheiben: 'Scheibe',
+};
+const PLURAL: Record<string, string> = Object.fromEntries(Object.entries(SINGULAR).map(([p, s1]) => [s1, p]));
+/** The unit in its stored (plural) form, also for a singular read back from "1 Glas" */
+export const baseUnit = (u: string) => PLURAL[u] || u;
+const unitFor = (q: number, u: string) => { const b = baseUnit(u); return q === 1 ? SINGULAR[b] || b : b; };
+export const qtyStr = (q: number, u: string) => (u === 'g' && q >= 1000 ? fmtNum(q / 1000) + ' kg' : fmtNum(q) + ' ' + unitFor(q, u));
 
 const fmtQty = (n: string, u: string | undefined) => {
-  const un = UNIT_MAP[(u || '').toLowerCase()] || u || 'Stück';
+  const un = unitOf(u) || 'Stück';
   const v = parseFloat(n.replace(',', '.'));
-  return un === 'g' && v >= 1000 ? qtyStr(v, 'g') : n.replace('.', ',') + ' ' + un;
+  return un === 'g' && v >= 1000 ? qtyStr(v, 'g') : n.replace('.', ',') + ' ' + unitFor(v, un);
 };
 
 /** "5 Bananen", "Mehl 500 g", "1.5l Milch" → { name, qty } */
@@ -88,7 +120,7 @@ export interface Pick {
 export function pickFor(it: { id: string; name: string; qty: string | null }): Pick {
   const m = (it.qty || '').match(/^(\d+(?:[.,]\d+)?)\s*(.*)$/);
   let qty = m ? parseFloat(m[1].replace(',', '.')) : 1;
-  let unit = (m && m[2]) || 'Stück';
+  let unit = baseUnit((m && m[2]) || 'Stück');
   const wasKg = unit === 'kg';
   if (wasKg) { qty = Math.round(qty * 1000); unit = 'g'; }
   const usual = USUAL.find(u => u.name.toLowerCase() === it.name.toLowerCase() && (u.unit === 'kg' ? 'g' : u.unit) === unit);
@@ -417,7 +449,7 @@ export const USUAL_MAX = 12;
 export function missingQty(item: { name: string; qty: string | null } | null, foundRaw: number) {
   const qtyM = ((item && item.qty) || '').match(/^(\d+(?:[.,]\d+)?)\s*(.*)$/);
   const qtyNum = qtyM ? parseFloat(qtyM[1].replace(',', '.')) : 0;
-  const qtyUnit = qtyM ? qtyM[2] : '';
+  const qtyUnit = qtyM ? baseUnit(qtyM[2]) : '';
   const unitL = qtyUnit.toLowerCase();
   const usualM = item && USUAL.find(u => u.name.toLowerCase() === item.name.toLowerCase() && u.unit === qtyUnit);
   let qtyStep = unitL === 'g' || unitL === 'ml' ? (qtyNum >= 1000 ? 250 : qtyNum >= 300 ? 100 : 50) : unitL === 'kg' || unitL === 'l' ? (qtyNum >= 2 ? 0.5 : 0.25) : 1;
@@ -427,10 +459,10 @@ export function missingQty(item: { name: string; qty: string | null } | null, fo
   const rest = Math.round((qtyNum - found) * 100) / 100;
   return {
     qtyNum, qtyUnit, qtyStep, maxFound, found, rest,
-    restText: fmtNum(rest) + ' ' + qtyUnit,
+    restText: fmtNum(rest) + ' ' + unitFor(rest, qtyUnit),
     foundText: qtyStep === 1 ? fmtNum(found) : fmtNum(found) + ' ' + qtyUnit,
-    totalText: fmtNum(qtyNum) + ' ' + qtyUnit,
-    foundQtyText: fmtNum(found) + ' ' + qtyUnit,
+    totalText: fmtNum(qtyNum) + ' ' + unitFor(qtyNum, qtyUnit),
+    foundQtyText: fmtNum(found) + ' ' + unitFor(found, qtyUnit),
   };
 }
 
