@@ -29,7 +29,8 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
   const { list, navigate, toast, data, user, personOf } = app;
-  const { route, itemsAt, doneOf, goStore, finish, stopOf, temp, townStores } = useTrip();
+  const { route, onlyStop, itemsAt, doneOf, goStore, finish, stopOf, temp, townStores } = useTrip();
+  const onlyHere = !spontaneous && !!onlyStop && onlyStop.id === stopId;
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [headRef, headH] = useHeaderHeight();
@@ -117,10 +118,12 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     finish(done => 'Einkauf bei ' + cur.name + ' abgeschlossen · ' + done + ' erledigt' + (openHere ? ' · ' + openHere + ' bleiben auf der Liste' : ''));
   };
 
+  // "Nur hier einkaufen": the trip ends here; the other stores' items stay on the list for next time
+  const finishTrip = () => finish(onlyHere ? done => 'Einkauf bei ' + cur.name + ' abgeschlossen · ' + done + ' erledigt' : undefined);
   const goNext = () => {
     // Items left unchecked here: ask what should happen to them (also at the last stop, for consistency)
     if (openHere > 0) { setMenu(false); setLeaving(true); return; }
-    if (!nextStop) { finish(); return; }
+    if (!nextStop) { finishTrip(); return; }
     if (allDone) markStoreDone(cur.id);
     goStore(nextStop.id);
   };
@@ -133,7 +136,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   }, [leaving, openHere]);
   const leaveWithOpenItems = (takeAlong: boolean) => {
     // Last stop: the open items simply stay on the list with their store when the trip ends
-    if (!nextStop) { setLeaving(false); finish(); return; }
+    if (!nextStop) { setLeaving(false); finishTrip(); return; }
     const open = curItems.filter(i => !i.checked);
     const n = open.length, one = n === 1 ? open[0].name : null;
     if (takeAlong) {
@@ -205,7 +208,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>{spontaneous ? 'Spontaner Einkauf' : 'Stopp ' + (Math.max(curIdx, 0) + 1) + ' von ' + route.length}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>{spontaneous ? 'Spontaner Einkauf' : onlyHere ? 'Nur dieser Laden' : 'Stopp ' + (Math.max(curIdx, 0) + 1) + ' von ' + route.length}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
           <LogoTile store={cur} size={44} radius={12} initialSize={18} bordered={false} />
@@ -257,11 +260,13 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         )}
         {menu && (
           <div style={{ marginBottom: 10, background: 'rgba(255,253,250,.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)', backdropFilter: 'blur(22px) saturate(1.6)', border: '1px solid rgba(255,255,255,.75)', borderRadius: 22, boxShadow: '0 12px 32px rgba(42,31,23,.16)', overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'toastIn .2s ease' }}>
-            <button onClick={skipStore} style={{ textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Diesen Laden überspringen</div>
-              <div style={{ fontSize: 13, color: '#8A7A6D' }}>Kommt ans Ende der Route – offene Artikel bleiben hier.</div>
-            </button>
-            <button onClick={() => navigate(paths.plan)} style={{ textAlign: 'left', height: 48, padding: '0 16px', border: 'none', borderTop: '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: '#2A1F17', cursor: 'pointer' }}>Zum Plan</button>
+            {!onlyHere && (
+              <button onClick={skipStore} style={{ textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Diesen Laden überspringen</div>
+                <div style={{ fontSize: 13, color: '#8A7A6D' }}>Kommt ans Ende der Route – offene Artikel bleiben hier.</div>
+              </button>
+            )}
+            <button onClick={() => navigate(paths.plan)} style={{ textAlign: 'left', height: 48, padding: '0 16px', border: 'none', borderTop: onlyHere ? 'none' : '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: '#2A1F17', cursor: 'pointer' }}>Zum Plan</button>
           </div>
         )}
         {spontaneous ? (

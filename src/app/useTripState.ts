@@ -14,6 +14,8 @@ export interface TripState {
   standIn: boolean;
   /** V1.4: temporary moves for this trip: item id → store id (never changes the item itself) */
   moves: Record<string, string>;
+  /** V1.8 "Nur hier einkaufen": a trip with just this stop and its items (null = the whole route) */
+  only: string | null;
 }
 
 const KEY = 'thisCounts.trip.';
@@ -26,6 +28,7 @@ const clean = (v: Partial<TripState>): TripState => ({
   town: typeof v.town === 'string' ? v.town : null,
   standIn: !!v.standIn,
   moves: v.moves && typeof v.moves === 'object' ? v.moves : {},
+  only: typeof v.only === 'string' ? v.only : null,
 });
 
 function read(listId: string): TripState {
@@ -36,7 +39,7 @@ function read(listId: string): TripState {
 }
 
 function write(listId: string, t: TripState) {
-  const empty = !t.stop && !t.town && !t.standIn && !Object.keys(t.moves).length;
+  const empty = !t.stop && !t.town && !t.standIn && !Object.keys(t.moves).length && !t.only;
   lsSet(KEY + listId, empty ? null : JSON.stringify(t));
   for (const k of Object.values(OLD)) lsSet(k + listId, null);
 }
@@ -54,13 +57,16 @@ export function useTripState(listId: string) {
     });
   }, [listId]);
 
-  const setStop = useCallback((stop: string | null) => update(t => ({ ...t, stop })), [update]);
+  // Going anywhere but the "Nur hier" stop (or ending the trip) ends "Nur hier"
+  const setStop = useCallback((stop: string | null) => update(t => ({ ...t, stop, only: stop && stop === t.only ? t.only : null })), [update]);
+  const startOnly = useCallback((stop: string) => update(t => ({ ...t, stop, only: stop })), [update]);
+  const endOnly = useCallback(() => update(t => ({ ...t, only: null })), [update]);
   // Stand-ins and temporary moves belong to one trip in one town: a new town (or the end of the trip) clears them
   const setTown = useCallback((town: string | null) => update(t => ({ ...t, town, standIn: false, moves: {} })), [update]);
   const setStandIn = useCallback((on: boolean) => update(t => ({ ...t, standIn: on, moves: on ? t.moves : {} })), [update]);
   const moveForTrip = useCallback((itemIds: string[], storeId: string) =>
     update(t => ({ ...t, moves: { ...t.moves, ...Object.fromEntries(itemIds.map(id => [id, storeId])) } })), [update]);
 
-  return { trip, setStop, setTown, setStandIn, moveForTrip };
+  return { trip, setStop, setTown, setStandIn, moveForTrip, startOnly, endOnly };
 }
 

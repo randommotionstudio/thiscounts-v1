@@ -47,3 +47,4 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |
+| only-here | "Nur hier einkaufen": a one-store trip that ends there; "Ganze Route"; the tidied stop menu ("Nochmal hierhin") |

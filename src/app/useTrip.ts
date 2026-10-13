@@ -18,7 +18,12 @@ export function useTrip() {
     // Another town than home: its own stop order (set in the plan), falling back to the usual one
     const orderIn = (t: string | null) => (t && towns.length >= 2 && t !== towns[0].id ? list.townOrder[t] || list.storeOrder : undefined);
     const plan = tripPlan(items, list, data.stores, townStores, { order: orderIn(town), standIn, moves: tripMoves });
-    const { route, stopOf } = plan;
+    const { stopOf } = plan;
+    // V1.8 "Nur hier einkaufen": the trip is just that stop (if it's still on the route)
+    const onlyStop = app.onlyStop ? plan.route.find(s => s.id === app.onlyStop) || null : null;
+    const route = onlyStop ? [onlyStop] : plan.route;
+    /** "Nur hier einkaufen": start a trip with just this stop */
+    const goOnly = (id: string) => { app.startOnly(id); app.navigate(paths.store(id)); };
     /** What a trip in another town would look like with stand-ins – for the question when switching */
     const previewIn = (t: string) => {
       const ts = storesInTown(data.stores, towns, t);
@@ -40,6 +45,6 @@ export function useTrip() {
       app.navigate(paths.list, true);
       app.toast(message ? message(done) : 'Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
-    return { route, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
+    return { route, fullRoute: plan.route, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
   }, [app, list, items, data.stores, townStores, town, towns, standIn, tripMoves]);
 }

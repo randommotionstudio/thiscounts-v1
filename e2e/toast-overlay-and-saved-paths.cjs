@@ -41,8 +41,6 @@ const REST = 'http://127.0.0.1:8080/v1/projects/demo-thiscounts/databases/(defau
 
   // --- Request: stores from the tester form show the edit path ---
   await A.click('.tab:has-text("Plan")');
-  await A.locator('.card', { hasText: 'Netto' }).locator('button[title="Mehr"]').click().catch(() => {});
-  await A.click('button:has-text("Mit diesem Laden starten")').catch(async () => A.goto('http://127.0.0.1:4173/laden/netto'));
   await A.goto('http://127.0.0.1:4173/laden/netto'); await A.waitForTimeout(800);
   ok(await A.getByText('Aufbau der Filiale geändert?').count() === 1 && await A.getByText('Hilf mit, diese Filiale genauer zu machen').count() === 0, 'Netto shows "Aufbau der Filiale geändert?"');
   await A.click('text=Aufbau der Filiale geändert?'); await A.waitForTimeout(400);

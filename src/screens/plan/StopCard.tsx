@@ -4,7 +4,22 @@ import { LogoTile, UpDown } from '../../ui/kit';
 
 const ACC = '#F3752E', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 
-const menuBtn = (first: boolean) => ({ textAlign: 'left' as const, height: 48, padding: '0 14px', border: 'none', borderTop: first ? 'none' : '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: INK, cursor: 'pointer' });
+const menuBtn = (first: boolean) => ({ textAlign: 'left' as const, minHeight: 48, padding: '10px 14px', border: 'none', borderTop: first ? 'none' : '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: INK, cursor: 'pointer' });
+
+type MenuEntry = { label: string; sub?: string; onClick: () => void };
+
+/** The stop's ⋯ menu */
+function Menu({ entries }: { entries: MenuEntry[] }) {
+  return (
+    <div role="menu" style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {entries.map((e, i) => (
+        <button key={e.label} role="menuitem" onClick={e.onClick} style={menuBtn(i === 0)}>
+          {e.label}{e.sub && <span style={{ color: '#8A7A6D', fontWeight: 500 }}> · {e.sub}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
@@ -15,7 +30,7 @@ function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 }
 
 /** One stop of the route: number, logo, the items as chips (dashed = only here for this trip), menu or sort arrows */
-export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, menuOpen, onToggleMenu, sort, onStart, onAllHere, onDefer }: {
+export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, menuOpen, onToggleMenu, sort, onStart, onOnly, onAllHere, allCount, onDefer }: {
   stop: Stop; idx: number; items: Item[]; done: boolean; isCur: boolean; isNext: boolean;
   /** For stand-in items: the store they're here instead of */
   insteadOf: (i: Item) => string | null;
@@ -23,9 +38,18 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
   /** While sorting the route: the arrows (null = not sorting) */
   sort: { isMain: boolean; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
   /** null while someone else is shopping (V1.5: one person at a time) */
-  onStart: (() => void) | null; onAllHere: (() => void) | null; onDefer: () => void;
+  onStart: (() => void) | null;
+  /** V1.8 "Nur hier einkaufen": a trip with just this stop (null = not offered) */
+  onOnly: (() => void) | null;
+  /** "Alles hier einkaufen": all open items to this stop (null = not offered); allCount = how many */
+  onAllHere: (() => void) | null; allCount: number;
+  onDefer: () => void;
 }) {
   const toggle = (e: React.MouseEvent) => { e.stopPropagation(); onToggleMenu(); };
+  const open = items.filter(i => !i.checked).length;
+  const only: MenuEntry[] = onOnly && !done ? [{ label: 'Nur hier einkaufen', sub: 'nur ' + open + ' Artikel', onClick: onOnly }] : [];
+  // A finished stop: back in, e.g. for something forgotten
+  const again: MenuEntry[] = onStart && done ? [{ label: 'Nochmal hierhin', onClick: onStart }] : [];
   const status = (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
       <span style={{ fontSize: 13, fontWeight: 600, padding: '3.5px 10px', borderRadius: 999, border: `1.5px solid ${done ? '#B9DFC4' : LINE}`, color: done ? '#2E6B41' : '#6F6055', whiteSpace: 'nowrap' }}>{done ? 'Erledigt' : items.length + ' Artikel'}</span>
@@ -37,6 +61,16 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
       })}
     </div>
   );
+  // A one-time stop has no "Stattdessen hier starten" button, so starting there stays in its menu
+  const customEntries: MenuEntry[] = [
+    ...(onStart && !done ? [{ label: 'Mit diesem Stopp starten', onClick: onStart }] : []), ...only, ...again,
+  ];
+  // "Mit diesem Laden starten" is gone: the same as "Stattdessen hier starten" on the card (or the big button for the next stop)
+  const entries: MenuEntry[] = done ? again : [
+    ...only,
+    ...(onAllHere ? [{ label: 'Alles hier einkaufen', sub: 'alle ' + allCount + ' Artikel', onClick: onAllHere }] : []),
+    { label: 'Später erledigen', onClick: onDefer },
+  ];
   if (s.custom) {
     return (
       <div className="card" style={{ border: '2px solid #fff' }}>
@@ -46,13 +80,9 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
             <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
             <div style={{ fontSize: 12, color: '#8A7A6D' }}>Einmaliger Stopp</div>
           </div>
-          {onStart && <Dots onClick={toggle} />}
+          {customEntries.length > 0 && <Dots onClick={toggle} />}
         </div>
-        {menuOpen && onStart && (
-          <div style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <button onClick={onStart} style={menuBtn(true)}>Mit diesem Stopp starten</button>
-          </div>
-        )}
+        {menuOpen && customEntries.length > 0 && <Menu entries={customEntries} />}
         {status}
       </div>
     );
@@ -66,19 +96,11 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
           <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
           <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{s.branch || 'Eigener Laden'}</div>
         </div>
-        {!sort && <Dots onClick={toggle} />}
+        {!sort && entries.length > 0 && <Dots onClick={toggle} />}
         {sort && !sort.isMain && <UpDown onUp={sort.onUp} onDown={sort.onDown} noUp={sort.noUp} noDown={sort.noDown} />}
         {sort && sort.isMain && <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>immer zuerst</span>}
       </div>
-      {menuOpen && !sort && (
-        <div style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {onStart && <button onClick={onStart} style={menuBtn(true)}>Mit diesem Laden starten</button>}
-          {onAllHere && (
-            <button onClick={onAllHere} style={menuBtn(false)}>Alles hier einkaufen <span style={{ color: '#8A7A6D', fontWeight: 500 }}>· nur ein Stopp</span></button>
-          )}
-          <button onClick={onDefer} style={menuBtn(false)}>Später erledigen</button>
-        </div>
-      )}
+      {menuOpen && !sort && entries.length > 0 && <Menu entries={entries} />}
       {status}
       {!done && !isNext && onStart && (
         <button onClick={onStart} style={{ marginTop: 12, width: '100%', height: 44, border: '2px solid #EADCCD', borderRadius: 14, background: '#fff', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Stattdessen hier starten</button>

@@ -21,7 +21,7 @@ const resetBtn = { border: 'none', background: 'none', padding: '6px 0', color: 
 export function PlanScreen() {
   const app = useApp();
   const { list, items, navigate, toast, data } = app;
-  const { route, itemsAt, doneOf, nextStore, goStore, finish, unavailable, temp, previewIn, orderIn } = useTrip();
+  const { route, fullRoute, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, unavailable, temp, previewIn, orderIn } = useTrip();
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [headRef, headH] = useHeaderHeight();
@@ -109,7 +109,8 @@ export function PlanScreen() {
         isCur={s.id === app.currentStop} isNext={!!nextStore && s.id === nextStore.id} insteadOf={insteadOf}
         menuOpen={menu === key} onToggleMenu={() => setMenu(m => (m === key ? null : key))}
         sort={sorting ? { isMain: idx === 0 && s.id === list.mainStoreId, onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: idx <= sortMin, noDown: idx >= plannedN - 1 } : null}
-        onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && route.length > 1 ? () => allHere(s) : null} onDefer={() => defer(s)} />
+        onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && route.length > 1 ? () => allHere(s) : null} allCount={items.filter(onTrip).length}
+        onOnly={!locked && !app.currentStop && !onlyStop && fullRoute.length > 1 ? () => goOnly(s.id) : null} onDefer={() => defer(s)} />
     );
   };
 
@@ -158,6 +159,12 @@ export function PlanScreen() {
           {manual.length > 0 && <LabeledRule style={{ margin: '6px 4px 0' }}>Ohne feste Reihenfolge</LabeledRule>}
           {manual.map(([s, i]) => card(s, i))}
         </div>
+        {onlyStop && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 4px 0', fontSize: 13, color: '#6F6055' }}>
+            <span style={{ flex: 1, minWidth: 0, textWrap: 'pretty' }}>Nur {onlyStop.name} – die anderen Läden bleiben für nächstes Mal.</span>
+            <button onClick={() => { app.endOnly(); toast('Wieder die ganze Route'); }} style={resetBtn}>Ganze Route</button>
+          </div>
+        )}
         {app.standIn && tempItems.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 4px 0', fontSize: 13, color: '#6F6055' }}>
             <span style={{ width: 16, height: 10, border: '1.5px dashed rgba(42,31,23,.45)', borderRadius: 999, flexShrink: 0, display: 'block' }} />

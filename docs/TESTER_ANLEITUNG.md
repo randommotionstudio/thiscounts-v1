@@ -85,6 +85,12 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 - **Gemerkt für alle Listen:** Welcher Laden und welche Kategorie zu einem Artikel gehören, merkt sich die App weiterhin für alle Listen gemeinsam.
 - Im Listen-Menü steht bei jeder Liste, mit wem ihr sie teilt – oder „nur für dich“.
 
+## Neu in Version 1.8: Nur hier einkaufen
+
+- **Schnell nur in einen Laden:** Im Plan beim Laden auf **⋯** → **„Nur hier einkaufen“** (z. B. auf dem Heimweg nur Wein bei trinkgut). Ihr seht nur die Artikel dieses Ladens, unten steht gleich **„Einkauf abschließen“**. Alles für die anderen Läden bleibt unverändert auf der Liste für nächstes Mal. Wer es sich anders überlegt: im Plan auf **„Ganze Route“**.
+- **Aufgeräumtes Menü:** „Mit diesem Laden starten“ gibt es nicht mehr – das macht der Knopf **„Stattdessen hier starten“** auf der Karte. Im Menü stehen jetzt **Nur hier einkaufen** (nur die Artikel dieses Ladens), **Alles hier einkaufen** (alle Artikel in diesen einen Laden) und **Später erledigen**. Bei einem erledigten Laden steht dort **„Nochmal hierhin“**, falls ihr etwas vergessen habt.
+- **Profilbild:** zwei neue Farben (Himmel, Flieder) und sechs neue Icons. Wer vorher eine andere Farbe als Orange hatte, wählt sie bitte einmal neu.
+
 ## 5. Ohne Empfang
 
 Kein Problem. Die App funktioniert auch im Funkloch oder im Flugmodus weiter. Oben erscheint dann
