@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import { useTrip } from '../app/useTrip';
@@ -76,18 +76,25 @@ export function PlanScreen() {
     setAskStandIn(null);
   };
 
-  const plannedN = route.filter(s => !s.custom).length;
-  const sortMin = route[0] && route[0].id === list.mainStoreId ? 1 : 0;
-  const canSortPlan = plannedN - sortMin >= 2;
+  // Sorting: stores you've already been to on this trip and the main store stay where they are
+  // (the main store first – or last, if it was put off with "Später erledigen")
+  const plannedIds = route.filter(s => !s.custom).map(s => s.id);
+  const mainLater = list.deferred.includes(list.mainStoreId || '');
+  const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : id === list.mainStoreId ? (mainLater ? 'später' : 'immer zuerst') : null);
+  const sortable = plannedIds.filter(id => !fixedLabel(id));
+  const canSortPlan = sortable.length >= 2;
+  // Nothing left to sort (e.g. after a change on the other phone) → sort mode ends by itself
+  const sorting = planSort && canSortPlan;
+  useEffect(() => { if (!canSortPlan) setPlanSort(false); }, [canSortPlan]);
   const parked = items.filter(i => i.parked);
 
   const moveTrip = (id: string, dir: -1 | 1) => {
-    const ids = route.filter(s => !s.custom).map(s => s.id);
-    const next = moveInOrder(ids, id, dir, ids[0] === list.mainStoreId ? 1 : 0);
-    if (!next) return;
+    const moved = moveInOrder(sortable, id, dir);
+    if (!moved) return;
+    const next = [...plannedIds.filter(x => app.visited.includes(x)), ...moved];
     // In another town the order is remembered for that town (it also decides where stand-in items go)
     if (awayTown) actions.setTownOrder(list.id, awayTown, [...next, ...(orderIn(awayTown) || []).filter(x => !next.includes(x))]);
-    else actions.updateList(list.id, { tripOrder: next, deferred: [] });
+    else actions.updateList(list.id, { tripOrder: next, deferred: mainLater ? [list.mainStoreId!] : [] });
   };
   const allHere = (s: Stop) => {
     const n = items.filter(onTrip).length;
@@ -103,12 +110,12 @@ export function PlanScreen() {
   };
 
   const card = (s: Stop, idx: number) => {
-    const key = 'stop:' + s.id, sorting = planSort && !s.custom, done = doneOf(s);
+    const key = 'stop:' + s.id, sortThis = sorting && !s.custom, done = doneOf(s), at = sortable.indexOf(s.id);
     return (
       <StopCard key={s.id} stop={s} idx={idx} items={itemsAt(s.id)} done={done}
         isCur={s.id === app.currentStop} isNext={!!nextStore && s.id === nextStore.id} insteadOf={insteadOf}
         menuOpen={menu === key} onToggleMenu={() => setMenu(m => (m === key ? null : key))}
-        sort={sorting ? { isMain: idx === 0 && s.id === list.mainStoreId, onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: idx <= sortMin, noDown: idx >= plannedN - 1 } : null}
+        sort={sortThis ? { fixed: fixedLabel(s.id), onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: at <= 0, noDown: at >= sortable.length - 1 } : null}
         onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && route.length > 1 ? () => allHere(s) : null} allCount={items.filter(onTrip).length}
         onOnly={!locked && !app.currentStop && !onlyStop && fullRoute.length > 1 ? () => goOnly(s.id) : null} onDefer={() => defer(s)} />
     );
@@ -151,7 +158,7 @@ export function PlanScreen() {
             {!awayTown && list.tripOrder && (
               <button onClick={() => { actions.updateList(list.id, { tripOrder: null }); setPlanSort(false); toast('Reihenfolge zurückgesetzt'); }} style={resetBtn}>Zurücksetzen</button>
             )}
-            <button onClick={() => { setPlanSort(v => !v); setMenu(null); }} style={{ border: 'none', background: planSort ? ACC : PALE, color: INK, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, minHeight: 36 }}>{planSort ? 'Fertig' : 'Ändern'}</button>
+            <button onClick={() => { setPlanSort(v => !v); setMenu(null); }} style={{ border: 'none', background: sorting ? ACC : PALE, color: INK, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, minHeight: 36 }}>{sorting ? 'Fertig' : 'Ändern'}</button>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>

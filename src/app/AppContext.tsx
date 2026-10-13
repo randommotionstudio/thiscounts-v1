@@ -77,6 +77,8 @@ export interface AppCtx {
   moveForTrip: (itemIds: string[], storeId: string) => void;
   /** V1.8 "Nur hier einkaufen": this trip is just this stop (per device and list) */
   onlyStop: string | null;
+  /** V1.8: stops of this trip in the order this phone went there */
+  visited: string[];
   startOnly: (stopId: string) => void;
   endOnly: () => void;
 }
@@ -189,7 +191,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
       standIn: trip.standIn, setStandIn, tripMoves: trip.moves, moveForTrip,
-      onlyStop: trip.only, startOnly, endOnly,
+      onlyStop: trip.only, visited: trip.visited, startOnly, endOnly,
     };
   }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip, startOnly, endOnly]);
 

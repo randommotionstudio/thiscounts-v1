@@ -82,7 +82,8 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(await A.getByText(/^Nur trinkgut/).count() === 0, '… and the note is gone');
 
   // A finished stop: "Nochmal hierhin"
-  await A.click('button.cta:has-text("Weiter einkaufen bei Netto")');
+  ok(await A.locator('.bottom-fade button.cta:has-text("Weiter einkaufen bei trinkgut")').count() === 1, 'the trip continues where you are: Weiter einkaufen bei trinkgut');
+  await A.locator('.card', { hasText: 'Netto' }).locator('button:has-text("Stattdessen hier starten")').click();
   await check(A, 'Bananen'); await check(A, 'Milch');
   await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
   const done = await menuOf(A, 'Netto');

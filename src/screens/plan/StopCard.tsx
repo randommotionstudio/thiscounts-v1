@@ -36,7 +36,7 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
   insteadOf: (i: Item) => string | null;
   menuOpen: boolean; onToggleMenu: () => void;
   /** While sorting the route: the arrows (null = not sorting) */
-  sort: { isMain: boolean; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
+  sort: { fixed: string | null; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
   /** null while someone else is shopping (V1.5: one person at a time) */
   onStart: (() => void) | null;
   /** V1.8 "Nur hier einkaufen": a trip with just this stop (null = not offered) */
@@ -97,8 +97,8 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
           <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{s.branch || 'Eigener Laden'}</div>
         </div>
         {!sort && entries.length > 0 && <Dots onClick={toggle} />}
-        {sort && !sort.isMain && <UpDown onUp={sort.onUp} onDown={sort.onDown} noUp={sort.noUp} noDown={sort.noDown} />}
-        {sort && sort.isMain && <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>immer zuerst</span>}
+        {sort && !sort.fixed && <UpDown onUp={sort.onUp} onDown={sort.onDown} noUp={sort.noUp} noDown={sort.noDown} />}
+        {sort && sort.fixed && <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>{sort.fixed}</span>}
       </div>
       {menuOpen && !sort && entries.length > 0 && <Menu entries={entries} />}
       {status}

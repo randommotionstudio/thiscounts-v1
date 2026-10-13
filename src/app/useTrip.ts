@@ -21,7 +21,11 @@ export function useTrip() {
     const { stopOf } = plan;
     // V1.8 "Nur hier einkaufen": the trip is just that stop (if it's still on the route)
     const onlyStop = app.onlyStop ? plan.route.find(s => s.id === app.onlyStop) || null : null;
-    const route = onlyStop ? [onlyStop] : plan.route;
+    // The trip follows the order you actually go: stops you've been to first (e.g. after "Stattdessen hier starten"),
+    // then the rest as planned
+    const planned = onlyStop ? [onlyStop] : plan.route;
+    const been = app.visited.map(id => planned.find(s => s.id === id)).filter((s): s is Stop => !!s);
+    const route = [...been, ...planned.filter(s => !been.includes(s))];
     /** "Nur hier einkaufen": start a trip with just this stop */
     const goOnly = (id: string) => { app.startOnly(id); app.navigate(paths.store(id)); };
     /** What a trip in another town would look like with stand-ins – for the question when switching */
