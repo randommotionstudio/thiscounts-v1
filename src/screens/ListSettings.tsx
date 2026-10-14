@@ -121,7 +121,7 @@ export function ListSettings() {
                   </div>
                 </div>
               )}
-              {lastList && <p style={{ fontSize: 13, color: '#8A7A6D', margin: '0 4px', textAlign: 'center' }}>Eine einzige Liste kann nicht gelöscht werden.</p>}
+              {lastList && <p style={{ fontSize: 13, color: '#8A7A6D', margin: '0 4px', textAlign: 'center' }}>Löschen ist nur möglich, wenn mehr als eine Liste vorhanden ist.</p>}
             </div>
           </>
         )}

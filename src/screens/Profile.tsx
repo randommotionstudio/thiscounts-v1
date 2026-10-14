@@ -144,7 +144,7 @@ export function Profile() {
           ))}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={() => setSheet({ mode: 'new', name: '', branch: '', logo: null })}><span className="plus-ring" /><span>Laden hinzufügen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Welche Läden eine Liste nutzt, wird in der Liste festgelegt.{multi ? '' : ' Gibt es einen Laden auch in einem anderen Ort, lässt er sich beim Laden als weitere Filiale hinzufügen.'}</p>
+        <p className="hint" style={{ marginTop: 10 }}>Die Auswahl der Läden erfolgt in der jeweiligen Liste.{multi ? '' : ' Gibt es einen Laden auch in einem anderen Ort, lässt er sich beim Laden als weitere Filiale hinzufügen.'}</p>
         {multi && (
           <>
             <div className="section-label" style={{ margin: '24px 0 8px' }}>Orte</div>

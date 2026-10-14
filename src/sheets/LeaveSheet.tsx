@@ -27,7 +27,7 @@ export function LeaveSheet({ open, storeName, nextStopName, onAnswer, onClose }:
           Auf der Einkaufsliste lassen
         </button>
       )}
-      <div style={{ fontSize: 13, color: '#8A7A6D', textAlign: 'center', margin: '10px 8px 0', textWrap: 'pretty' }}>Die Artikel behalten ihren Laden und sind beim nächsten Einkauf wieder dabei.</div>
+      <div style={{ fontSize: 13, color: '#8A7A6D', textAlign: 'center', margin: '10px 8px 0', textWrap: 'pretty' }}>Die Artikel behalten ihren Laden und sind beim nächsten Einkauf wieder auf der Liste.</div>
     </Sheet>
   );
 }
