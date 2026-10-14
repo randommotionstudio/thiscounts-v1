@@ -332,9 +332,11 @@ export function tripPlan(items: Item[], list: List, allStores: Store[], townStor
   const allIds = new Set(allStores.map(s => s.id)), townIds = new Set(townStores.map(s => s.id));
   const ord = opts.order || list.tripOrder || list.storeOrder;
   const main = list.mainStoreId && townIds.has(list.mainStoreId) ? list.mainStoreId : null;
+  // The main store comes first – unless it was put off this trip (then the trip order places it)
+  const first = list.mainFree ? null : main;
   const ordered = (arr: Store[]) => {
     const o = ord && ord.length ? sortByOrder(arr, ord) : arr;
-    return [...o.filter(s => s.id === main), ...o.filter(s => s.id !== main)];
+    return [...o.filter(s => s.id === first), ...o.filter(s => s.id !== first)];
   };
   const candidates = ordered(townStores);
   const byId = new Map(townStores.map(s => [s.id, s]));

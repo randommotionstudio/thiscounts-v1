@@ -155,7 +155,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   };
   const skipStore = () => {
     const rest = route.filter(s => s.id !== cur.id && !doneOf(s));
-    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== cur.id), cur.id] });
+    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== cur.id), cur.id], ...(cur.id === list.mainStoreId ? { mainFree: true } : {}) });
     setMenu(false);
     if (rest.length) goStore(rest[0].id); else navigate(paths.plan);
     toast(cur.name + ' auf später verschoben');

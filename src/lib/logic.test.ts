@@ -10,7 +10,7 @@ const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), b
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
-  tripOrder: null, townOrder: {}, deferred: [], without: [], createdAtMs: 0, ...p,
+  tripOrder: null, townOrder: {}, deferred: [], mainFree: false, without: [], createdAtMs: 0, ...p,
 });
 let n = 0;
 const item = (p: Partial<Item> = {}): Item => ({
@@ -139,6 +139,12 @@ describe('route', () => {
   it('trip order overrides standing order, main stays first', () => {
     const items = [item({ storeId: 'd' }), item({ storeId: 'b' }), item()];
     expect(route(items, list({ tripOrder: ['d', 'a', 'b'] }), STORES).map(s => s.id)).toEqual(['a', 'd', 'b']);
+  });
+  it('a main store put off this trip can go anywhere, also back to the front', () => {
+    const items = [item({ storeId: 'd' }), item({ storeId: 'b' }), item()];
+    expect(route(items, list({ deferred: ['a'], mainFree: true }), STORES).map(s => s.id)).toEqual(['b', 'd', 'a']);
+    expect(route(items, list({ tripOrder: ['b', 'a', 'd'], mainFree: true }), STORES).map(s => s.id)).toEqual(['b', 'a', 'd']);
+    expect(route(items, list({ tripOrder: ['a', 'b', 'd'], mainFree: true }), STORES).map(s => s.id)).toEqual(['a', 'b', 'd']);
   });
   it('deferred go last in deferral order, free-text stops after them', () => {
     const items = [item({ storeId: 'b' }), item({ storeId: 'c' }), item(), item({ once: true, onceStopName: ' Apotheke' }), item({ once: true, onceStopName: 'apotheke ' })];

@@ -76,11 +76,10 @@ export function PlanScreen() {
     setAskStandIn(null);
   };
 
-  // Sorting: stores you've already been to on this trip and the main store stay where they are
-  // (the main store first – or last, if it was put off with "Später erledigen")
+  // Sorting: stores you've already been to on this trip stay where they are, and so does the main store ("immer zuerst") –
+  // unless it was put off this trip with "Später erledigen": then it moves like any other store
   const plannedIds = route.filter(s => !s.custom).map(s => s.id);
-  const mainLater = list.deferred.includes(list.mainStoreId || '');
-  const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : id === list.mainStoreId ? (mainLater ? 'später' : 'immer zuerst') : null);
+  const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : id === list.mainStoreId && !list.mainFree ? 'immer zuerst' : null);
   const sortable = plannedIds.filter(id => !fixedLabel(id));
   const canSortPlan = sortable.length >= 2;
   // Nothing left to sort (e.g. after a change on the other phone) → sort mode ends by itself
@@ -94,7 +93,14 @@ export function PlanScreen() {
     const next = [...plannedIds.filter(x => app.visited.includes(x)), ...moved];
     // In another town the order is remembered for that town (it also decides where stand-in items go)
     if (awayTown) actions.setTownOrder(list.id, awayTown, [...next, ...(orderIn(awayTown) || []).filter(x => !next.includes(x))]);
-    else actions.updateList(list.id, { tripOrder: next, deferred: mainLater ? [list.mainStoreId!] : [] });
+    else actions.updateList(list.id, { tripOrder: next, deferred: [] });
+  };
+  // Back to the usual order: main store first again, nothing put off
+  const resetOrder = () => {
+    if (awayTown && list.townOrder[awayTown]) actions.setTownOrder(list.id, awayTown, null);
+    actions.updateList(list.id, awayTown ? { deferred: [], mainFree: false } : { tripOrder: null, deferred: [], mainFree: false });
+    setPlanSort(false);
+    toast('Reihenfolge zurückgesetzt');
   };
   const allHere = (s: Stop) => {
     const n = items.filter(onTrip).length;
@@ -104,7 +110,7 @@ export function PlanScreen() {
     toast('Alle ' + n + ' Artikel jetzt bei ' + s.name + ' · nur ein Stopp');
   };
   const defer = (s: Stop) => {
-    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== s.id), s.id] });
+    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== s.id), s.id], ...(s.id === list.mainStoreId ? { mainFree: true } : {}) });
     setMenu(null);
     toast(s.name + ' ans Ende der Route verschoben');
   };
@@ -151,13 +157,10 @@ export function PlanScreen() {
         )}
         {canSortPlan && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 4px 0' }}>
-            <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6F6055' }}>Reihenfolge · <span style={{ fontWeight: 600, color: INK }}>{awayTown ? 'für ' + app.townName : list.tripOrder ? 'nur für diesen Einkauf' : 'deine Reihenfolge'}</span></div>
-            {awayTown && list.townOrder[awayTown] && (
-              <button onClick={() => { actions.setTownOrder(list.id, awayTown, null); setPlanSort(false); toast('Reihenfolge zurückgesetzt'); }} style={resetBtn}>Zurücksetzen</button>
-            )}
-            {!awayTown && list.tripOrder && (
-              <button onClick={() => { actions.updateList(list.id, { tripOrder: null }); setPlanSort(false); toast('Reihenfolge zurückgesetzt'); }} style={resetBtn}>Zurücksetzen</button>
-            )}
+            <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6F6055' }}>Reihenfolge · <span style={{ fontWeight: 600, color: INK }}>{awayTown ? 'für ' + app.townName : list.tripOrder || list.mainFree ? 'nur für diesen Einkauf' : 'deine Reihenfolge'}</span></div>
+            {(awayTown ? !!list.townOrder[awayTown] : !!list.tripOrder) || list.mainFree ? (
+              <button onClick={resetOrder} style={resetBtn}>Zurücksetzen</button>
+            ) : null}
             <button onClick={() => { setPlanSort(v => !v); setMenu(null); }} style={{ border: 'none', background: sorting ? ACC : PALE, color: INK, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, minHeight: 36 }}>{sorting ? 'Fertig' : 'Ändern'}</button>
           </div>
         )}

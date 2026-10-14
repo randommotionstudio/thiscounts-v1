@@ -110,7 +110,7 @@ export function finishShopping(list: List, items: Item[]) {
   });
   // Sets and deletes can't fail on a missing document, so this batch is safe; the list update goes separately.
   report(batch.commit());
-  updateList(list.id, { tripOrder: null, deferred: [] });
+  updateList(list.id, { tripOrder: null, deferred: [], mainFree: false });
   // Items held back for "next time" are back on the next trip
   items.filter(i => !i.checked && (i.nextTrip || i.pendingDecision)).forEach(i => updateItem(i, { nextTrip: false, pendingDecision: false }));
   endSession();
@@ -189,7 +189,7 @@ export function createList(data: ListDraftData): string {
   return id;
 }
 
-export function updateList(listId: string, patch: Partial<Pick<List, 'name' | 'storeIds' | 'mainStoreId' | 'storeOrder' | 'tripOrder' | 'deferred' | 'without'>>) {
+export function updateList(listId: string, patch: Partial<Pick<List, 'name' | 'storeIds' | 'mainStoreId' | 'storeOrder' | 'tripOrder' | 'deferred' | 'mainFree' | 'without'>>) {
   report(updateDoc(listRef(listId), { ...patch, ...stamp() }));
 }
 

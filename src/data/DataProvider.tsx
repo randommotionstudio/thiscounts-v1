@@ -75,7 +75,7 @@ const toList = (d: DocumentSnapshot<DocumentData>): List => {
   const x = d.data(opts) || {};
   return {
     id: d.id, name: x.name || '', storeIds: strArr(x.storeIds), mainStoreId: str(x.mainStoreId), storeOrder: strArr(x.storeOrder),
-    tripOrder: Array.isArray(x.tripOrder) ? strArr(x.tripOrder) : null, deferred: strArr(x.deferred), without: strArr(x.without), createdAtMs: ms(x.createdAt, Date.now()),
+    tripOrder: Array.isArray(x.tripOrder) ? strArr(x.tripOrder) : null, deferred: strArr(x.deferred), mainFree: !!x.mainFree, without: strArr(x.without), createdAtMs: ms(x.createdAt, Date.now()),
     townOrder: x.townOrder && typeof x.townOrder === 'object' ? Object.fromEntries(Object.entries(x.townOrder).map(([t, o]) => [t, strArr(o)])) : {},
   };
 };
