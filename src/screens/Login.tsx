@@ -10,7 +10,7 @@ const ERRORS: Record<string, string> = {
   'auth/wrong-password': 'E-Mail oder Passwort stimmt nicht.',
   'auth/user-not-found': 'E-Mail oder Passwort stimmt nicht.',
   'auth/invalid-email': 'Diese E-Mail-Adresse sieht nicht richtig aus.',
-  'auth/too-many-requests': 'Zu viele Versuche. Bitte warte einen Moment.',
+  'auth/too-many-requests': 'Zu viele Versuche. Bitte einen Moment warten.',
   'auth/network-request-failed': 'Keine Verbindung. Für die erste Anmeldung wird Internet benötigt.',
   'auth/user-disabled': 'Dieser Zugang ist gesperrt.',
 };
@@ -37,7 +37,7 @@ export function Login() {
     signInWithEmailAndPassword(auth, e, pw).catch((x: { code?: string }) => {
       setBusy(false);
       setPw('');
-      setErr(ERRORS[x.code || ''] || 'Anmelden hat nicht geklappt. Bitte versuch es nochmal.');
+      setErr(ERRORS[x.code || ''] || 'Anmelden hat nicht geklappt. Bitte noch einmal versuchen.');
     });
   };
   const signUp = () => {

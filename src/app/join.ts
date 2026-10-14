@@ -14,18 +14,18 @@ const setJoining = (v: boolean) => { joining = v; subs.forEach(f => f()); };
 export const useJoining = () => useSyncExternalStore(f => { subs.add(f); return () => { subs.delete(f); }; }, () => joining);
 
 export const JOIN_ERRORS: Record<string, string> = {
-  'permission-denied': 'Dieser Einladungscode gilt nicht (mehr) – vielleicht wurde er schon benutzt oder ist abgelaufen. Bitte um einen neuen.',
+  'permission-denied': 'Dieser Einladungscode gilt nicht (mehr) – vielleicht wurde er schon benutzt oder ist abgelaufen. Bitte einen neuen anfordern.',
   'timeout': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
   'auth/network-request-failed': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
   'unavailable': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
   'auth/invalid-email': 'Diese E-Mail-Adresse sieht nicht richtig aus.',
   'auth/weak-password': 'Das Passwort braucht mindestens 6 Zeichen.',
-  'auth/too-many-requests': 'Zu viele Versuche. Bitte warte einen Moment.',
+  'auth/too-many-requests': 'Zu viele Versuche. Bitte einen Moment warten.',
   'auth/operation-not-allowed': 'Registrieren ist gerade nicht möglich.',
   'auth/admin-restricted-operation': 'Registrieren ist gerade nicht möglich.',
   'existing-account': 'Mit dieser E-Mail gibt es schon einen Zugang, aber das Passwort passt nicht. Bitte anmelden oder das Passwort prüfen.',
 };
-export const joinError = (code: string | undefined) => JOIN_ERRORS[code || ''] || 'Das hat nicht geklappt. Bitte versuch es nochmal.';
+export const joinError = (code: string | undefined) => JOIN_ERRORS[code || ''] || 'Das hat nicht geklappt. Bitte noch einmal versuchen.';
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
