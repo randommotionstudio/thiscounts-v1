@@ -162,6 +162,16 @@ export function LabeledRule({ children, style }: { children: ReactNode; style?: 
   );
 }
 
+/** V1.8: a subtle outlined chip with a line icon for secondary actions under the route ("Reihenfolge ändern") */
+export function ActionChip({ icon, onClick, children }: { icon: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 16px 0 13px', border: '1.5px solid #EADCCD', borderRadius: 999, background: '#fff', color: '#2A1F17', fontSize: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+      <span aria-hidden style={{ width: 16, height: 16, display: 'block', opacity: 0.75, background: `url(/icons/${icon}.svg) center/16px no-repeat` }} />
+      {children}
+    </button>
+  );
+}
+
 /** A quiet, underlined text button for rarely used actions ("Woanders einkaufen …") */
 export function TextLink({ onClick, children, style }: { onClick: () => void; children: ReactNode; style?: CSSProperties }) {
   return (

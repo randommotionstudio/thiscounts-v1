@@ -49,14 +49,16 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await A.click('button:has-text("Einsortieren")').catch(() => {});
   await assign(A, 'Crispy Choccies', 'REWE');
   await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
-  ok(await A.locator('button:has-text("Ändern")').count() === 1, 'two stores: the order row is there');
+  ok(await A.locator('button:has-text("Reihenfolge ändern")').count() === 1 && await A.locator('button:has-text("Woanders einkaufen")').count() === 1, 'two stores: chips "Reihenfolge ändern" and "Woanders einkaufen" under the route');
+  ok(await A.getByText('Reihenfolge ·').count() === 0, 'no order row at the top any more');
   await A.click('button:has-text("Ändern")');
   const netto = A.locator('.card', { hasText: 'Netto' });
   ok(await netto.getByText('Hauptladen · immer zuerst').count() === 1 && await netto.locator('button[title="Nach unten"]').count() === 1, 'Netto: arrows and "Hauptladen · immer zuerst"');
   await netto.locator('button[title="Nach unten"]').click(); await A.waitForTimeout(400);
   ok((await cards(A)).join(',') === 'REWE,Netto', 'Netto moved down: REWE, Netto');
   ok(await netto.getByText('Hauptladen · heute verschoben').count() === 1, 'note: "Hauptladen · heute verschoben"');
-  ok(await A.getByText('nur für diesen Einkauf').count() === 1, 'row: "nur für diesen Einkauf"');
+  ok(await A.locator('.bottom-fade button.cta').innerText() === 'Fertig', 'while sorting, the big button is "Fertig"');
+  ok(await A.locator('button:has-text("Reihenfolge ändern")').count() === 0, 'chips hidden while sorting');
   await netto.locator('button[title="Nach oben"]').click(); await A.waitForTimeout(400);
   ok((await cards(A)).join(',') === 'Netto,REWE', 'and back up: Netto, REWE');
   ok(await A.locator('button:has-text("Fertig")').count() === 1, 'still sorting ("Fertig" there)');
@@ -64,10 +66,13 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await netto.locator('button[title="Nach unten"]').click(); await A.waitForTimeout(300);
   await A.click('button:has-text("Fertig")');
   ok(await A.locator('button[title="Nach oben"]').count() === 0, 'sort mode ends');
+  ok(await A.getByText('Reihenfolge für heute geändert').count() === 1, 'note under the route: "Reihenfolge für heute geändert"');
+  await A.screenshot({ path: SHOTS + 'order-04-note.png' });
   await A.click('button:has-text("Zurücksetzen")'); await A.waitForTimeout(400);
   ok((await cards(A)).join(',') === 'Netto,REWE', '"Zurücksetzen": Netto first again');
   await A.click('button:has-text("Ändern")');
   ok(await netto.getByText('Hauptladen · immer zuerst').count() === 1, '… "immer zuerst" again');
+  ok(await A.getByText('Reihenfolge für heute geändert').count() === 0, '… and the note is gone');
   await A.click('button:has-text("Fertig")');
 
   // ---- Heute auslassen (plan) ----

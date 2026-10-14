@@ -21,10 +21,10 @@ const byName = async n => { const d = (await itemDocs()).find(x => x.fields.name
 
   // Plan: quiet link, sheet with all stores
   await A.click('.tab:has-text("Plan")'); await A.waitForTimeout(400);
-  const link = A.locator('button', { hasText: 'Woanders einkaufen …' });
-  ok(await link.count() === 1, 'Plan shows "Woanders einkaufen …"');
+  const link = A.locator('button', { hasText: 'Woanders einkaufen' });
+  ok(await link.count() === 1, 'Plan shows "Woanders einkaufen"');
   const fs = await link.evaluate(e => getComputedStyle(e).fontSize + ' ' + getComputedStyle(e).backgroundColor);
-  ok(/^14px rgba\(0, 0, 0, 0\)/.test(fs), 'it is a small text link, not a button: ' + fs);
+  ok(/^14px rgb\(255, 255, 255\)/.test(fs), 'it is a subtle white chip, not an orange button: ' + fs);
   await link.scrollIntoViewIfNeeded(); await A.screenshot({ path: SHOTS + '190-plan-link.png' });
   await link.click(); await A.waitForTimeout(400);
   const rows = await A.locator('.sheet button:has(.logo-tile)').allTextContents();
@@ -68,7 +68,7 @@ const byName = async n => { const d = (await itemDocs()).find(x => x.fields.name
 
   // trinkgut has a set-up path → departments it doesn't carry go to the bottom
   await A.fill(IN, 'Milch'); await A.press(IN, 'Enter'); await A.locator(IN).blur(); await A.waitForTimeout(600);
-  await A.click('.tab:has-text("Plan")'); await A.click('text=Woanders einkaufen …'); await A.waitForTimeout(300);
+  await A.click('.tab:has-text("Plan")'); await A.click('text=Woanders einkaufen'); await A.waitForTimeout(300);
   await A.locator('.sheet button:has(.logo-tile)', { hasText: 'trinkgut' }).click(); await A.waitForTimeout(900);
   const txt = await A.locator('.scroll').innerText();
   const cut = txt.indexOf("Gibt's hier vermutlich nicht");
@@ -80,7 +80,7 @@ const byName = async n => { const d = (await itemDocs()).find(x => x.fields.name
   ok(/\/plan$/.test(A.url()) && (await A.locator('.cta').textContent()).startsWith('Einkauf starten bei'), 'back on the plan, normal route again');
   ok((await itemDocs()).length === 3, 'all 3 items still on the list');
   // Reload in the middle of a spontaneous trip keeps you there
-  await A.click('text=Woanders einkaufen …'); await A.locator('.sheet button:has(.logo-tile)', { hasText: 'Edeka' }).click(); await A.waitForTimeout(600);
+  await A.click('text=Woanders einkaufen'); await A.locator('.sheet button:has(.logo-tile)', { hasText: 'Edeka' }).click(); await A.waitForTimeout(600);
   await A.reload(); await A.waitForTimeout(1500);
   ok(/\/spontan\/edeka$/.test(A.url()) && await A.getByText('Spontaner Einkauf').count() === 1, 'reload keeps the spontaneous trip');
   await browser.close();

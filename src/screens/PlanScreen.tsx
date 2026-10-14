@@ -9,12 +9,12 @@ import { ElsewhereSheet } from '../sheets/ElsewhereSheet';
 import { StandInSheet } from '../sheets/StandInSheet';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { TownSheet } from '../sheets/TownSheet';
-import { Avatar, ConnPill, LabeledRule, TabBar, TextLink, useHeaderHeight } from '../ui/kit';
+import { ActionChip, Avatar, ConnPill, LabeledRule, TabBar, useHeaderHeight } from '../ui/kit';
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 import { SkippedSection } from './plan/SkippedSection';
 
-const ACC = '#F3752E', PALE = '#F3EADF', INK = '#2A1F17';
+const PALE = '#F3EADF', INK = '#2A1F17';
 
 const resetBtn = { border: 'none', background: 'none', padding: '6px 0', color: '#8A7A6D', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 } as const;
 
@@ -81,6 +81,7 @@ export function PlanScreen() {
   // too, for this trip only ("immer zuerst" until it's moved; "Zurücksetzen" or the end of the trip puts it first again)
   const plannedIds = route.filter(s => !s.custom).map(s => s.id);
   const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : null);
+  const orderChanged = (awayTown ? !!list.townOrder[awayTown] : !!list.tripOrder) || list.mainFree;
   const mainNote = list.mainFree ? 'Hauptladen · heute verschoben' : 'Hauptladen · immer zuerst';
   const sortable = plannedIds.filter(id => !fixedLabel(id));
   const canSortPlan = sortable.length >= 2;
@@ -171,15 +172,6 @@ export function PlanScreen() {
             <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>{skipped.length ? 'Die übrigen Läden hast du für heute ausgelassen.' : waiting.length ? 'Deine offenen Artikel gibt’s nur in einem anderen Ort.' : 'Setz etwas auf die Liste – dann planen wir die Route.'}</div>
           </div>
         )}
-        {canSortPlan && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 4px 0' }}>
-            <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6F6055' }}>Reihenfolge · <span style={{ fontWeight: 600, color: INK }}>{awayTown ? 'für ' + app.townName : list.tripOrder || list.mainFree ? 'nur für diesen Einkauf' : 'deine Reihenfolge'}</span></div>
-            {(awayTown ? !!list.townOrder[awayTown] : !!list.tripOrder) || list.mainFree ? (
-              <button onClick={resetOrder} style={resetBtn}>Zurücksetzen</button>
-            ) : null}
-            <button onClick={() => { setPlanSort(v => !v); setMenu(null); }} style={{ border: 'none', background: sorting ? ACC : PALE, color: INK, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, minHeight: 36 }}>{sorting ? 'Fertig' : 'Ändern'}</button>
-          </div>
-        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
           {planned.map(([s, i]) => card(s, i))}
           {manual.length > 0 && <LabeledRule style={{ margin: '6px 4px 0' }}>Ohne feste Reihenfolge</LabeledRule>}
@@ -198,15 +190,24 @@ export function PlanScreen() {
             <button onClick={() => { app.setStandIn(false); toast('Ersatz aufgehoben'); }} style={resetBtn}>Aufheben</button>
           </div>
         )}
+        {orderChanged && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 4px 0', fontSize: 13, color: '#6F6055' }}>
+            <span aria-hidden style={{ width: 16, height: 16, display: 'block', opacity: 0.55, flexShrink: 0, background: 'url(/icons/arrow-up-down.svg) center/16px no-repeat' }} />
+            <span style={{ flex: 1, minWidth: 0, textWrap: 'pretty' }}>{awayTown ? 'Reihenfolge für ' + app.townName + ' geändert' : 'Reihenfolge für heute geändert'}</span>
+            <button onClick={resetOrder} style={resetBtn}>Zurücksetzen</button>
+          </div>
+        )}
         {skipped.length > 0 && <SkippedSection groups={skipped.map(s => ({ stop: s, items: itemsAt(s.id) }))} onUndo={locked ? null : unskip} />}
         {waiting.length > 0 && (
           <WaitingSection groups={waiting} townName={app.townName}
             elsewhere={s => townsOf(s, app.towns).filter(t => t.id !== app.town).map(t => t.name)}
             onReplace={app.town && !app.standIn && herePreview && herePreview.stores.length > 0 && herePreview.missing.length > 0 ? () => setAskStandIn(app.town) : null} />
         )}
-        {openItems > 0 && data.stores.length > 0 && !locked && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
-            <TextLink onClick={() => setElsewhere('pick')}>Woanders einkaufen …</TextLink>
+        {/* Secondary actions under the route: chips, so each reads as its own button */}
+        {!sorting && !locked && (canSortPlan || (openItems > 0 && data.stores.length > 0)) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 20 }}>
+            {canSortPlan && <ActionChip icon="arrow-up-down" onClick={() => { setPlanSort(true); setMenu(null); }}>Reihenfolge ändern</ActionChip>}
+            {openItems > 0 && data.stores.length > 0 && <ActionChip icon="store" onClick={() => setElsewhere('pick')}>Woanders einkaufen</ActionChip>}
           </div>
         )}
       </div>
@@ -225,7 +226,9 @@ export function PlanScreen() {
                 </span>
               </div>
             )}
-            {locked ? (
+            {sorting ? (
+              <button className="cta" onClick={() => setPlanSort(false)}>Fertig</button>
+            ) : locked ? (
               <button className="cta off" disabled aria-disabled="true" style={{ color: '#8A7A6D', cursor: 'default' }}>
                 {nextStore ? 'Einkauf starten bei ' + nextStore.name : 'Einkauf abschließen'}
               </button>

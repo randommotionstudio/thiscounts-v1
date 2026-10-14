@@ -31,7 +31,7 @@ const cta = P => P.locator('.bottom-fade button.cta');
   ok(await cta(A).isDisabled(), 'while Anna shops: Michi\'s "Einkauf starten" is greyed out');
   ok(await A.getByText('Du kannst starten, sobald der Einkauf abgeschlossen ist.').count() === 1, 'message: "Du kannst starten, sobald der Einkauf abgeschlossen ist."');
   ok(await A.getByText('Stattdessen hier starten').count() === 0, 'no "Stattdessen hier starten"');
-  ok(await A.getByText('Woanders einkaufen …').count() === 0, 'no "Woanders einkaufen …"');
+  ok(await A.getByText('Woanders einkaufen').count() === 0, 'no "Woanders einkaufen"');
   await A.locator('button[aria-label="Mehr"], button[title="Mehr"]').first().click().catch(() => {});
   ok(await A.getByText('Mit diesem Laden starten').count() === 0, 'no "Mit diesem Laden starten" in the stop menu');
   await A.screenshot({ path: SHOTS + 'lock-01-locked.png' });

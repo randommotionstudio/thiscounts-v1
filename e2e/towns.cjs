@@ -111,7 +111,7 @@ const get = async p => (await fetch(H + p, { headers: auth })).json();
   await A.click('.tab:has-text("Plan")'); await A.waitForTimeout(400);
   ok(await A.locator('button[aria-label^="Ort wählen"]').textContent() === 'in Prien', 'next trip starts in Prien again');
   // Woanders einkaufen lists stores per town
-  await A.click('text=Woanders einkaufen …'); await A.waitForTimeout(300);
+  await A.click('text=Woanders einkaufen'); await A.waitForTimeout(300);
   const sheetTxt = await A.locator('.sheet').innerText();
   ok(/IN PRIEN|In Prien/i.test(sheetTxt) && /IN FRASDORF|In Frasdorf/i.test(sheetTxt), 'Woanders einkaufen: grouped by town');
   await A.screenshot({ path: SHOTS + '204-elsewhere-towns.png' });

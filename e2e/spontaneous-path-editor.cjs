@@ -7,7 +7,7 @@ const IN = 'input[placeholder^="z. B. 5 Bananen"]';
   const { page: A } = await phone(browser);
   await login(A, 'michael@rieplhuber.com'); await A.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 20000 });
   await A.fill(IN, 'Milch'); await A.press(IN, 'Enter'); await A.locator(IN).blur(); await A.waitForTimeout(600);
-  await A.click('.tab:has-text("Plan")'); await A.click('text=Woanders einkaufen …');
+  await A.click('.tab:has-text("Plan")'); await A.click('text=Woanders einkaufen');
   await A.locator('.sheet button:has(.logo-tile)', { hasText: 'REWE' }).click(); await A.waitForTimeout(700);
   await A.click('text=Aufbau der Filiale geändert?'); await A.waitForTimeout(500);
   ok(/\/laden\/rewe\/weg$/.test(A.url()), 'path editor opens');
