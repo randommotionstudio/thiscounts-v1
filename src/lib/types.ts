@@ -49,10 +49,12 @@ export interface List {
   tripOrder: string[] | null;
   /** V1.4: standing stop order per town (other than the home town), set in the plan */
   townOrder: Record<string, string[]>;
-  /** Stops pushed to the end ("Später erledigen" / "überspringen") */
+  /** Stops pushed to the end (the old "Später erledigen" before V1.8; still honoured, cleared when the trip ends) */
   deferred: string[];
   /** V1.8: the main store was put off this trip, so it can go anywhere in the order (until the trip ends or a reset) */
   mainFree: boolean;
+  /** V1.8 "Heute auslassen": stops left out of this trip (their items stay on the list); cleared when the trip ends */
+  skipped: string[];
   /** V1.6: people (uids) who are NOT on this list. Everyone else is – also anyone who joins the household later. */
   without: string[];
   createdAtMs: number;

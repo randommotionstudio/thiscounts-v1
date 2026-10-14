@@ -48,4 +48,4 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |
 | only-here | "Nur hier einkaufen": a one-store trip that ends there; "Ganze Route"; the tidied stop menu ("Nochmal hierhin") |
-| trip-order | "Stattdessen hier starten" makes the trip follow your order (Stopp 1 von 2, "Weiter zu …"); a main store put off with "Später erledigen" can be moved anywhere, "Zurücksetzen" makes it first again; sorting never gets stuck |
+| trip-order | "Hier starten" makes the trip follow your order; the order row (also with two stores) with a movable main store and "Zurücksetzen"; "Heute auslassen" in the plan ("Doch mitnehmen") and in the store |

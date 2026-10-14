@@ -16,7 +16,7 @@ export interface TripState {
   moves: Record<string, string>;
   /** V1.8 "Nur hier einkaufen": a trip with just this stop and its items (null = the whole route) */
   only: string | null;
-  /** V1.8: the stops of this trip in the order you went there (the trip follows it, e.g. after "Stattdessen hier starten") */
+  /** V1.8: the stops of this trip in the order you went there (the trip follows it, e.g. after "Hier starten" at another store) */
   visited: string[];
 }
 

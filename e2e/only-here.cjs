@@ -27,12 +27,12 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   // ---- The tidied menu ----
   await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
   const tg = await menuOf(A, 'trinkgut');
-  ok(tg.join(' | ') === 'Nur hier einkaufen · nur 2 Artikel | Alles hier einkaufen · alle 4 Artikel | Später erledigen', 'trinkgut menu: ' + tg.join(' | '));
-  ok(await A.getByText('Mit diesem Laden starten').count() === 0, 'no "Mit diesem Laden starten" any more');
-  ok(await A.getByText('Stattdessen hier starten').count() === 1, '"Stattdessen hier starten" stays on the card');
+  ok(tg.join(' | ') === 'Hier starten | Nur hier einkaufen · nur 2 Artikel | Alles hier einkaufen · alle 4 Artikel | Heute auslassen · 2 Artikel bleiben auf der Liste', 'trinkgut menu: ' + tg.join(' | '));
+  ok(await A.getByText('Später erledigen').count() === 0, 'no "Später erledigen" any more');
+  ok(await A.getByText('Stattdessen hier starten').count() === 0, 'no buttons on the cards');
   await A.screenshot({ path: SHOTS + 'only-01-menu.png' });
   const nt = await menuOf(A, 'Netto');
-  ok(nt[0] === 'Nur hier einkaufen · nur 2 Artikel', 'the next store offers "Nur hier einkaufen" too');
+  ok(nt[1] === 'Nur hier einkaufen · nur 2 Artikel', 'the next store offers "Nur hier einkaufen" too');
 
   // ---- Wine on the way home ----
   await A.locator('.card', { hasText: 'trinkgut' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(150);
@@ -42,7 +42,7 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(await A.getByText('Bananen', { exact: true }).count() === 0, 'only trinkgut items');
   ok(await A.locator('button:has-text("Einkauf abschließen")').count() === 1 && await A.getByText(/Weiter zu/).count() === 0, 'bottom button: "Einkauf abschließen", no "Weiter zu Netto"');
   await A.locator('button[title="Mehr"], button[aria-label="Mehr"]').last().click().catch(() => {});
-  ok(await A.getByText('Diesen Laden überspringen').count() === 0, 'no "überspringen" on a one-store trip');
+  ok(await A.getByText('Heute auslassen').count() === 0, 'no "Heute auslassen" on a one-store trip');
   await A.screenshot({ path: SHOTS + 'only-02-store.png' });
   await B.click('.tab:has-text("Plan")');
   await waitText(B, 'Michi kauft gerade ein.').then(() => ok(true, 'Anna sees Michi shopping (and waits)'), () => ok(false, 'Anna sees Michi shopping'));
@@ -83,7 +83,9 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
 
   // A finished stop: "Nochmal hierhin"
   ok(await A.locator('.bottom-fade button.cta:has-text("Weiter einkaufen bei trinkgut")').count() === 1, 'the trip continues where you are: Weiter einkaufen bei trinkgut');
-  await A.locator('.card', { hasText: 'Netto' }).locator('button:has-text("Stattdessen hier starten")').click();
+  const go = await menuOf(A, 'Netto');
+  ok(go[0] === 'Jetzt hierhin', 'during a trip the menu says "Jetzt hierhin"');
+  await A.locator('.card', { hasText: 'Netto' }).locator('[role=menuitem]:has-text("Jetzt hierhin")').click();
   await check(A, 'Bananen'); await check(A, 'Milch');
   await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
   const done = await menuOf(A, 'Netto');

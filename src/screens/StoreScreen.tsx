@@ -153,12 +153,13 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     markStoreDone(cur.id);
     goStore(nextStop.id);
   };
+  // V1.8 "Heute auslassen" (closed, too crowded …): off this trip, the open items stay on the list
   const skipStore = () => {
     const rest = route.filter(s => s.id !== cur.id && !doneOf(s));
-    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== cur.id), cur.id], ...(cur.id === list.mainStoreId ? { mainFree: true } : {}) });
+    actions.updateList(list.id, { skipped: [...list.skipped.filter(x => x !== cur.id), cur.id] });
     setMenu(false);
     if (rest.length) goStore(rest[0].id); else navigate(paths.plan);
-    toast(cur.name + ' auf später verschoben');
+    toast(cur.name + ' heute ausgelassen');
   };
 
   // ---- V1.1 Filiale einrichten: which entry to show ----
@@ -262,8 +263,8 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           <div style={{ marginBottom: 10, background: 'rgba(255,253,250,.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)', backdropFilter: 'blur(22px) saturate(1.6)', border: '1px solid rgba(255,255,255,.75)', borderRadius: 22, boxShadow: '0 12px 32px rgba(42,31,23,.16)', overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'toastIn .2s ease' }}>
             {!onlyHere && (
               <button onClick={skipStore} style={{ textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>Diesen Laden überspringen</div>
-                <div style={{ fontSize: 13, color: '#8A7A6D' }}>Kommt ans Ende der Route – offene Artikel bleiben hier.</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Heute auslassen</div>
+                <div style={{ fontSize: 13, color: '#8A7A6D' }}>Die offenen Artikel bleiben auf der Liste für nächstes Mal.</div>
               </button>
             )}
             <button onClick={() => navigate(paths.plan)} style={{ textAlign: 'left', height: 48, padding: '0 16px', border: 'none', borderTop: onlyHere ? 'none' : '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: '#2A1F17', cursor: 'pointer' }}>Zum Plan</button>

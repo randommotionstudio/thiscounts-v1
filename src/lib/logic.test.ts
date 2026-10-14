@@ -10,7 +10,7 @@ const store = (id: string, i: number): Store => ({ id, name: id.toUpperCase(), b
 const STORES = ['a', 'b', 'c', 'd', 'x'].map(store);
 const list = (p: Partial<List> = {}): List => ({
   id: 'l', name: 'L', storeIds: ['a', 'b', 'c', 'd'], mainStoreId: 'a', storeOrder: ['b', 'c', 'd'],
-  tripOrder: null, townOrder: {}, deferred: [], mainFree: false, without: [], createdAtMs: 0, ...p,
+  tripOrder: null, townOrder: {}, deferred: [], mainFree: false, skipped: [], without: [], createdAtMs: 0, ...p,
 });
 let n = 0;
 const item = (p: Partial<Item> = {}): Item => ({
@@ -145,6 +145,13 @@ describe('route', () => {
     expect(route(items, list({ deferred: ['a'], mainFree: true }), STORES).map(s => s.id)).toEqual(['b', 'd', 'a']);
     expect(route(items, list({ tripOrder: ['b', 'a', 'd'], mainFree: true }), STORES).map(s => s.id)).toEqual(['b', 'a', 'd']);
     expect(route(items, list({ tripOrder: ['a', 'b', 'd'], mainFree: true }), STORES).map(s => s.id)).toEqual(['a', 'b', 'd']);
+  });
+  it('"Heute auslassen": skipped stops leave the route, their items stay where they are', () => {
+    const items = [item({ storeId: 'd' }), item({ storeId: 'b' }), item(), item({ once: true, onceStopName: 'Apotheke' })];
+    const p = tripPlan(items, list({ skipped: ['b', 'once:apotheke'] }), STORES, STORES);
+    expect(p.route.map(s => s.id)).toEqual(['a', 'd']);
+    expect(p.skipped.map(s => s.id)).toEqual(['b', 'once:apotheke']);
+    expect(p.stopOf(items[1])).toBe('b');
   });
   it('deferred go last in deferral order, free-text stops after them', () => {
     const items = [item({ storeId: 'b' }), item({ storeId: 'c' }), item(), item({ once: true, onceStopName: ' Apotheke' }), item({ once: true, onceStopName: 'apotheke ' })];

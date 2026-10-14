@@ -21,7 +21,7 @@ export function useTrip() {
     const { stopOf } = plan;
     // V1.8 "Nur hier einkaufen": the trip is just that stop (if it's still on the route)
     const onlyStop = app.onlyStop ? plan.route.find(s => s.id === app.onlyStop) || null : null;
-    // The trip follows the order you actually go: stops you've been to first (e.g. after "Stattdessen hier starten"),
+    // The trip follows the order you actually go: stops you've been to first (e.g. after "Hier starten" at another store),
     // then the rest as planned
     const planned = onlyStop ? [onlyStop] : plan.route;
     const been = app.visited.map(id => planned.find(s => s.id === id)).filter((s): s is Stop => !!s);
@@ -49,6 +49,6 @@ export function useTrip() {
       app.navigate(paths.list, true);
       app.toast(message ? message(done) : 'Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
-    return { route, fullRoute: plan.route, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
+    return { route, fullRoute: plan.route, skipped: plan.skipped, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
   }, [app, list, items, data.stores, townStores, town, towns, standIn, tripMoves]);
 }

@@ -366,7 +366,10 @@ export function tripPlan(items: Item[], list: List, allStores: Store[], townStor
   o = [...o.filter(s => !d.includes(s.id)), ...d.map(id => o.find(s => s.id === id)).filter((s): s is Store => !!s)];
   const custom = [...ids].filter(id => id.startsWith('once:')).map(id => stopById(id, townStores, items)!);
   const unavailable = list.mainStoreId || list.storeIds.length ? trip.filter(i => !stopOf(i)) : [];
-  return { route: [...o.map(storeToStop), ...custom], stopOf, temp, unavailable, mainId: main, candidates };
+  // V1.8 "Heute auslassen": off this trip's route; the items keep their store and simply stay on the list
+  const sk = list.skipped || [];
+  const all = [...o.map(storeToStop), ...custom];
+  return { route: all.filter(s => !sk.includes(s.id)), skipped: all.filter(s => sk.includes(s.id)), stopOf, temp, unavailable, mainId: main, candidates };
 }
 
 /**

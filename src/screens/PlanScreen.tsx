@@ -12,6 +12,7 @@ import { TownSheet } from '../sheets/TownSheet';
 import { Avatar, ConnPill, LabeledRule, TabBar, TextLink, useHeaderHeight } from '../ui/kit';
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
+import { SkippedSection } from './plan/SkippedSection';
 
 const ACC = '#F3752E', PALE = '#F3EADF', INK = '#2A1F17';
 
@@ -21,7 +22,7 @@ const resetBtn = { border: 'none', background: 'none', padding: '6px 0', color: 
 export function PlanScreen() {
   const app = useApp();
   const { list, items, navigate, toast, data } = app;
-  const { route, fullRoute, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, unavailable, temp, previewIn, orderIn } = useTrip();
+  const { route, fullRoute, skipped, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, unavailable, temp, previewIn, orderIn } = useTrip();
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [headRef, headH] = useHeaderHeight();
@@ -76,10 +77,11 @@ export function PlanScreen() {
     setAskStandIn(null);
   };
 
-  // Sorting: stores you've already been to on this trip stay where they are, and so does the main store ("immer zuerst") –
-  // unless it was put off this trip with "Später erledigen": then it moves like any other store
+  // Sorting: stores you've already been to on this trip stay where they are; everything else moves – the main store
+  // too, for this trip only ("immer zuerst" until it's moved; "Zurücksetzen" or the end of the trip puts it first again)
   const plannedIds = route.filter(s => !s.custom).map(s => s.id);
-  const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : id === list.mainStoreId && !list.mainFree ? 'immer zuerst' : null);
+  const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : null);
+  const mainNote = list.mainFree ? 'Hauptladen · heute verschoben' : 'Hauptladen · immer zuerst';
   const sortable = plannedIds.filter(id => !fixedLabel(id));
   const canSortPlan = sortable.length >= 2;
   // Nothing left to sort (e.g. after a change on the other phone) → sort mode ends by itself
@@ -91,9 +93,13 @@ export function PlanScreen() {
     const moved = moveInOrder(sortable, id, dir);
     if (!moved) return;
     const next = [...plannedIds.filter(x => app.visited.includes(x)), ...moved];
+    // Something moved in front of the main store → it's free for this trip
+    const mainFree = list.mainFree || (!!list.mainStoreId && moved.includes(list.mainStoreId) && moved[0] !== list.mainStoreId);
     // In another town the order is remembered for that town (it also decides where stand-in items go)
-    if (awayTown) actions.setTownOrder(list.id, awayTown, [...next, ...(orderIn(awayTown) || []).filter(x => !next.includes(x))]);
-    else actions.updateList(list.id, { tripOrder: next, deferred: [] });
+    if (awayTown) {
+      actions.setTownOrder(list.id, awayTown, [...next, ...(orderIn(awayTown) || []).filter(x => !next.includes(x))]);
+      if (mainFree !== list.mainFree || list.deferred.length) actions.updateList(list.id, { mainFree, deferred: [] });
+    } else actions.updateList(list.id, { tripOrder: next, deferred: [], mainFree });
   };
   // Back to the usual order: main store first again, nothing put off
   const resetOrder = () => {
@@ -102,17 +108,25 @@ export function PlanScreen() {
     setPlanSort(false);
     toast('Reihenfolge zurückgesetzt');
   };
+  // Items on today's route (not those of stores left out with "Heute auslassen")
+  const routeIds = new Set(route.map(s => s.id));
+  const onRoute = items.filter(i => onTrip(i) && routeIds.has(stopOf(i) || ''));
   const allHere = (s: Stop) => {
-    const n = items.filter(onTrip).length;
-    actions.allHere(items, list, s.id);
+    const n = onRoute.length;
+    actions.allHere(onRoute, list, s.id);
     setMenu(null);
     goStore(s.id);
     toast('Alle ' + n + ' Artikel jetzt bei ' + s.name + ' · nur ein Stopp');
   };
-  const defer = (s: Stop) => {
-    actions.updateList(list.id, { deferred: [...list.deferred.filter(x => x !== s.id), s.id], ...(s.id === list.mainStoreId ? { mainFree: true } : {}) });
+  // V1.8 "Heute auslassen": off this trip; the items stay on the list with their store
+  const skip = (s: Stop) => {
+    actions.updateList(list.id, { skipped: [...list.skipped.filter(x => x !== s.id), s.id] });
     setMenu(null);
-    toast(s.name + ' ans Ende der Route verschoben');
+    toast(s.name + ' heute ausgelassen');
+  };
+  const unskip = (s: Stop) => {
+    actions.updateList(list.id, { skipped: list.skipped.filter(x => x !== s.id) });
+    toast(s.name + ' ist wieder dabei');
   };
 
   const card = (s: Stop, idx: number) => {
@@ -121,9 +135,11 @@ export function PlanScreen() {
       <StopCard key={s.id} stop={s} idx={idx} items={itemsAt(s.id)} done={done}
         isCur={s.id === app.currentStop} isNext={!!nextStore && s.id === nextStore.id} insteadOf={insteadOf}
         menuOpen={menu === key} onToggleMenu={() => setMenu(m => (m === key ? null : key))}
-        sort={sortThis ? { fixed: fixedLabel(s.id), onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: at <= 0, noDown: at >= sortable.length - 1 } : null}
-        onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && route.length > 1 ? () => allHere(s) : null} allCount={items.filter(onTrip).length}
-        onOnly={!locked && !app.currentStop && !onlyStop && fullRoute.length > 1 ? () => goOnly(s.id) : null} onDefer={() => defer(s)} />
+        running={!!app.currentStop}
+        sort={sortThis ? { fixed: fixedLabel(s.id), note: s.id === list.mainStoreId ? mainNote : null, onUp: () => moveTrip(s.id, -1), onDown: () => moveTrip(s.id, 1), noUp: at <= 0, noDown: at >= sortable.length - 1 } : null}
+        onStart={locked ? null : () => goStore(s.id)} onAllHere={!locked && !done && !s.custom && route.length > 1 ? () => allHere(s) : null} allCount={onRoute.length}
+        onOnly={!locked && !app.currentStop && !onlyStop && fullRoute.length > 1 ? () => goOnly(s.id) : null}
+        onSkip={!locked && !done && s.id !== app.currentStop && !onlyStop ? () => skip(s) : null} />
     );
   };
 
@@ -151,8 +167,8 @@ export function PlanScreen() {
         {parked.length > 0 && <div style={{ marginBottom: 12, fontSize: 13, color: '#8A7A6D' }}>{parked.map(i => i.name).join(', ') + (parked.length > 1 ? ' warten' : ' wartet') + ' auf der Liste ohne Laden.'}</div>}
         {!route.length && (
           <div style={{ textAlign: 'center', padding: '30px 12px' }}>
-            <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>{waiting.length ? 'In ' + app.townName + ' gibt’s nichts zu holen' : 'Noch keine Stopps'}</div>
-            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>{waiting.length ? 'Deine offenen Artikel gibt’s nur in einem anderen Ort.' : 'Setz etwas auf die Liste – dann planen wir die Route.'}</div>
+            <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>{skipped.length ? 'Heute ist nichts mehr dran' : waiting.length ? 'In ' + app.townName + ' gibt’s nichts zu holen' : 'Noch keine Stopps'}</div>
+            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>{skipped.length ? 'Die übrigen Läden hast du für heute ausgelassen.' : waiting.length ? 'Deine offenen Artikel gibt’s nur in einem anderen Ort.' : 'Setz etwas auf die Liste – dann planen wir die Route.'}</div>
           </div>
         )}
         {canSortPlan && (
@@ -182,6 +198,7 @@ export function PlanScreen() {
             <button onClick={() => { app.setStandIn(false); toast('Ersatz aufgehoben'); }} style={resetBtn}>Aufheben</button>
           </div>
         )}
+        {skipped.length > 0 && <SkippedSection groups={skipped.map(s => ({ stop: s, items: itemsAt(s.id) }))} onUndo={locked ? null : unskip} />}
         {waiting.length > 0 && (
           <WaitingSection groups={waiting} townName={app.townName}
             elsewhere={s => townsOf(s, app.towns).filter(t => t.id !== app.town).map(t => t.name)}
@@ -194,7 +211,8 @@ export function PlanScreen() {
         )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
-        {route.length > 0 && (
+        {/* Everything left was put off for today, but something is checked already → the trip can still be finished */}
+        {(route.length > 0 || items.some(i => i.checked)) && (
           <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
             {locked && app.shopper && (
               <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 4px 10px', padding: '10px 12px', background: 'rgba(255,253,250,.82)', WebkitBackdropFilter: 'blur(18px)', backdropFilter: 'blur(18px)', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD' }}>

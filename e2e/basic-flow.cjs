@@ -79,14 +79,17 @@ async function add(p, list) { for (const t of list) { await p.fill(IN, t); await
   const order = await A.locator('.card .ellipsis').allTextContents();
   ok(order.join('|').indexOf('trinkgut') < order.join('|').indexOf('DM'), 'trip order: trinkgut before DM');
   await A.screenshot({ path: SHOTS + '38-A-plan-trip.png' });
-  // Defer Netto via menu → goes to end
+  // The main store can move too (for this trip): Netto to the end
   await A.locator('.card:has-text("Netto")').locator('button[title="Mehr"]').click();
   await A.waitForTimeout(150);
   await A.screenshot({ path: SHOTS + '39-A-plan-menu.png' });
-  await A.click('button:has-text("Später erledigen")');
+  await A.locator('.card:has-text("Netto")').locator('button[title="Mehr"]').click();
+  await A.click('button:has-text("Ändern")');
+  for (let k = 0; k < 2; k++) { await A.locator('.card:has-text("Netto")').locator('button[title="Nach unten"]').click(); await A.waitForTimeout(250); }
+  await A.click('button:has-text("Fertig")');
   await A.waitForTimeout(300);
   const order2 = (await A.locator('.card .ellipsis').allTextContents()).filter(t => /Netto|DM|trinkgut/.test(t) && t.length < 12);
-  ok(order2[order2.length - 1] === 'Netto', 'deferred Netto is last: ' + order2.join(' → '));
+  ok(order2[order2.length - 1] === 'Netto', 'Netto moved to the end: ' + order2.join(' → '));
   await A.click('button:has-text("Zurücksetzen")');
 
   // Create a new list

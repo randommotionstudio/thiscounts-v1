@@ -30,20 +30,23 @@ function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 }
 
 /** One stop of the route: number, logo, the items as chips (dashed = only here for this trip), menu or sort arrows */
-export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, menuOpen, onToggleMenu, sort, onStart, onOnly, onAllHere, allCount, onDefer }: {
+export function StopCard({ stop: s, idx, items, done, isCur, isNext, running, insteadOf, menuOpen, onToggleMenu, sort, onStart, onOnly, onAllHere, allCount, onSkip }: {
   stop: Stop; idx: number; items: Item[]; done: boolean; isCur: boolean; isNext: boolean;
+  /** A trip is under way on this phone ("Jetzt hierhin" instead of "Hier starten") */
+  running: boolean;
   /** For stand-in items: the store they're here instead of */
   insteadOf: (i: Item) => string | null;
   menuOpen: boolean; onToggleMenu: () => void;
   /** While sorting the route: the arrows (null = not sorting) */
-  sort: { fixed: string | null; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
+  sort: { fixed: string | null; note: string | null; onUp: () => void; onDown: () => void; noUp: boolean; noDown: boolean } | null;
   /** null while someone else is shopping (V1.5: one person at a time) */
   onStart: (() => void) | null;
   /** V1.8 "Nur hier einkaufen": a trip with just this stop (null = not offered) */
   onOnly: (() => void) | null;
   /** "Alles hier einkaufen": all open items to this stop (null = not offered); allCount = how many */
   onAllHere: (() => void) | null; allCount: number;
-  onDefer: () => void;
+  /** V1.8 "Heute auslassen": off this trip, the items stay on the list (null = not offered) */
+  onSkip: (() => void) | null;
 }) {
   const toggle = (e: React.MouseEvent) => { e.stopPropagation(); onToggleMenu(); };
   const open = items.filter(i => !i.checked).length;
@@ -61,15 +64,12 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
       })}
     </div>
   );
-  // A one-time stop has no "Stattdessen hier starten" button, so starting there stays in its menu
-  const customEntries: MenuEntry[] = [
-    ...(onStart && !done ? [{ label: 'Mit diesem Stopp starten', onClick: onStart }] : []), ...only, ...again,
-  ];
-  // "Mit diesem Laden starten" is gone: the same as "Stattdessen hier starten" on the card (or the big button for the next stop)
+  // V1.8: every option lives in the ⋯ menu (no buttons on the card)
   const entries: MenuEntry[] = done ? again : [
+    ...(onStart && !isCur ? [{ label: running ? 'Jetzt hierhin' : 'Hier starten', onClick: onStart }] : []),
     ...only,
     ...(onAllHere ? [{ label: 'Alles hier einkaufen', sub: 'alle ' + allCount + ' Artikel', onClick: onAllHere }] : []),
-    { label: 'Später erledigen', onClick: onDefer },
+    ...(onSkip ? [{ label: 'Heute auslassen', sub: open + ' Artikel ' + (open === 1 ? 'bleibt' : 'bleiben') + ' auf der Liste', onClick: onSkip }] : []),
   ];
   if (s.custom) {
     return (
@@ -80,9 +80,9 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
             <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
             <div style={{ fontSize: 12, color: '#8A7A6D' }}>Einmaliger Stopp</div>
           </div>
-          {customEntries.length > 0 && <Dots onClick={toggle} />}
+          {entries.length > 0 && <Dots onClick={toggle} />}
         </div>
-        {menuOpen && customEntries.length > 0 && <Menu entries={customEntries} />}
+        {menuOpen && entries.length > 0 && <Menu entries={entries} />}
         {status}
       </div>
     );
@@ -94,7 +94,9 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
         <LogoTile store={s} size={36} radius={10} initialSize={15} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
-          <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{s.branch || 'Eigener Laden'}</div>
+          {sort && sort.note
+            ? <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>{sort.note}</div>
+            : <div className="ellipsis" style={{ fontSize: 12, color: '#8A7A6D' }}>{s.branch || 'Eigener Laden'}</div>}
         </div>
         {!sort && entries.length > 0 && <Dots onClick={toggle} />}
         {sort && !sort.fixed && <UpDown onUp={sort.onUp} onDown={sort.onDown} noUp={sort.noUp} noDown={sort.noDown} />}
@@ -102,9 +104,6 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, insteadOf, 
       </div>
       {menuOpen && !sort && entries.length > 0 && <Menu entries={entries} />}
       {status}
-      {!done && !isNext && onStart && (
-        <button onClick={onStart} style={{ marginTop: 12, width: '100%', height: 44, border: '2px solid #EADCCD', borderRadius: 14, background: '#fff', color: INK, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Stattdessen hier starten</button>
-      )}
     </div>
   );
 }
