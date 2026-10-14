@@ -7,6 +7,7 @@ import { joinNames } from '../lib/people';
 import type { Store } from '../lib/types';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { LogoTile, RoundCheck, UpDown, useHeaderHeight } from '../ui/kit';
+import { Toast } from '../ui/Toast';
 
 /** Einstieg / "Deine Läden": which stores a list uses, the Hauptladen and the stop order. */
 export function StoresSetup() {
@@ -106,6 +107,7 @@ export function StoresSetup() {
         )}
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
+        <Toast dark />
         <button className={'cta' + (noSel ? ' off' : '')} onClick={cta}>{noSel ? 'Mindestens einen Laden wählen' : isCreate ? '„' + name + '“ erstellen' : 'Fertig'}</button>
       </div>
       {newStore && (

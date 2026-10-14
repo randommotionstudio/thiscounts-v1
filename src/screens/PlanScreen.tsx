@@ -13,6 +13,7 @@ import { ActionChip, Avatar, ConnPill, LabeledRule, TabBar, useHeaderHeight } fr
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 import { SkippedSection } from './plan/SkippedSection';
+import { Toast } from '../ui/Toast';
 
 const PALE = '#F3EADF', INK = '#2A1F17';
 
@@ -212,6 +213,7 @@ export function PlanScreen() {
         )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
+        <Toast dark />
         {/* Everything left was put off for today, but something is checked already → the trip can still be finished */}
         {(route.length > 0 || items.some(i => i.checked)) && (
           <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>

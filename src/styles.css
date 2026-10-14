@@ -58,7 +58,7 @@ input::placeholder { color: #A89888; }
 .section-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; }
 .card { background: #fff; border-radius: 18px; padding: 14px 16px; box-shadow: 0 1px 0 var(--line); box-sizing: border-box; }
 .back-link { border: none; background: none; color: var(--accent-text); font-size: 14px; font-weight: 600; padding: 6px 0; cursor: pointer; }
-.hint { font-size: 13px; color: var(--muted); margin: 14px 4px 0; text-wrap: pretty; }
+.hint { font-size: 13px; color: var(--muted); margin: 14px 4px 0; }
 
 .field {
   height: 54px; width: 100%; box-sizing: border-box; border: 2px solid #fff; border-radius: 18px; background: #fff;

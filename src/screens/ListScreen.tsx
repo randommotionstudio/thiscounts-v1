@@ -19,6 +19,7 @@ import { joinNames } from '../lib/people';
 import { ask as askState, holdForNextTrip } from '../app/shopping';
 import type { Stop } from '../lib/types';
 import type { Person } from '../config/household';
+import { Toast } from '../ui/Toast';
 
 const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK = '#2A1F17';
 
@@ -326,9 +327,8 @@ export function ListScreen() {
           <p style={{ fontSize: 13, color: '#9C4412', margin: '12px 4px 0' }}>Schwarz markierte Artikel waren nicht verfügbar – für die nächste Runde einen Laden wählen.</p>
         )}
       </div>
-
-      {app.toastText && <div className={'toast-inline toast-overlay' + (app.toastLeaving ? ' toast-leaving' : '')} role="status" style={{ top: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
+        <Toast />
         <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
           <button className={'cta' + (n ? '' : ' off')} onClick={() => navigate(paths.plan)}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>
         </div>

@@ -24,7 +24,7 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | File | What it checks |
 |---|---|
 | basic-flow | List, shopping, finishing on two phones; parking; usual chips; remembered categories; a foreign account is refused |
-| offline-sync | Offline pill, changes made offline sync afterwards, reopening the app offline |
+| offline-sync | Offline pill, changes made offline sync afterwards, reopening the app offline (waits for the items, which follow the list title by a few ms) |
 | live-shopping | "Neu von …" markers, the partner's live card, the late-item banner, Rückfrage |
 | rueckfrage-edge-cases | Rückfrage after leaving a store via the plan; the question closes when the shopper finishes |
 | leave-popup / leave-popup-last-stop | Leaving a store with open items: take along or leave on the list |

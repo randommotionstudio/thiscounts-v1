@@ -85,11 +85,9 @@ function Screens() {
     case 'listNew': case 'listEdit': screen = app.draft ? <ListSettings /> : null; break;
     case 'listStores': screen = app.draft ? <StoresSetup /> : null; break;
   }
-  const floatToast = app.toastText && ['plan', 'profile', 'listNew', 'listEdit', 'listStores'].includes(r.name);
   return (
     <>
       {screen}
-      {floatToast && <div className={'toast-float' + (app.toastLeaving ? ' toast-leaving' : '')}>{app.toastText}</div>}
     </>
   );
 }

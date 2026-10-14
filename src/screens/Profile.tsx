@@ -11,6 +11,7 @@ import { Avatar, AvatarStack, LogoTile, Sheet, TabBar } from '../ui/kit';
 import { guessTownName, townsOf } from '../lib/logic';
 import { INVITE_DAYS, formatCode, untilLabel } from '../lib/people';
 import type { Town } from '../lib/types';
+import { Toast } from '../ui/Toast';
 
 /** Profil (reduced for V1): who you are, who you share with, and the household's stores. */
 export function Profile() {
@@ -169,8 +170,8 @@ export function Profile() {
           <div role="switch" aria-checked={data.notifyWhileShopping} onClick={() => actions.setNotifyWhileShopping(!data.notifyWhileShopping)}
             style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', minHeight: 64, boxSizing: 'border-box', cursor: 'pointer' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>Beim Einkaufen</div>
-              <div style={{ fontSize: 13, color: '#8A7A6D', textWrap: 'pretty' }}>Hinweis, wenn während des Einkaufs etwas für eine bereits passierte Abteilung dazukommt.</div>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>Während des Einkaufs</div>
+              <div style={{ fontSize: 13, color: '#8A7A6D', textWrap: 'pretty' }}>Hinweis, wenn etwas für eine bereits passierte Abteilung hinzukommt.</div>
             </div>
             <span style={{ width: 51, height: 31, borderRadius: 999, background: data.notifyWhileShopping ? '#F3752E' : '#D8CBBD', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
               <span style={{ position: 'absolute', left: 2, top: 2, width: 27, height: 27, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 4px rgba(42,31,23,.2)', transform: `translateX(${data.notifyWhileShopping ? 20 : 0}px)`, transition: 'transform .2s', display: 'block' }} />
@@ -180,6 +181,7 @@ export function Profile() {
         <button className="outline-danger" style={{ marginTop: 28 }} onClick={() => { signOut(auth); navigate('/', true); }}>Abmelden</button>
       </div>
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>
+        <Toast dark />
         <TabBar active="profile" go={navigate} />
       </div>
       {invite && (

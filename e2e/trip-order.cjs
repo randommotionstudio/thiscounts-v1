@@ -69,6 +69,9 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(await A.getByText('Reihenfolge für heute geändert').count() === 1, 'note under the route: "Reihenfolge für heute geändert"');
   await A.screenshot({ path: SHOTS + 'order-04-note.png' });
   await A.click('button:has-text("Zurücksetzen")'); await A.waitForTimeout(400);
+  const tb = await A.locator('[role=status]', { hasText: 'Reihenfolge zurückgesetzt' }).boundingBox(), cb = await A.locator('.bottom-fade button.cta').boundingBox();
+  ok(tb && cb && tb.y + tb.height <= cb.y, 'toast sits above the main button (' + Math.round(tb.y + tb.height) + ' ≤ ' + Math.round(cb.y) + ')');
+  await A.screenshot({ path: SHOTS + 'order-05-toast.png' });
   ok((await cards(A)).join(',') === 'Netto,REWE', '"Zurücksetzen": Netto first again');
   await A.click('button:has-text("Ändern")');
   ok(await netto.getByText('Hauptladen · immer zuerst').count() === 1, '… "immer zuerst" again');

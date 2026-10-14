@@ -85,7 +85,10 @@ async function gone(page, text, timeout = 10000) { const t0 = Date.now(); await 
   A2.on('pageerror', e => console.log('[pageerror A2]', e.message));
   await A2.goto('http://127.0.0.1:4173/');
   await A2.waitForSelector('h1:has-text("Wocheneinkauf")', { timeout: 15000 });
-  ok(await A2.getByText('Kaffee', { exact: true }).count() > 0, 'reopened offline: pending item still there');
+  // The list title shows first, the items follow from the phone's storage a moment later
+  const t2 = Date.now();
+  await A2.getByText('Kaffee', { exact: true }).first().waitFor({ timeout: 5000 })
+    .then(() => ok(true, 'reopened offline: pending item still there (' + (Date.now() - t2) + ' ms after the list)'), () => ok(false, 'reopened offline: pending item still there'));
   ok(await B.getByText('Kaffee', { exact: true }).count() === 0, 'B does not have Kaffee yet');
   await a.ctx.setOffline(false);
   const t3 = Date.now();

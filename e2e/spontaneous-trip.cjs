@@ -24,7 +24,7 @@ const byName = async n => { const d = (await itemDocs()).find(x => x.fields.name
   const link = A.locator('button', { hasText: 'Woanders einkaufen' });
   ok(await link.count() === 1, 'Plan shows "Woanders einkaufen"');
   const fs = await link.evaluate(e => getComputedStyle(e).fontSize + ' ' + getComputedStyle(e).backgroundColor);
-  ok(/^14px rgb\(255, 255, 255\)/.test(fs), 'it is a subtle white chip, not an orange button: ' + fs);
+  ok(/^14px rgb\(243, 234, 223\)/.test(fs), 'it is a subtle beige chip, not an orange button: ' + fs);
   await link.scrollIntoViewIfNeeded(); await A.screenshot({ path: SHOTS + '190-plan-link.png' });
   await link.click(); await A.waitForTimeout(400);
   const rows = await A.locator('.sheet button:has(.logo-tile)').allTextContents();

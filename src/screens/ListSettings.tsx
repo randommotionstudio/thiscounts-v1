@@ -5,6 +5,7 @@ import * as actions from '../data/actions';
 import { setupOrdered } from '../lib/logic';
 import { joinNames } from '../lib/people';
 import { Avatar, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
+import { Toast } from '../ui/Toast';
 
 /** Liste einrichten: create (step 1 of 2) or edit a list. */
 export function ListSettings() {
@@ -90,7 +91,7 @@ export function ListSettings() {
                 );
               })}
             </div>
-            {!isEdit && <p className="hint" style={{ marginTop: 10 }}>Nur wer ausgewählt ist, hat Zugriff auf die Liste.</p>}
+            <p className="hint" style={{ marginTop: 10 }}>Nur wer ausgewählt ist, hat Zugriff auf die Liste.</p>
           </>
         )}
         {isEdit && (
@@ -126,6 +127,7 @@ export function ListSettings() {
         )}
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
+        <Toast dark />
         <button className={'cta' + (off ? ' off' : '')} onClick={next}>{noStores ? 'Mindestens einen Laden wählen' : isEdit ? 'Änderungen speichern' : name ? 'Weiter zu den Läden' : 'Erst einen Namen eingeben'}</button>
       </div>
     </div>

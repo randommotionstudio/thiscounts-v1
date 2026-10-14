@@ -11,6 +11,7 @@ import type { Item, Stop } from '../lib/types';
 import { Avatar, CatIcon, ConnPill, LabeledRule, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
 import { LeaveSheet } from '../sheets/LeaveSheet';
 import { RefinePrompt } from './store/RefinePrompt';
+import { Toast } from '../ui/Toast';
 
 export function useCurrentStop(stopId: string): Stop {
   const app = useApp();
@@ -33,7 +34,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   const onlyHere = !spontaneous && !!onlyStop && onlyStop.id === stopId;
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [headRef, headH] = useHeaderHeight();
+  const [headRef] = useHeaderHeight();
   const [notif, setNotif] = useState<{ title: string; body: string; by: string | null } | null>(null);
   const routeStop = useCurrentStop(stopId);
   // A spontaneous trip is always at exactly this store (no fallback to another stop of the route)
@@ -247,8 +248,8 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         <RefinePrompt state={refineState} age={age} onRefine={goRefine}
           onConfirm={() => { if (store) { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); } }} />
       </div>
-      {app.toastText && <div className={'toast-inline toast-overlay' + (app.toastLeaving ? ' toast-leaving' : '')} role="status" style={{ top: headH + 16 }}>{app.toastText}</div>}
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
+        <Toast />
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>
             <Avatar person={personOf(notif.by)} size={36} onDark />
