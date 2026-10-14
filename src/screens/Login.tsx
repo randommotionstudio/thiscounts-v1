@@ -11,7 +11,7 @@ const ERRORS: Record<string, string> = {
   'auth/user-not-found': 'E-Mail oder Passwort stimmt nicht.',
   'auth/invalid-email': 'Diese E-Mail-Adresse sieht nicht richtig aus.',
   'auth/too-many-requests': 'Zu viele Versuche. Bitte warte einen Moment.',
-  'auth/network-request-failed': 'Keine Verbindung. Für die erste Anmeldung brauchst du Internet.',
+  'auth/network-request-failed': 'Keine Verbindung. Für die erste Anmeldung wird Internet benötigt.',
   'auth/user-disabled': 'Dieser Zugang ist gesperrt.',
 };
 
@@ -42,7 +42,7 @@ export function Login() {
   };
   const signUp = () => {
     const e = email.trim(), n = name.trim(), c = normalizeCode(code);
-    if (!n) return setErr('Wie sollen dich die anderen sehen? Bitte gib deinen Namen ein.');
+    if (!n) return setErr('Bitte einen Namen eingeben – so erscheint er für die anderen.');
     if (!e || !emailOk(e)) return setErr('Diese E-Mail-Adresse sieht nicht richtig aus.');
     if (pw.length < 6) return setErr('Das Passwort braucht mindestens 6 Zeichen.');
     if (!c) return setErr('Der Einladungscode hat 6 Zeichen, z. B. K7M-4QX.');
@@ -64,13 +64,13 @@ export function Login() {
         <img src="/brand/app-icon-v13-144.png" alt="thisCounts" style={{ width: 72, height: 72, borderRadius: 18, display: 'block', boxShadow: '0 8px 24px rgba(42,31,23,.14)' }} />
         <h1 className="h1" style={{ margin: '24px 0 6px' }}>{reg ? 'Registrieren' : 'Anmelden'}</h1>
         <p style={{ margin: '0 0 24px', color: '#6F6055', fontSize: 15, textWrap: 'pretty' }}>
-          {reg ? 'Mit dem Einladungscode, den du bekommen hast. Danach siehst du alle Listen des Haushalts.' : 'Mit dem Zugang, den du für den Test bekommen hast.'}
+          {reg ? 'Mit dem erhaltenen Einladungscode. Danach sind alle Listen des Haushalts sichtbar.' : 'Mit dem Zugang für den Test.'}
         </p>
         {reg && (
           <>
-            <div className="section-label">Dein Name</div>
+            <div className="section-label">Name</div>
             <input className="field" autoComplete="given-name" autoCapitalize="words" maxLength={40} value={name}
-              onChange={e => { setName(e.target.value); setErr(''); }} onKeyDown={onKey} placeholder="So sehen dich die anderen" />
+              onChange={e => { setName(e.target.value); setErr(''); }} onKeyDown={onKey} placeholder="So erscheint er für die anderen" />
             <div className="section-label" style={{ margin: '18px 0 8px' }}>E-Mail</div>
           </>
         )}

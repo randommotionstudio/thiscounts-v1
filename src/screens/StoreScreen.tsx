@@ -87,7 +87,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       seen.add(i.id);
       if (notifiedItems.has(i.id) || !lateFromOther(i) || i.checked || !pi.passed(i.category)) continue;
       notifiedItems.add(i.id);
-      if (data.notifyWhileShopping) setNotif({ title: personOf(i.createdBy).name + ' hat ' + i.name + ' hinzugefügt', body: i.category + ' hast du schon hinter dir – noch mal kurz zurück?', by: i.createdBy });
+      if (data.notifyWhileShopping) setNotif({ title: personOf(i.createdBy).name + ' hat ' + i.name + ' hinzugefügt', body: i.category + ' ist schon vorbei – noch mal kurz zurück?', by: i.createdBy });
     }
   }, [app.items, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -228,7 +228,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       </div>
       <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
         <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12, textWrap: 'pretty' }}>
-          {spontaneous ? 'Deine ganze Liste, sortiert nach dem Weg durch diese Filiale. Was du hier nicht abhakst, bleibt bei seinem Laden.' : 'Sortiert nach dem Weg durch diese Filiale'}
+          {spontaneous ? 'Die ganze Liste, sortiert nach dem Weg durch diese Filiale. Was hier nicht abgehakt wird, bleibt bei seinem Laden.' : 'Sortiert nach dem Weg durch diese Filiale'}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {groups.map((g, n) => renderGroup(g, n))}
@@ -242,7 +242,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
             </div>
           </div>
         )}
-        {!curItems.length && <div style={{ textAlign: 'center', color: '#8A7A6D', padding: '30px 0' }}>{spontaneous ? 'Deine Liste ist leer.' : 'Hier ist nichts mehr zu holen.'}</div>}
+        {!curItems.length && <div style={{ textAlign: 'center', color: '#8A7A6D', padding: '30px 0' }}>{spontaneous ? 'Die Liste ist leer.' : 'Hier ist nichts mehr zu holen.'}</div>}
 
         <RefinePrompt state={refineState} age={age} onRefine={goRefine}
           onConfirm={() => { if (store) { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); } }} />

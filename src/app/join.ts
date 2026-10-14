@@ -15,15 +15,15 @@ export const useJoining = () => useSyncExternalStore(f => { subs.add(f); return 
 
 export const JOIN_ERRORS: Record<string, string> = {
   'permission-denied': 'Dieser Einladungscode gilt nicht (mehr) – vielleicht wurde er schon benutzt oder ist abgelaufen. Bitte um einen neuen.',
-  'timeout': 'Keine Verbindung. Für die Registrierung brauchst du Internet.',
-  'auth/network-request-failed': 'Keine Verbindung. Für die Registrierung brauchst du Internet.',
-  'unavailable': 'Keine Verbindung. Für die Registrierung brauchst du Internet.',
+  'timeout': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
+  'auth/network-request-failed': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
+  'unavailable': 'Keine Verbindung. Für die Registrierung wird Internet benötigt.',
   'auth/invalid-email': 'Diese E-Mail-Adresse sieht nicht richtig aus.',
   'auth/weak-password': 'Das Passwort braucht mindestens 6 Zeichen.',
   'auth/too-many-requests': 'Zu viele Versuche. Bitte warte einen Moment.',
   'auth/operation-not-allowed': 'Registrieren ist gerade nicht möglich.',
   'auth/admin-restricted-operation': 'Registrieren ist gerade nicht möglich.',
-  'existing-account': 'Mit dieser E-Mail gibt es schon einen Zugang, aber das Passwort passt nicht. Melde dich an oder prüf das Passwort.',
+  'existing-account': 'Mit dieser E-Mail gibt es schon einen Zugang, aber das Passwort passt nicht. Bitte anmelden oder das Passwort prüfen.',
 };
 export const joinError = (code: string | undefined) => JOIN_ERRORS[code || ''] || 'Das hat nicht geklappt. Bitte versuch es nochmal.';
 

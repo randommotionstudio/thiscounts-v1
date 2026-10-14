@@ -45,7 +45,7 @@ export function ListScreen() {
 
   // V1.6: who else is on this list (and on each list in the list menu)
   const listOthers = othersOn(list);
-  const withLabel = (l: typeof list) => { const o = othersOn(l); return o.length ? 'mit ' + joinNames(o.map(p => p.name)) : 'nur für dich'; };
+  const withLabel = (l: typeof list) => { const o = othersOn(l); return o.length ? 'mit ' + joinNames(o.map(p => p.name)) : 'nicht geteilt'; };
 
   const storeIdSet = useMemo(() => new Set(data.stores.map(s => s.id)), [data.stores]);
   const markSince = useMarkSince();
@@ -130,7 +130,7 @@ export function ListScreen() {
     const had = data.memory[memoryId(it.name)]?.storeId || null;
     actions.setItemStore(it, sid);
     setExpanded(null);
-    if (sid && sid !== had) toast('Gemerkt: ' + it.name + ' holst du künftig bei ' + (data.stores.find(s => s.id === sid)?.name || ''));
+    if (sid && sid !== had) toast('Gemerkt: ' + it.name + ' künftig bei ' + (data.stores.find(s => s.id === sid)?.name || ''));
     else if (!sid && had) toast(it.name + ' wird wieder automatisch zugeordnet');
   };
 
@@ -311,22 +311,19 @@ export function ListScreen() {
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', padding: '12px 12px 12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, textWrap: 'pretty' }}>„{qName}“ ist noch nicht auf der Liste</div>
-              <div style={{ fontSize: 12, color: '#8A7A6D', marginTop: 2 }}>{qDept === UNKNOWN || !qDept ? 'Kategorie wählst du danach' : 'Kommt zu ' + qDept}</div>
+              <div style={{ fontSize: 12, color: '#8A7A6D', marginTop: 2 }}>{qDept === UNKNOWN || !qDept ? 'Kategorie danach wählen' : 'Kommt zu ' + qDept}</div>
             </div>
             <button onMouseDown={keepFocus} onClick={addEntry} style={{ height: 44, padding: '0 16px', border: 'none', borderRadius: 999, background: INK, color: '#FBF5EE', fontSize: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Hinzufügen</button>
           </div>
         )}
         {n === 0 && !searching && (
           <div style={{ textAlign: 'center', padding: '18px 12px 6px' }}>
-            <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>Deine Liste ist leer</div>
-            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>Tipp etwas ein oder wähle aus deinen üblichen Artikeln.</div>
+            <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>Die Liste ist leer</div>
+            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>Artikel eintippen oder aus den üblichen Artikeln wählen.</div>
           </div>
         )}
         {items.some(i => i.parked) && !searching && (
-          <p style={{ fontSize: 13, color: '#9C4412', margin: '12px 4px 0' }}>Schwarz markierte Artikel waren nicht verfügbar – wähle einen Laden für die nächste Runde.</p>
-        )}
-        {n > 0 && !searching && (
-          <p style={{ fontSize: 13, color: '#8A7A6D', margin: '22px 4px 0' }}>Tipp: Artikel antippen, um den Laden zu ändern. Ohne Zuordnung → {mainName} (Hauptladen).</p>
+          <p style={{ fontSize: 13, color: '#9C4412', margin: '12px 4px 0' }}>Schwarz markierte Artikel waren nicht verfügbar – für die nächste Runde einen Laden wählen.</p>
         )}
       </div>
 
@@ -342,7 +339,7 @@ export function ListScreen() {
         <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
           <div onClick={() => setListMenu(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(42,31,23,.16)' }} />
           <div style={{ position: 'absolute', left: 14, right: 14, top: 'calc(var(--safe-top) + 72px)', background: 'rgba(255,253,250,.88)', WebkitBackdropFilter: 'blur(24px) saturate(1.6)', backdropFilter: 'blur(24px) saturate(1.6)', border: '1px solid rgba(255,255,255,.8)', borderRadius: 24, boxShadow: '0 18px 44px rgba(42,31,23,.22), inset 0 1px 0 rgba(255,255,255,.9)', padding: 6, animation: 'toastIn .2s ease', display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '70%', overflow: 'auto' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', padding: '10px 12px 6px' }}>Deine Listen</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', padding: '10px 12px 6px' }}>Listen</div>
             {data.lists.map(l => {
               const active = l.id === list.id, cnt = (data.itemsByList[l.id] || []).length;
               return (
@@ -381,8 +378,8 @@ export function ListScreen() {
           stores={data.stores.filter(s => !list.storeIds.includes(s.id))}
           currentStoreId={onceItem.once ? onceItem.storeId : null}
           onClose={() => setOnceFor(null)}
-          onText={t => { actions.assignOnce(onceItem, { text: t }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + t); }}
-          onStore={s => { actions.assignOnce(onceItem, { storeId: s.id }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' holst du diesmal bei ' + s.name); }}
+          onText={t => { actions.assignOnce(onceItem, { text: t }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' diesmal bei ' + t); }}
+          onStore={s => { actions.assignOnce(onceItem, { storeId: s.id }); setOnceFor(null); setExpanded(null); toast('Einmaliger Stopp: ' + onceItem.name + ' diesmal bei ' + s.name); }}
         />
       )}
       {ask && <AskSheet other={ask.who} itemName={ask.name} from={ask.from} at={ask.at} onAnswer={resolveAsk} />}

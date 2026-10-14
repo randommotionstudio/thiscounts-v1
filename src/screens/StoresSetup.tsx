@@ -43,7 +43,7 @@ export function StoresSetup() {
     setDraft(null);
     navigate(paths.list, true);
     const on = app.othersOn(draft);
-    toast('„' + name + '“ ist startklar' + (on.length ? ' · geteilt mit ' + joinNames(on.map(p => p.name)) : ' · nur für dich'));
+    toast('„' + name + '“ ist startklar' + (on.length ? ' · geteilt mit ' + joinNames(on.map(p => p.name)) : ' · nicht geteilt'));
   };
 
   const rows = [...(mainS ? [{ s: mainS, isMain: true }] : []), ...setupOrd.map(s => ({ s, isMain: false }))];
@@ -55,8 +55,8 @@ export function StoresSetup() {
           <button className="back-link" onClick={back} style={{ flexShrink: 0 }}>‹ Zurück</button>
           <span className="ellipsis" style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', minWidth: 0 }}>{isCreate ? 'Schritt 2 von 2 · ' + name : 'Läden für „' + name + '“'}</span>
         </div>
-        <h1 className="h1" style={{ margin: '0 0 6px' }}>Deine Läden</h1>
-        <p style={{ margin: 0, color: '#6F6055', fontSize: 15 }}>Wir sortieren deine Liste nach Läden und nach dem Weg durch die Filiale.</p>
+        <h1 className="h1" style={{ margin: '0 0 6px' }}>Läden</h1>
+        <p style={{ margin: 0, color: '#6F6055', fontSize: 15 }}>Die Liste wird nach Läden und nach dem Weg durch die Filiale sortiert.</p>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 110px)', paddingTop: headH ? headH + 20 : 'calc(var(--safe-top) + 203px)' }}>
         <div className="section-label">Lieblingsläden</div>
@@ -101,7 +101,7 @@ export function StoresSetup() {
                 );
               })}
             </div>
-            <p className="hint" style={{ marginTop: 10 }}>Diese Reihenfolge gilt für jeden Einkauf. Der Hauptladen bleibt immer vorn.</p>
+            <p className="hint" style={{ marginTop: 10 }}>Die Standard-Reihenfolge kann pro Einkauf angepasst werden.</p>
           </>
         )}
       </div>

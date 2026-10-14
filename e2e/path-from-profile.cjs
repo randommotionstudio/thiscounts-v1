@@ -34,7 +34,7 @@ const openNetto = async P => { await P.goto(BASE + '/profil'); await P.waitForTi
   const rows = await P.locator('.sheet button', { has: P.locator('div', { hasText: /eingerichtet|Eingerichtet/ }) }).allTextContents();
   ok(rows.some(t => t.startsWith('Prien') && /Eingerichtet/.test(t)) && rows.some(t => t.startsWith('Frasdorf') && /Noch nicht eingerichtet/.test(t)), 'one row per branch: ' + rows.map(t => t.replace('›', '')).join(' | '));
   await P.locator('.sheet button', { hasText: /^FrasdorfNoch nicht/ }).click(); await P.waitForTimeout(1200);
-  ok(/\/laden\/netto\/weg\/t/.test(P.url()) && await P.getByText('Wie läufst du durch Netto Frasdorf?').count() === 1, 'unsaved branch got saved, editor opens for Netto Frasdorf (set-up mode)');
+  ok(/\/laden\/netto\/weg\/t/.test(P.url()) && await P.getByText('Der Weg durch Netto Frasdorf').count() === 1, 'unsaved branch got saved, editor opens for Netto Frasdorf (set-up mode)');
   for (const d of ['Milchprodukte', 'Getränke']) await P.locator('button', { hasText: d }).last().click();
   await P.click('text=Ich bestätige, dass es diese Abteilungen in dieser Filiale nicht gibt.');
   await P.locator('.bottom-fade > button').last().click(); await P.waitForTimeout(900);

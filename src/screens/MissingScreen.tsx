@@ -58,7 +58,7 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
     toast(mi.name + ' ist zurück auf der Einkaufsliste');
   };
 
-  const reason = (s: Stop, onRoute: boolean) => (onRoute ? 'Stopp ' + (route.findIndex(x => x.id === s.id) + 1) + ' · liegt ohnehin auf deiner Route' : s.branch || 'Nicht auf der heutigen Route');
+  const reason = (s: Stop, onRoute: boolean) => (onRoute ? 'Stopp ' + (route.findIndex(x => x.id === s.id) + 1) + ' · liegt ohnehin auf der Route' : s.branch || 'Nicht auf der heutigen Route');
   const alts = others.filter(s => !primary || s.id !== primary.id);
   const stepBtn = { width: 38, height: 38, border: 'none', borderRadius: '50%', background: '#fff', color: '#2A1F17', fontSize: 20, lineHeight: 1, cursor: 'pointer' } as const;
 
@@ -68,7 +68,7 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
         <button className="back-link" onClick={() => app.back(storePath)}>‹ Zurück</button>
         <div style={{ fontSize: 13, color: '#8A7A6D', fontWeight: 600, marginTop: 8 }}>Nicht gefunden bei {cur.name}</div>
         <h1 className="h1" style={{ margin: '4px 0 6px' }}>{mi.name} woanders holen</h1>
-        <p style={{ margin: '0 0 20px', color: '#6F6055', fontSize: 15 }}>Wir schlagen den nächsten Stopp auf deiner Route vor.</p>
+        <p style={{ margin: '0 0 20px', color: '#6F6055', fontSize: 15 }}>Vorgeschlagen ist der nächste Stopp auf der Route.</p>
         {q.maxFound > 0 && (
           <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>

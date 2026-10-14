@@ -36,7 +36,7 @@ export function OnceSheet({ itemName, suggestions, stores, currentStoreId, onClo
           </div>
         ))}
         {!stores.length && (
-          <div style={{ fontSize: 14, color: '#8A7A6D', padding: '4px 4px 8px', textWrap: 'pretty' }}>Alle deine Läden sind schon auf dieser Liste. Neue Läden legst du im Profil an.</div>
+          <div style={{ fontSize: 14, color: '#8A7A6D', padding: '4px 4px 8px', textWrap: 'pretty' }}>Alle Läden sind schon auf dieser Liste. Neue Läden lassen sich im Profil anlegen.</div>
         )}
       </div>
     </Sheet>

@@ -24,11 +24,11 @@ function Centered({ children }: { children: ReactNode }) {
   return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, boxSizing: 'border-box', textAlign: 'center', fontSize: 15, color: '#8A7A6D' }}>{children}</div>;
 }
 
-/** "Lade deine Listen …" — only visible on the very first login, while the first data arrives. */
+/** "Listen werden geladen …" — only visible on the very first login, while the first data arrives. */
 function Loading() {
   const [show, setShow] = useState(false);
   useEffect(() => { const t = setTimeout(() => setShow(true), 400); return () => clearTimeout(t); }, []);
-  return <Centered>{show ? 'Lade deine Listen …' : null}</Centered>;
+  return <Centered>{show ? 'Listen werden geladen …' : null}</Centered>;
 }
 
 export function App() {
@@ -103,7 +103,7 @@ function Denied({ user }: { user: User }) {
   const [busy, setBusy] = useState(false);
   const join = () => {
     const c = normalizeCode(code);
-    if (!name.trim()) return setErr('Bitte gib deinen Namen ein.');
+    if (!name.trim()) return setErr('Bitte einen Namen eingeben.');
     if (!c) return setErr('Der Einladungscode hat 6 Zeichen, z. B. K7M-4QX.');
     setErr(''); setBusy(true);
     joinWithCode(user, name.trim().slice(0, 40), c).catch((x: { code?: string }) => { setBusy(false); setErr(joinError(x && x.code)); });
@@ -113,7 +113,7 @@ function Denied({ user }: { user: User }) {
       <div style={{ textWrap: 'pretty' }}>Das Konto {user.email} hat keinen Zugriff auf die Listen.</div>
       {open ? (
         <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
-          <input className="field" value={name} onChange={e => { setName(e.target.value); setErr(''); }} placeholder="Dein Name" aria-label="Dein Name" maxLength={40} />
+          <input className="field" value={name} onChange={e => { setName(e.target.value); setErr(''); }} placeholder="Name" aria-label="Name" maxLength={40} />
           <input className="field" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setErr(''); }} placeholder="Einladungscode, z. B. K7M-4QX" aria-label="Einladungscode" autoCapitalize="characters" spellCheck={false} />
           {err && <div role="alert" style={{ fontSize: 13, color: '#B23A12', margin: '0 4px' }}>{err}</div>}
           <button className="cta" onClick={join} disabled={busy}>{busy ? 'Beitreten …' : 'Beitreten'}</button>

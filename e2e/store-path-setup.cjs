@@ -25,7 +25,7 @@ const cta = P => P.locator('.bottom-fade > button').last();
   for (const P of [B, A]) { await P.click('.tab:has-text("Plan")'); await P.click('button:has-text("Einkauf starten bei Netto")'); }
   const groupsOf = P => P.locator('span[style*="uppercase"]').allTextContents();
   console.log('   Netto groups before:', (await groupsOf(B)).join(' → '));
-  await A.click('text=Hilf mit, diese Filiale genauer zu machen');
+  await A.click('text=Weg durch diese Filiale einrichten');
   await A.waitForTimeout(300);
   await A.screenshot({ path: SHOTS + '90-A-refine-setup.png' });
   ok((await cta(A).textContent()) === 'Erste Abteilung antippen', 'CTA: Erste Abteilung antippen');
@@ -41,7 +41,7 @@ const cta = P => P.locator('.bottom-fade > button').last();
   await A.screenshot({ path: SHOTS + '92-A-refine-ready.png', fullPage: true });
   await cta(A).click();
   await A.waitForTimeout(500);
-  ok(await A.getByText('Netto nutzt jetzt deinen Weg – auch für Anna').count() === 1, 'toast: Netto nutzt jetzt deinen Weg – auch für Anna');
+  ok(await A.getByText('Netto nutzt jetzt den neuen Weg – auch für Anna').count() === 1, 'toast: Netto nutzt jetzt den neuen Weg – auch für Anna');
   const t0 = Date.now();
   await B.waitForFunction(() => [...document.querySelectorAll('span')].filter(s => s.style.textTransform === 'uppercase').map(s => s.textContent)[0] === 'Obst & Gemüse', null, { timeout: 5000 }).catch(() => {});
   const after = await groupsOf(B);
@@ -58,7 +58,7 @@ const cta = P => P.locator('.bottom-fade > button').last();
   // 61 days back → check-back card
   const old = new Date(Date.now() - 61 * 86400000).toISOString();
   await fetch(REST + '/stores/netto?updateMask.fieldPaths=orderCheckedAt', { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { orderCheckedAt: { timestampValue: old } } }) });
-  await A.getByText('Stimmt dein Weg noch?').waitFor({ timeout: 5000 }).then(() => ok(true, 'check-back card after 61 days'), () => ok(false, 'check-back card'));
+  await A.getByText('Stimmt der Weg noch?').waitFor({ timeout: 5000 }).then(() => ok(true, 'check-back card after 61 days'), () => ok(false, 'check-back card'));
   ok(await A.getByText('Gespeichert vor 2 Monaten').count() === 1, 'check-back sub: Gespeichert vor 2 Monaten');
   await A.screenshot({ path: SHOTS + '93-A-checkback.png' });
   await A.click('button:has-text("Passt noch")');

@@ -23,16 +23,16 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await assign(A, 'Crispy Choccies', 'REWE');
 
   // ---- No buttons on the cards; "Hier starten" at the second store ----
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'Netto,REWE', 'planned: Netto, REWE');
   ok(await A.getByText('Stattdessen hier starten').count() === 0 && await A.locator('.card > button').count() === 0, 'no buttons on the cards');
   const m = await menu(A, 'REWE');
-  ok(m.join(' | ') === 'Hier starten | Nur hier einkaufen · nur 1 Artikel | Alles hier einkaufen · alle 3 Artikel | Heute auslassen · 1 Artikel bleibt auf der Liste', 'menu: ' + m.join(' | '));
+  ok(m.join(' | ') === 'Hier starten | Nur hier einkaufen · nur 1 Artikel | Alles hier einkaufen · alle 3 Artikel | Heute auslassen', 'menu: ' + m.join(' | '));
   await pick(A, 'REWE', 'Hier starten');
   await waitText(A, 'Crispy Choccies');
   ok(await A.getByText('Stopp 1 von 2').count() === 1, 'REWE is "Stopp 1 von 2"');
   ok(/^Weiter zu Netto/.test(await bottom(A).innerText()), 'bottom: "' + (await bottom(A).innerText()) + '"');
-  await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
+  await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'REWE,Netto', 'plan follows the trip: REWE, Netto');
   ok((await menu(A, 'Netto'))[0] === 'Jetzt hierhin', 'during the trip: "Jetzt hierhin"');
   await A.click('button.cta:has-text("Weiter einkaufen bei REWE")');
@@ -48,7 +48,7 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await add(A, ['Pfefferminztee', 'Crispy Choccies']);
   await A.click('button:has-text("Einsortieren")').catch(() => {});
   await assign(A, 'Crispy Choccies', 'REWE');
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('button:has-text("Reihenfolge ändern")').count() === 1 && await A.locator('button:has-text("Woanders einkaufen")').count() === 1, 'two stores: chips "Reihenfolge ändern" and "Woanders einkaufen" under the route');
   ok(await A.getByText('Reihenfolge ·').count() === 0, 'no order row at the top any more');
   await A.click('button:has-text("Ändern")');
@@ -77,10 +77,10 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
 
   // ---- Heute auslassen (plan) ----
   await A.click('.tab:has-text("Liste")'); await add(A, ['Joghurt']); await assign(A, 'Joghurt', 'Edeka');
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'Netto,Edeka,REWE', 'planned: Netto, Edeka, REWE');
   const r = await menu(A, 'REWE');
-  ok(r[r.length - 1] === 'Heute auslassen · 1 Artikel bleibt auf der Liste', '"Heute auslassen" is the last option');
+  ok(r[r.length - 1] === 'Heute auslassen', '"Heute auslassen" is the last option');
   await pick(A, 'REWE', 'Heute auslassen'); await A.waitForTimeout(400);
   ok((await cards(A)).join(',') === 'Netto,Edeka', 'REWE left out: Netto, Edeka');
   ok(await A.locator('[data-skipped="rewe"]').getByText('Crispy Choccies').count() === 1, '"Heute nicht": REWE with Crispy Choccies');
@@ -96,19 +96,19 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await A.click('button:has-text("Einkauf abschließen")');
   await waitText(A, 'Einkauf abgeschlossen'); await A.waitForTimeout(600);
   ok(JSON.stringify(await names()) === JSON.stringify(['Crispy Choccies']), 'Crispy Choccies stays on the list');
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'REWE' && await A.getByText('Heute nicht').count() === 0, 'next trip: REWE is back on the route');
 
   // ---- Heute auslassen (in the store: closed, too crowded …) ----
   await A.click('.tab:has-text("Liste")'); await add(A, ['Brot']);
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   await A.click('button.cta:has-text("Einkauf starten bei Netto")');
   await waitText(A, 'Brot');
   await A.locator('.bottom-fade button[title="Mehr"], .bottom-fade button[aria-label="Mehr"]').last().click();
   await A.click('button:has-text("Heute auslassen")');
   await waitText(A, 'Crispy Choccies');
   ok(/\/laden\/rewe$/.test(A.url()), 'left out in the store → on to REWE');
-  await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
+  await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('[data-skipped="netto"]').getByText('Brot').count() === 1, 'plan: "Heute nicht: Netto · Brot"');
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

@@ -155,7 +155,7 @@ export function PlanScreen() {
           <ConnPill conn={app.conn} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '4px 0 0' }}>
-          <h1 className="h1" style={{ margin: 0 }}>Deine Route</h1>
+          <h1 className="h1" style={{ margin: 0 }}>Route</h1>
           {multiTown && (
             <button onClick={() => setTownPick(true)} aria-label={'Ort wählen, gerade ' + app.townName} style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: PALE, color: INK, borderRadius: 999, padding: '0 12px 0 14px', height: 36, fontSize: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 1, minWidth: 0 }}>
               <span className="ellipsis">in {app.townName}</span>
@@ -169,7 +169,7 @@ export function PlanScreen() {
         {!route.length && (
           <div style={{ textAlign: 'center', padding: '30px 12px' }}>
             <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>{skipped.length ? 'Heute ist nichts mehr dran' : waiting.length ? 'In ' + app.townName + ' gibt’s nichts zu holen' : 'Noch keine Stopps'}</div>
-            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>{skipped.length ? 'Die übrigen Läden hast du für heute ausgelassen.' : waiting.length ? 'Deine offenen Artikel gibt’s nur in einem anderen Ort.' : 'Setz etwas auf die Liste – dann planen wir die Route.'}</div>
+            <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>{skipped.length ? 'Die übrigen Läden sind für heute ausgelassen.' : waiting.length ? 'Die offenen Artikel gibt’s nur in einem anderen Ort.' : 'Sobald Artikel auf der Liste stehen, wird die Route geplant.'}</div>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
@@ -222,7 +222,7 @@ export function PlanScreen() {
                   <span style={{ position: 'absolute', right: -2, bottom: -2, width: 10, height: 10, borderRadius: '50%', background: '#3E9B5F', border: '2px solid #FFFDFA', display: 'block' }} />
                 </span>
                 <span style={{ fontSize: 13, color: '#6F6055', textWrap: 'pretty' }}>
-                  <span style={{ fontWeight: 600, color: INK }}>{app.shopper.person.name} kauft gerade ein.</span> Du kannst starten, sobald der Einkauf abgeschlossen ist.
+                  <span style={{ fontWeight: 600, color: INK }}>{app.shopper.person.name} kauft gerade ein.</span> Ein neuer Einkauf ist möglich, sobald dieser abgeschlossen ist.
                 </span>
               </div>
             )}

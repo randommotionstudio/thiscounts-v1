@@ -34,7 +34,7 @@ export function RefinePrompt({ state, age, onRefine, onConfirm }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <RouteGlyph />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>Stimmt dein Weg noch?</div>
+            <div style={{ fontWeight: 600, fontSize: 15 }}>Stimmt der Weg noch?</div>
             <div style={{ fontSize: 13, color: '#9C4412' }}>Gespeichert {agoText(age)}</div>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function RefinePrompt({ state, age, onRefine, onConfirm }: {
       <div onClick={onRefine} style={{ marginTop: 20, background: '#FDE4D1', borderRadius: 18, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <RouteGlyph />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 15 }}>Hilf mit, diese Filiale genauer zu machen</div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>Weg durch diese Filiale einrichten</div>
           <div style={{ fontSize: 13, color: '#9C4412' }}>Abteilungs-Reihenfolge antippen</div>
         </div>
         <span style={{ color: '#9C4412', fontSize: 20 }}>›</span>

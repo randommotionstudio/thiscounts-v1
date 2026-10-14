@@ -70,7 +70,7 @@ export function ListSettings() {
         <h1 className="h1">{isEdit ? 'Liste bearbeiten' : 'Neue Einkaufsliste'}</h1>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 110px)', paddingTop: headH ? headH + 22 : 'calc(var(--safe-top) + 110px)' }}>
-        <p style={{ margin: '0 0 22px', color: '#6F6055', fontSize: 15 }}>{isEdit ? 'Änderungen gelten für alle, mit denen du die Liste teilst.' : 'Gib ihr einen Namen. Danach wählst du die Läden.'}</p>
+        <p style={{ margin: '0 0 22px', color: '#6F6055', fontSize: 15 }}>{isEdit ? 'Änderungen gelten für alle, mit denen die Liste geteilt wird.' : 'Liste benennen, danach Läden auswählen.'}</p>
         <div className="section-label">Name</div>
         <input className="field" value={draft.name} onChange={e => { const v = e.target.value; app.setDraft(d => (d ? { ...d, name: v } : d)); }}
           onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="z. B. Auf dem Heimweg" enterKeyHint="done" />
@@ -90,7 +90,7 @@ export function ListSettings() {
                 );
               })}
             </div>
-            <p className="hint" style={{ marginTop: 10 }}>Nur wer dabei ist, sieht die Liste. Wer neu in den Haushalt kommt, ist bei allen Listen dabei.</p>
+            {!isEdit && <p className="hint" style={{ marginTop: 10 }}>Nur wer ausgewählt ist, hat Zugriff auf die Liste.</p>}
           </>
         )}
         {isEdit && (
@@ -120,7 +120,7 @@ export function ListSettings() {
                   </div>
                 </div>
               )}
-              {lastList && <p style={{ fontSize: 13, color: '#8A7A6D', margin: '0 4px', textAlign: 'center' }}>Deine einzige Liste kann nicht gelöscht werden.</p>}
+              {lastList && <p style={{ fontSize: 13, color: '#8A7A6D', margin: '0 4px', textAlign: 'center' }}>Eine einzige Liste kann nicht gelöscht werden.</p>}
             </div>
           </>
         )}

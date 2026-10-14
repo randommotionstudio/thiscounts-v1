@@ -98,7 +98,7 @@ async function gone(page, text, timeout = 10000) { const t0 = Date.now(); await 
   const A3 = await a.ctx.newPage();
   A3.on('pageerror', e => console.log('[pageerror A3]', e.message));
   await A3.goto('http://127.0.0.1:4173/plan');
-  await A3.waitForSelector('h1:has-text("Deine Route")', { timeout: 15000 });
+  await A3.waitForSelector('h1:text-is("Route")', { timeout: 15000 });
   await A3.waitForTimeout(800);
   await A3.screenshot({ path: SHOTS + '23-A-coldstart-offline.png' });
   ok(await A3.getByText('Kaffee').count() > 0, 'cold start offline opens with data');

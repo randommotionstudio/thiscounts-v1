@@ -43,17 +43,17 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Wer kauft gerade ein:** Wenn die andere Person im Laden ist, seht ihr oben auf der Liste, wo sie gerade ist – z. B. „Netto · Stopp 1 von 2“.
 - **Nachschub beim Einkaufen:** Kommt beim Einkaufen ein Artikel dazu, taucht er mit „Neu von …“ auf. Liegt seine Abteilung schon hinter euch, erscheint unten ein Hinweis – so könnt ihr kurz zurückgehen. Ausschalten könnt ihr das im Profil unter „Benachrichtigungen“.
 - **Rückfrage:** Setzt ihr etwas für einen Laden auf die Liste, mit dem die andere Person heute schon fertig ist, fragt die App: gleich im aktuellen Laden mitnehmen – oder beim nächsten Einkauf?
-- **Filiale einrichten:** Im Laden unten auf „Hilf mit, diese Filiale genauer zu machen“ tippen und die Abteilungen in der Reihenfolge antippen, in der ihr durch den Laden lauft. Das gilt dann für euch beide. Später könnt ihr den Weg über „Aufbau der Filiale geändert?“ anpassen.
+- **Filiale einrichten:** Im Laden unten auf „Weg durch diese Filiale einrichten“ tippen und die Abteilungen in der Reihenfolge antippen, in der ihr durch den Laden lauft. Das gilt dann für euch beide. Später könnt ihr den Weg über „Aufbau der Filiale geändert?“ anpassen.
 
 ## Neu in Version 1.2
 
 - **Profilbild:** Im Profil auf euren Kreis mit dem Stift tippen und Anfangsbuchstaben oder ein Icon plus eine Farbe wählen. So seht ihr euch gegenseitig überall in der App – auf der Liste, beim Einkaufen und in den Hinweisen.
-- **Weg durch die Filiale prüfen:** Bei euren fünf Läden steht unten im Laden jetzt „Aufbau der Filiale geändert?“. Dort seht ihr den hinterlegten Weg und könnt ihn mit dem echten Laden vergleichen und anpassen. Nur neu angelegte Läden zeigen noch „Hilf mit, diese Filiale genauer zu machen“.
+- **Weg durch die Filiale prüfen:** Bei euren fünf Läden steht unten im Laden jetzt „Aufbau der Filiale geändert?“. Dort seht ihr den hinterlegten Weg und könnt ihn mit dem echten Laden vergleichen und anpassen. Nur neu angelegte Läden zeigen noch „Weg durch diese Filiale einrichten“.
 
 ## Neu in Version 1.3
 
 - **Neue Kategorien:** „Gewürze & Saucen“ ist jetzt aufgeteilt in **Gewürze** und **Saucen**. Neu sind außerdem **Eier**, **Kühltheke** (z. B. Tofu, Hummus, Feinkostsalate, Pizzateig), **Wein & Spirituosen** und **Angebote** für Artikel im Angebot. Eure Läden haben die neuen Abteilungen schon im Weg: Angebote ganz vorne, Gewürze und Saucen dort, wo vorher „Gewürze & Saucen“ war, Eier und Kühltheke direkt nach den Milchprodukten, Wein & Spirituosen direkt nach den Getränken. Stimmt das in eurer Filiale nicht, passt es über „Aufbau der Filiale geändert?“ an.
-- **Üblich auf deiner Liste:** Vorgeschlagen werden nur Artikel, die ihr in den letzten 8 Wochen bei mindestens zwei Einkäufen gekauft habt – die häufigsten zuerst, höchstens 12. Einmal gekaufte Sachen tauchen auf, sobald ihr anfangt zu tippen.
+- **Üblich auf dieser Liste:** Vorgeschlagen werden nur Artikel, die ihr in den letzten 8 Wochen bei mindestens zwei Einkäufen gekauft habt – die häufigsten zuerst, höchstens 12. Einmal gekaufte Sachen tauchen auf, sobald ihr anfangt zu tippen.
 
 - **Woanders einkaufen:** Spontan bei einem Laden vorbei, der heute nicht auf der Route ist? Im Plan unten auf **„Woanders einkaufen …“** tippen und den Laden wählen (oder neu anlegen). Ihr seht dann eure ganze Liste, sortiert nach dem Weg durch diesen Laden. Was ihr abhakt, ist erledigt – alles andere bleibt bei seinem gewohnten Laden. Hat der Laden einen eingerichteten Weg, stehen Abteilungen, die es dort nicht gibt, unten unter „Gibt's hier vermutlich nicht“.
 - **Neues App-Symbol:** Das iPhone behält das alte Symbol auf dem Home-Bildschirm. Um das neue zu sehen: App vom Home-Bildschirm entfernen und in Safari über **Teilen → Zum Home-Bildschirm** neu hinzufügen. Eure Listen und Läden bleiben erhalten – sie hängen an eurem Konto.
@@ -68,7 +68,7 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 - **Ersatz-Läden:** Gibt es einen Laden im gewählten Ort nicht (z. B. Netto und Edeka in Bernau), fragt die App, ob die Artikel bei diesem Einkauf woanders mit sollen. Jeder Artikel geht dann zum ersten Laden eurer Bernau-Reihenfolge, der die Abteilung hat – z. B. alles zu ALDI, was ALDI nicht hat, zu Denns. Hat kein Laden dort die Abteilung, steht der Artikel beim ersten Laden ganz unten unter „Gibt's hier vermutlich nicht“. Artikel mit „Einmaliger Stopp“ bei einem bestimmten Laden werden nie ersetzt – sie warten, bis ihr in dessen Ort einkauft. Diese Artikel sind im Plan gestrichelt und zeigen im Laden „statt Netto“. Ihr gewohnter Laden ändert sich nie – auch „Alle zu … mitnehmen“ gilt bei ihnen nur für diesen Einkauf. Im Plan lässt sich der Ersatz mit „Aufheben“ zurücknehmen oder später über „Heute in Bernau ersetzen …“ einschalten.
 - **Reihenfolge pro Ort:** Ändert ihr im Plan in einem anderen Ort die Reihenfolge („Ändern“), merkt sich die App sie für diesen Ort.
 - **Weg auch ohne Einkauf bearbeiten:** Profil → Laden antippen → **„Weg durch die Filiale“**. Dort steht für jede Filiale, ob ihr Weg schon eingerichtet ist; antippen öffnet ihn. Im Laden geht es weiterhin über „Aufbau der Filiale geändert?“.
-- **Eigener Weg pro Filiale:** Eine neue Filiale startet ohne Weg – im Laden einfach auf „Hilf mit, diese Filiale genauer zu machen“ tippen.
+- **Eigener Weg pro Filiale:** Eine neue Filiale startet ohne Weg – im Laden einfach auf „Weg durch diese Filiale einrichten“ tippen.
 
 ## Neu in Version 1.5: Jemanden einladen
 
@@ -81,7 +81,7 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 
 - **Personen pro Liste:** Beim Erstellen oder Bearbeiten einer Liste gibt es den Abschnitt **„Wer ist dabei“**. Ein Haken heißt: diese Person sieht die Liste. Ihr selbst seid immer dabei. Nur wer dabei ist, sieht die Liste und ihre Artikel.
 - **Neue Leute:** Wer neu in den Haushalt kommt, ist automatisch bei allen Listen dabei. Soll jemand eine Liste nicht sehen, nehmt den Haken in der Liste wieder raus.
-- **Vorschläge pro Liste:** „Üblich auf deiner Liste“ zeigt jetzt nur, was ihr mit genau dieser Liste gekauft habt – auf der Baumarkt-Liste also keine Milch. Die Start-Vorschläge (Milch, Brot …) erscheinen nur, solange eine Liste noch keine eigenen üblichen Artikel hat.
+- **Vorschläge pro Liste:** „Üblich auf dieser Liste“ zeigt jetzt nur, was ihr mit genau dieser Liste gekauft habt – auf der Baumarkt-Liste also keine Milch. Die Start-Vorschläge (Milch, Brot …) erscheinen nur, solange eine Liste noch keine eigenen üblichen Artikel hat.
 - **Gemerkt für alle Listen:** Welcher Laden und welche Kategorie zu einem Artikel gehören, merkt sich die App weiterhin für alle Listen gemeinsam.
 - Im Listen-Menü steht bei jeder Liste, mit wem ihr sie teilt – oder „nur für dich“.
 

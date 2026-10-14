@@ -33,7 +33,7 @@ const marker = (P, name) => P.locator('div:has(> span:text-is("' + name + '")) [
   await A.waitForTimeout(1000);
   await a.ctx.setOffline(true);
   await A.goto('http://127.0.0.1:4173/laden/edeka/weg').catch(() => {});
-  await A.waitForSelector('text=Dein Weg', { timeout: 10000 });
+  await A.waitForSelector('text=Der Weg', { timeout: 10000 });
   for (const d of ['Backwaren', 'Frühstück']) await A.locator('button', { hasText: d }).last().click();
   await A.click('text=Ich bestätige, dass es diese Abteilungen in dieser Filiale nicht gibt.');
   await A.click('button:has-text("Reihenfolge speichern")');

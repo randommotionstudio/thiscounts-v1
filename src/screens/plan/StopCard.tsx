@@ -69,7 +69,7 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, running, in
     ...(onStart && !isCur ? [{ label: running ? 'Jetzt hierhin' : 'Hier starten', onClick: onStart }] : []),
     ...only,
     ...(onAllHere ? [{ label: 'Alles hier einkaufen', sub: 'alle ' + allCount + ' Artikel', onClick: onAllHere }] : []),
-    ...(onSkip ? [{ label: 'Heute auslassen', sub: open + ' Artikel ' + (open === 1 ? 'bleibt' : 'bleiben') + ' auf der Liste', onClick: onSkip }] : []),
+    ...(onSkip ? [{ label: 'Heute auslassen', onClick: onSkip }] : []),
   ];
   if (s.custom) {
     return (

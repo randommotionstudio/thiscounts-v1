@@ -15,7 +15,7 @@ export function UsualChips({ pool, searching, showAll, isOn, deptOf, onToggle, o
 }) {
   return (
     <div style={{ marginTop: 12, animation: 'toastIn .2s ease' }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 4px 8px' }}>{searching ? 'Aus deinen üblichen Artikeln' : 'Üblich auf deiner Liste'}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 4px 8px' }}>{searching ? 'Aus den üblichen Artikeln' : 'Üblich auf dieser Liste'}</div>
       {/* Capped height: the header can't scroll, so a long list must never grow over the bottom buttons */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: '34vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
         {pool.slice(0, showAll ? pool.length : CHIP_LIM).map(c => {

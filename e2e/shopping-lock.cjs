@@ -29,7 +29,7 @@ const cta = P => P.locator('.bottom-fade button.cta');
   await check(B, 'Bananen');
   await waitText(A, 'Anna kauft gerade ein.');
   ok(await cta(A).isDisabled(), 'while Anna shops: Michi\'s "Einkauf starten" is greyed out');
-  ok(await A.getByText('Du kannst starten, sobald der Einkauf abgeschlossen ist.').count() === 1, 'message: "Du kannst starten, sobald der Einkauf abgeschlossen ist."');
+  ok(await A.getByText('Ein neuer Einkauf ist möglich, sobald dieser abgeschlossen ist.').count() === 1, 'message: "Ein neuer Einkauf ist möglich, sobald dieser abgeschlossen ist."');
   ok(await A.getByText('Stattdessen hier starten').count() === 0, 'no "Stattdessen hier starten"');
   ok(await A.getByText('Woanders einkaufen').count() === 0, 'no "Woanders einkaufen"');
   await A.locator('button[aria-label="Mehr"], button[title="Mehr"]').first().click().catch(() => {});

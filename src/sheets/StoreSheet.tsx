@@ -141,7 +141,7 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
                 <input className="field" style={{ marginTop: 10, fontSize: 16 }} value={adding.name} onChange={e => setAdding({ ...adding, name: e.target.value })} placeholder="Name des Orts, z. B. Frasdorf" aria-label="Name des neuen Orts" />
                 {!allTowns.length && (
                   <>
-                    <div style={{ fontSize: 13, color: '#6F6055', margin: '12px 2px 6px', textWrap: 'pretty' }}>Und wie heißt der Ort, in dem eure bisherigen Läden sind?</div>
+                    <div style={{ fontSize: 13, color: '#6F6055', margin: '12px 2px 6px', textWrap: 'pretty' }}>Und wie heißt der Ort der bisherigen Läden?</div>
                     <input className="field" style={{ fontSize: 16 }} value={adding.home} onChange={e => setAdding({ ...adding, home: e.target.value })} placeholder="z. B. Prien" aria-label="Name des bisherigen Orts" />
                   </>
                 )}
@@ -188,7 +188,7 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
             );
           })}
         </div>
-        <div style={{ fontSize: 12, color: '#8A7A6D', margin: '8px 4px 0' }}>Ohne Logo zeigen wir den Anfangsbuchstaben.</div>
+        <div style={{ fontSize: 12, color: '#8A7A6D', margin: '8px 4px 0' }}>Ohne Logo erscheint der Anfangsbuchstabe.</div>
       </div>
       <button onClick={save}
         style={{ marginTop: 16, width: '100%', height: 54, border: 'none', borderRadius: 999, background: name ? 'rgba(242,106,16,.86)' : '#F3EADF', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>

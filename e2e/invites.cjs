@@ -146,7 +146,7 @@ async function newInvite(P) {
   await login(F, 'fremd@example.com');
   await waitText(F, 'keinen Zugriff', 15000);
   await F.click('button:has-text("Mit Einladungscode beitreten")');
-  await F.fill('input[aria-label="Dein Name"]', 'Fremd');
+  await F.fill('input[aria-label="Name"]', 'Fremd');
   await F.fill('input[aria-label="Einladungscode"]', code4);
   await F.screenshot({ path: SHOTS + 'inv-05-denied-join.png' });
   await F.click('button:has-text("Beitreten")');

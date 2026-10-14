@@ -9,7 +9,7 @@ export function ElsewhereSheet({ stores, towns, currentTown, onPick, onNewStore,
 }) {
   const groups = towns.length >= 2 ? [...towns].sort((a, b) => (a.id === currentTown ? -1 : b.id === currentTown ? 1 : 0)) : [null];
   return (
-    <Sheet title="Woanders einkaufen" sub="Du siehst deine ganze Liste in diesem Laden. Was du nicht abhakst, bleibt bei seinem Laden." onClose={onClose} scrollBody>
+    <Sheet title="Woanders einkaufen" sub="Die ganze Liste in diesem Laden. Was nicht abgehakt wird, bleibt bei seinem Laden." onClose={onClose} scrollBody>
       {groups.map(t => (
         <div key={t ? t.id : 'all'} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
           {t && <div className="section-label" style={{ margin: '4px 4px 0' }}>In {t.name}</div>}

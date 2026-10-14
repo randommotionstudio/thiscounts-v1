@@ -3,8 +3,8 @@ import { Sheet } from '../ui/kit';
 
 /** The message that goes out with "Link teilen" / "Code kopieren" */
 export function inviteMessage(code: string, expiresAtMs: number) {
-  return 'Mach mit bei unseren Einkaufslisten in thisCounts: ' + location.origin + invitePath(code)
-    + '\nOder registrier dich in der App mit dem Code ' + formatCode(code) + ' (gültig ' + untilLabel(expiresAtMs) + ').';
+  return 'Einladung zu den Einkaufslisten in thisCounts: ' + location.origin + invitePath(code)
+    + '\nOder in der App mit dem Code ' + formatCode(code) + ' registrieren (gültig ' + untilLabel(expiresAtMs) + ').';
 }
 
 /** V1.5 "Jemanden einladen": one code for one person, valid for 7 days */

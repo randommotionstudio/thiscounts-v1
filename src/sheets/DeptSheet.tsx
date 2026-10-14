@@ -4,7 +4,7 @@ import { CatIcon, Sheet } from '../ui/kit';
 /** "Kategorie wählen" */
 export function DeptSheet({ name, current, onClose, onPick }: { name: string; current: string; onClose: () => void; onPick: (d: string) => void }) {
   return (
-    <Sheet title={<>Wo findet man „{name}“?</>} sub="Wir merken uns die Kategorie für das nächste Mal." onClose={onClose} scrollBody>
+    <Sheet title={<>Wo findet man „{name}“?</>} sub="Die Kategorie wird für das nächste Mal gespeichert." onClose={onClose} scrollBody>
       <div className="dept-grid">
         {ALL_DEPTS.map((d, i) => {
           const on = current === d;

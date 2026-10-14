@@ -42,7 +42,7 @@ const REST = 'http://127.0.0.1:8080/v1/projects/demo-thiscounts/databases/(defau
   // --- Request: stores from the tester form show the edit path ---
   await A.click('.tab:has-text("Plan")');
   await A.goto('http://127.0.0.1:4173/laden/netto'); await A.waitForTimeout(800);
-  ok(await A.getByText('Aufbau der Filiale geändert?').count() === 1 && await A.getByText('Hilf mit, diese Filiale genauer zu machen').count() === 0, 'Netto shows "Aufbau der Filiale geändert?"');
+  ok(await A.getByText('Aufbau der Filiale geändert?').count() === 1 && await A.getByText('Weg durch diese Filiale einrichten').count() === 0, 'Netto shows "Aufbau der Filiale geändert?"');
   await A.click('text=Aufbau der Filiale geändert?'); await A.waitForTimeout(400);
   ok(await A.getByText('Was hat sich bei Netto geändert?').count() === 1, 'opens in edit mode');
   const chips = (await A.locator('button:has(span:text-matches("^[0-9]+$"))').allTextContents()).slice(0, 4);
@@ -58,6 +58,6 @@ const REST = 'http://127.0.0.1:8080/v1/projects/demo-thiscounts/databases/(defau
   const st = await (await fetch(REST + '/stores', { headers: { Authorization: 'Bearer owner' } })).json();
   const bio = st.documents.find(d => d.fields.name.stringValue === 'Bioladen').name.split('/').pop();
   await A.goto('http://127.0.0.1:4173/laden/' + bio + '/weg'); await A.waitForTimeout(600);
-  ok(await A.getByText('Wie läufst du durch Bioladen?').count() === 1, 'a new store without a path still opens in setup mode');
+  ok(await A.getByText('Der Weg durch Bioladen').count() === 1, 'a new store without a path still opens in setup mode');
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

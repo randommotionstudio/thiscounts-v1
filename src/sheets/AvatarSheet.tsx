@@ -17,7 +17,7 @@ export function AvatarSheet({ person, onClose }: { person: { name: string; avata
   }) as const;
 
   return (
-    <Sheet title="Profilbild" sub="So sehen dich alle, mit denen du Listen teilst." onClose={onClose} z={45} scrollBody>
+    <Sheet title="Profilbild" sub="So erscheint das Profilbild für alle im Haushalt." onClose={onClose} z={45} scrollBody>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
         <Avatar person={{ name: person.name, avatar: av }} size={96} iconScale={0.52} shadow="0 8px 24px rgba(42,31,23,.14)" />
       </div>

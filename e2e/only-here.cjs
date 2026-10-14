@@ -25,9 +25,9 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await toTrinkgut(A, 'Wasser'); await toTrinkgut(A, 'Rotwein');
 
   // ---- The tidied menu ----
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   const tg = await menuOf(A, 'trinkgut');
-  ok(tg.join(' | ') === 'Hier starten | Nur hier einkaufen · nur 2 Artikel | Alles hier einkaufen · alle 4 Artikel | Heute auslassen · 2 Artikel bleiben auf der Liste', 'trinkgut menu: ' + tg.join(' | '));
+  ok(tg.join(' | ') === 'Hier starten | Nur hier einkaufen · nur 2 Artikel | Alles hier einkaufen · alle 4 Artikel | Heute auslassen', 'trinkgut menu: ' + tg.join(' | '));
   ok(await A.getByText('Später erledigen').count() === 0, 'no "Später erledigen" any more');
   ok(await A.getByText('Stattdessen hier starten').count() === 0, 'no buttons on the cards');
   await A.screenshot({ path: SHOTS + 'only-01-menu.png' });
@@ -48,7 +48,7 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await waitText(B, 'Michi kauft gerade ein.').then(() => ok(true, 'Anna sees Michi shopping (and waits)'), () => ok(false, 'Anna sees Michi shopping'));
 
   // Back in the plan mid-trip: just this stop, with a way back to the whole route
-  await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
+  await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('.card').count() === 1, 'plan shows only trinkgut');
   ok(await A.getByText('Nur trinkgut – die anderen Läden bleiben für nächstes Mal.').count() === 1, 'note: the other stores stay for next time');
   ok(await A.locator('.bottom-fade button.cta:has-text("Weiter einkaufen bei trinkgut")').count() === 1, 'CTA: Weiter einkaufen bei trinkgut');
@@ -68,14 +68,14 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(await B.locator('.bottom-fade button.cta').isEnabled(), 'Anna can start again');
 
   // A normal trip afterwards: the whole route again
-  await A.click('.tab:has-text("Plan")'); await waitText(A, 'Deine Route');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('.card').count() === 2, 'next trip: whole route (Netto, trinkgut)');
 
   // "Ganze Route" turns a one-store trip back into the full trip
   await A.locator('.card', { hasText: 'trinkgut' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(150);
   await A.locator('.card', { hasText: 'trinkgut' }).locator('button:has-text("Nur hier einkaufen")').click();
   await waitText(A, 'Nur dieser Laden');
-  await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
+  await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   await A.click('button:has-text("Ganze Route")');
   await A.waitForTimeout(300);
   ok(await A.locator('.card').count() === 2, '"Ganze Route": both stores again');
@@ -87,7 +87,7 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(go[0] === 'Jetzt hierhin', 'during a trip the menu says "Jetzt hierhin"');
   await A.locator('.card', { hasText: 'Netto' }).locator('[role=menuitem]:has-text("Jetzt hierhin")').click();
   await check(A, 'Bananen'); await check(A, 'Milch');
-  await A.click('text=‹ Zum Plan'); await waitText(A, 'Deine Route');
+  await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   const done = await menuOf(A, 'Netto');
   ok(done.join(' | ') === 'Nochmal hierhin', 'finished store menu: "Nochmal hierhin" (' + done.join(' | ') + ')');
   await A.locator('.card', { hasText: 'Netto' }).locator('button:has-text("Nochmal hierhin")').click();

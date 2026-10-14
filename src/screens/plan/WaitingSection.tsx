@@ -30,7 +30,7 @@ export function WaitingSection({ groups, townName, elsewhere, onReplace }: {
             </div>
           );
         })}
-        <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>Bleiben auf der Liste, bis du wieder dort einkaufst.</div>
+        <div style={{ fontSize: 12, color: '#8A7A6D', textWrap: 'pretty' }}>Bleiben auf der Liste bis zum nächsten Einkauf dort.</div>
         {onReplace && (
           <button onClick={onReplace} style={{ height: 40, border: '2px solid #EADCCD', borderRadius: 12, background: '#fff', color: '#2A1F17', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Heute in {townName} ersetzen …</button>
         )}

@@ -97,7 +97,7 @@ export function Profile() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, paddingTop: 14, borderTop: '1px solid #4A3B2E' }}>
             {others.length > 0 && <AvatarStack people={others} onDark ring="#2A1F17" />}
-            <span style={{ fontSize: 14, color: '#C9B8A6', minWidth: 0 }}>{others.length ? <>Im Haushalt mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{othersLabel}</span></> : 'Noch bist du allein im Haushalt.'}</span>
+            <span style={{ fontSize: 14, color: '#C9B8A6', minWidth: 0 }}>{others.length ? <>Im Haushalt mit <span style={{ color: '#FBF5EE', fontWeight: 600 }}>{othersLabel}</span></> : 'Noch ist niemand sonst im Haushalt.'}</span>
           </div>
         </div>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Mitglieder</div>
@@ -127,8 +127,8 @@ export function Profile() {
           })}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={newInvite}><span className="plus-ring" /><span>Jemanden einladen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und 7 Tage. Wer neu dazukommt, ist bei allen Listen dabei – wer bei welcher Liste ist, legst du in der Liste fest.</p>
-        <div className="section-label" style={{ margin: '24px 0 8px' }}>Deine Läden</div>
+        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung kann nur einmal genutzt werden und ist 7 Tage gültig.</p>
+        <div className="section-label" style={{ margin: '24px 0 8px' }}>Läden</div>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
           {data.stores.map((s, i) => (
             <div key={s.id} onClick={() => editStore(s)}
@@ -143,7 +143,7 @@ export function Profile() {
           ))}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={() => setSheet({ mode: 'new', name: '', branch: '', logo: null })}><span className="plus-ring" /><span>Laden hinzufügen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Welche Läden eine Liste nutzt, legst du in der Liste fest.{multi ? '' : ' Gibt es einen Laden auch in einem anderen Ort, füge ihn beim Laden als weitere Filiale hinzu.'}</p>
+        <p className="hint" style={{ marginTop: 10 }}>Welche Läden eine Liste nutzt, wird in der Liste festgelegt.{multi ? '' : ' Gibt es einen Laden auch in einem anderen Ort, lässt er sich beim Laden als weitere Filiale hinzufügen.'}</p>
         {multi && (
           <>
             <div className="section-label" style={{ margin: '24px 0 8px' }}>Orte</div>
@@ -161,7 +161,7 @@ export function Profile() {
                 );
               })}
             </div>
-            <p className="hint" style={{ marginTop: 10 }}>Jeder Einkauf startet im Heimatort. Im Plan wählst du, wo du heute einkaufst.</p>
+            <p className="hint" style={{ marginTop: 10 }}>Die Route nutzt die Läden im Heimatort. Im Plan lässt sich der Ort wechseln.</p>
           </>
         )}
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Benachrichtigungen</div>
@@ -170,7 +170,7 @@ export function Profile() {
             style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', minHeight: 64, boxSizing: 'border-box', cursor: 'pointer' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 15 }}>Beim Einkaufen</div>
-              <div style={{ fontSize: 13, color: '#8A7A6D', textWrap: 'pretty' }}>Wenn jemand etwas hinzufügt, an dessen Abteilung du schon vorbei bist.</div>
+              <div style={{ fontSize: 13, color: '#8A7A6D', textWrap: 'pretty' }}>Hinweis, wenn während des Einkaufs etwas für eine bereits passierte Abteilung dazukommt.</div>
             </div>
             <span style={{ width: 51, height: 31, borderRadius: 999, background: data.notifyWhileShopping ? '#F3752E' : '#D8CBBD', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
               <span style={{ position: 'absolute', left: 2, top: 2, width: 27, height: 27, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 4px rgba(42,31,23,.2)', transform: `translateX(${data.notifyWhileShopping ? 20 : 0}px)`, transition: 'transform .2s', display: 'block' }} />

@@ -49,7 +49,7 @@ const itemDoc = async name => { const j = await (await fetch(REST + '/lists/woch
   const sess = await (await fetch(REST + '/sessions', { headers: { Authorization: 'Bearer owner' } })).json();
   for (const d of sess.documents || []) await fetch('http://127.0.0.1:8080/v1/' + d.name + '?updateMask.fieldPaths=updatedAt&updateMask.fieldPaths=startedAt', { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { updatedAt: { timestampValue: old }, startedAt: { timestampValue: old } } }) });
   const B2 = await b.ctx.newPage(); await B.close();
-  await B2.goto('http://127.0.0.1:4173/plan'); await B2.waitForSelector('text=Deine Route');
+  await B2.goto('http://127.0.0.1:4173/plan'); await B2.waitForSelector('h1:text-is("Route")');
   await B2.locator('.bottom-fade button.cta').click(); // "Einkauf starten" or "Weiter einkaufen bei Netto" (this phone still had the old trip)
   await B2.waitForTimeout(1200);
   ok((await itemDoc('Senf')).nextTrip === false, 'new trip after an abandoned one: held item is back');

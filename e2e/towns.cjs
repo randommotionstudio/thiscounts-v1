@@ -87,12 +87,12 @@ const get = async p => (await fetch(H + p, { headers: auth })).json();
   // --- Trip in Frasdorf ---
   await A.click('button:has-text("Einkauf starten bei Netto")'); await A.waitForTimeout(800);
   ok(await A.getByText('Hauptstraße 3, 83112 Frasdorf').count() === 1, 'store mode shows the Frasdorf branch');
-  ok(await A.getByText('Hilf mit, diese Filiale genauer zu machen').count() === 1, 'new branch: offer to set up its path');
+  ok(await A.getByText('Weg durch diese Filiale einrichten').count() === 1, 'new branch: offer to set up its path');
   await B.click('.tab:has-text("Liste")'); await B.waitForTimeout(1200);
   ok(await B.getByText(/Netto Frasdorf · Stopp 1 von 2/).count() === 1, 'Anna’s live card: Netto Frasdorf · Stopp 1 von 2');
   // set up the Frasdorf path: Milchprodukte first, nothing else here
-  await A.click('text=Hilf mit, diese Filiale genauer zu machen'); await A.waitForTimeout(400);
-  ok(await A.getByText('Wie läufst du durch Netto Frasdorf?').count() === 1, 'path editor names the branch');
+  await A.click('text=Weg durch diese Filiale einrichten'); await A.waitForTimeout(400);
+  ok(await A.getByText('Der Weg durch Netto Frasdorf').count() === 1, 'path editor names the branch');
   for (const d of ['Milchprodukte', 'Backwaren']) await A.locator('button', { hasText: d }).last().click();
   await A.click('text=Ich bestätige, dass es diese Abteilungen in dieser Filiale nicht gibt.');
   await A.locator('.bottom-fade > button').last().click(); await A.waitForTimeout(800);

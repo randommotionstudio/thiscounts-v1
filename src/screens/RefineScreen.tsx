@@ -110,7 +110,7 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
     if (!canSave) return;
     actions.saveStoreOrder(store, order);
     app.back(storePath);
-    toast(isEdit ? 'Weg bei ' + label + ' aktualisiert' : label + ' nutzt jetzt deinen Weg' + (app.others.length ? ' – auch für ' + app.othersLabel : ''));
+    toast(isEdit ? 'Weg bei ' + label + ' aktualisiert' : label + ' nutzt jetzt den neuen Weg' + (app.others.length ? ' – auch für ' + app.othersLabel : ''));
   };
 
   const chip = (d: string, on: boolean, num: number | '+') => {
@@ -133,14 +133,14 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 14px) 20px 12px' }}>
         <button className="back-link" style={{ margin: '0 0 2px' }} onClick={() => app.back(storePath)}>{fromProfile ? '‹ Zurück' : '‹ Zurück in den Laden'}</button>
-        <h1 className="h1" style={{ fontSize: 26, margin: '2px 0 2px', textWrap: 'pretty' }}>{isEdit ? 'Was hat sich bei ' + label + ' geändert?' : 'Wie läufst du durch ' + label + '?'}</h1>
+        <h1 className="h1" style={{ fontSize: 26, margin: '2px 0 2px', textWrap: 'pretty' }}>{isEdit ? 'Was hat sich bei ' + label + ' geändert?' : 'Der Weg durch ' + label}</h1>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D' }}>{store.branch}</div>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: (headH || 150) + 16 }}>
         <p style={{ margin: '0 0 16px', color: '#6F6055', fontSize: 15, textWrap: 'pretty' }}>
           {isEdit
-            ? 'Gespeichert ' + agoText(age) + '. Tippe eine Abteilung an, um sie zu verschieben oder zu entfernen.'
-            : 'Tippe alle Abteilungen in der Reihenfolge an, in der du sie durchläufst. Bisher nutzen wir die Standard-Reihenfolge von ' + store.name + '.'}
+            ? 'Gespeichert ' + agoText(age) + '. Eine Abteilung antippen, um sie zu verschieben oder zu entfernen.'
+            : 'Alle Abteilungen in der Reihenfolge antippen, in der sie durchlaufen werden. Bisher gilt die Standard-Reihenfolge von ' + store.name + '.'}
         </p>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', marginBottom: 20 }}>
           <button onClick={() => setGuide(g => !g)} style={{ width: '100%', minHeight: 48, padding: '12px 14px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer', textAlign: 'left' }}>
@@ -149,18 +149,18 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
           </button>
           {guide && (
             <div style={{ padding: '0 14px 12px', marginTop: -6 }}>
-              <p style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.45, color: '#6F6055', textWrap: 'pretty' }}>Jeder läuft anders – damit alle Angaben vergleichbar sind, gehen wir von diesem Weg aus: vom Eingang an Obst &amp; Gemüse vorbei, Gang für Gang in Schlangenlinien, zum Schluss zur Kasse.</p>
+              <p style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.45, color: '#6F6055', textWrap: 'pretty' }}>Jeder läuft anders – damit alle Angaben vergleichbar sind, gilt dieser Weg: vom Eingang an Obst &amp; Gemüse vorbei, Gang für Gang in Schlangenlinien, zum Schluss zur Kasse.</p>
               <StorePathIllustration />
             </div>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 28, marginBottom: 4, paddingRight: 14 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em' }}>Dein Weg</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D', textTransform: 'uppercase', letterSpacing: '.06em' }}>Der Weg</span>
           {(isEdit ? changed : placed > 0) && (
             <button onClick={() => { setOrder([...base]); setPick(null); }} style={{ border: 'none', background: 'none', padding: '6px 0', color: '#C9581A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{isEdit ? 'Ursprüngliche Reihenfolge' : 'Zurücksetzen'}</button>
           )}
         </div>
-        <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 12, textWrap: 'pretty' }}>{placed ? 'Tippe eine nummerierte Abteilung an, um sie zu verschieben.' : 'Die Kasse setzen wir automatisch ans Ende.'}</div>
+        <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 12, textWrap: 'pretty' }}>{placed ? 'Eine nummerierte Abteilung antippen, um sie zu verschieben.' : 'Die Kasse kommt automatisch ans Ende.'}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {order.map((d, i) => (
             <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', maxWidth: '100%' }}>
