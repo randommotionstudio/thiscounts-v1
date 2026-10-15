@@ -15,17 +15,17 @@ const IN = 'input[placeholder^="z. B. 5 Bananen"]';
   await A.locator('[role=checkbox]', { has: A.getByText('Bananen', { exact: true }) }).click();
   await A.click('button:has-text("Weiter zu trinkgut")');
   await A.click('button:has-text("Auf der Einkaufsliste lassen")');
-  const t = A.locator('.toast-overlay'); await t.waitFor({ timeout: 3000 });
+  const t = A.locator('.toast-float'); await t.waitFor({ timeout: 3000 });
   const samples = [];
   const t0 = Date.now();
   while (Date.now() - t0 < 4200) {
-    const o = await A.evaluate(() => { const e = document.querySelector('.toast-overlay'); return e ? +getComputedStyle(e).opacity : null; });
+    const o = await A.evaluate(() => { const e = document.querySelector('.toast-float'); return e ? +getComputedStyle(e).opacity : null; });
     samples.push([Date.now() - t0, o]); await A.waitForTimeout(40);
   }
   const mid = samples.filter(([, o]) => o != null && o > 0.05 && o < 0.95 && samples.indexOf([, o]) === -1);
   const fadingSamples = samples.filter(([ms, o]) => ms > 2500 && o != null && o > 0.05 && o < 0.95);
   console.log('   fade samples:', JSON.stringify(fadingSamples));
-  ok(fadingSamples.length >= 2, 'green toast fades out gradually');
+  ok(fadingSamples.length >= 2, 'toast fades out gradually');
   ok(samples[samples.length - 1][1] === null, 'toast removed afterwards');
   // dark toast on the profile screen keeps its colour when switching to the list (it turned green before)
   await A.goto('http://127.0.0.1:4173/profil'); await A.waitForSelector('text=Mitglieder', { timeout: 15000 });
@@ -35,7 +35,7 @@ const IN = 'input[placeholder^="z. B. 5 Bananen"]';
   const cls = async () => A.locator('[role=status]', { hasText: 'Änderungen gespeichert' }).getAttribute('class');
   ok(/toast-float/.test(await cls()), 'profile: dark toast');
   await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(200);
-  ok(/toast-float/.test(await cls()) && !/toast-inline/.test(await cls()), 'after switching to the list it stays dark (' + (await cls()) + ')');
+  ok(/toast-float/.test(await cls()), 'after switching to the list it stays dark (' + (await cls()) + ')');
   await A.screenshot({ path: SHOTS + 'toast-tab-switch.png' });
   await browser.close();
 })();
