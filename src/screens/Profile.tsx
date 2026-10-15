@@ -128,7 +128,7 @@ export function Profile() {
           })}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={newInvite}><span className="plus-ring" /><span>Jemanden einladen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und läuft nach 7 Tagen ab.</p>
+        <p className="hint" style={{ marginTop: 10 }}>Einladungen sind einmalig nutzbar und 7 Tage gültig.</p>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Läden</div>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
           {data.stores.map((s, i) => (

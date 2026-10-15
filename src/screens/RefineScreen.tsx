@@ -161,7 +161,7 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
           )}
         </div>
         <div style={{ fontSize: 13, color: '#6F6055', marginBottom: isEdit ? 6 : 12, textWrap: 'pretty' }}>{placed ? 'Eine nummerierte Abteilung antippen, um sie zu verschieben oder zu entfernen.' : 'Die Kasse kommt automatisch ans Ende.'}</div>
-        {isEdit && <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 12 }}>{'Gespeichert ' + agoText(age) + '.'}</div>}
+        {isEdit && <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 20 }}>{'Gespeichert ' + agoText(age) + '.'}</div>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {order.map((d, i) => (
             <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', maxWidth: '100%' }}>
