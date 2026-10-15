@@ -96,18 +96,18 @@ export function StoresSetup() {
                     <LogoTile store={r.s} size={34} radius={10} initialSize={15} />
                     <div className="ellipsis" style={{ flex: 1, minWidth: 0, fontWeight: 600 }}>{r.s.name}</div>
                     {r.isMain
-                      ? <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>immer zuerst</span>
+                      ? <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>Hauptladen</span>
                       : <UpDown onUp={() => move(r.s.id, -1)} onDown={() => move(r.s.id, 1)} noUp={i === 0} noDown={i === setupOrd.length - 1} />}
                   </div>
                 );
               })}
             </div>
-            <p className="hint" style={{ marginTop: 10 }}>Die Standard-Reihenfolge kann pro Einkauf angepasst werden.</p>
+            <p className="hint" style={{ marginTop: 10 }}>Für einzelne Einkäufe kann eine abweichende Reihenfolge gewählt werden.</p>
           </>
         )}
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
-        <Toast dark />
+        <Toast />
         <button className={'cta' + (noSel ? ' off' : '')} onClick={cta}>{noSel ? 'Mindestens einen Laden wählen' : isCreate ? '„' + name + '“ erstellen' : 'Fertig'}</button>
       </div>
       {newStore && (

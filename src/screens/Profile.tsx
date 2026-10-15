@@ -128,7 +128,7 @@ export function Profile() {
           })}
         </div>
         <button className="dashed-btn" style={{ marginTop: 12 }} onClick={newInvite}><span className="plus-ring" /><span>Jemanden einladen</span></button>
-        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung kann nur einmal genutzt werden und ist 7 Tage gültig.</p>
+        <p className="hint" style={{ marginTop: 10 }}>Jede Einladung gilt für eine Person und läuft nach 7 Tagen ab.</p>
         <div className="section-label" style={{ margin: '24px 0 8px' }}>Läden</div>
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', overflow: 'hidden' }}>
           {data.stores.map((s, i) => (
@@ -181,7 +181,7 @@ export function Profile() {
         <button className="outline-danger" style={{ marginTop: 28 }} onClick={() => { signOut(auth); navigate('/', true); }}>Abmelden</button>
       </div>
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>
-        <Toast dark />
+        <Toast />
         <TabBar active="profile" go={navigate} />
       </div>
       {invite && (

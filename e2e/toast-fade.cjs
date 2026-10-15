@@ -27,7 +27,15 @@ const IN = 'input[placeholder^="z. B. 5 Bananen"]';
   console.log('   fade samples:', JSON.stringify(fadingSamples));
   ok(fadingSamples.length >= 2, 'green toast fades out gradually');
   ok(samples[samples.length - 1][1] === null, 'toast removed afterwards');
-  // dark toast on the profile screen
-  await A.goto('http://127.0.0.1:4173/profil'); await A.waitForTimeout(500);
+  // dark toast on the profile screen keeps its colour when switching to the list (it turned green before)
+  await A.goto('http://127.0.0.1:4173/profil'); await A.waitForSelector('text=Mitglieder', { timeout: 15000 });
+  await A.locator('div[style*="cursor: pointer"]', { hasText: 'Netto' }).first().click();
+  await A.click('button:has-text("Laden speichern")');
+  await A.locator('[role=status]', { hasText: 'Änderungen gespeichert' }).waitFor({ timeout: 3000 });
+  const cls = async () => A.locator('[role=status]', { hasText: 'Änderungen gespeichert' }).getAttribute('class');
+  ok(/toast-float/.test(await cls()), 'profile: dark toast');
+  await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(200);
+  ok(/toast-float/.test(await cls()) && !/toast-inline/.test(await cls()), 'after switching to the list it stays dark (' + (await cls()) + ')');
+  await A.screenshot({ path: SHOTS + 'toast-tab-switch.png' });
   await browser.close();
 })();

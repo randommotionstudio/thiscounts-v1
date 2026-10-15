@@ -168,7 +168,6 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: '#8A7A6D', margin: '8px 4px 0', textWrap: 'pretty' }}>Beim Einkaufen geht's auch direkt im Laden: unten „Aufbau der Filiale geändert?“.</div>
           </>
         )}
 

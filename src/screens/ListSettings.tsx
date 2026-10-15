@@ -127,7 +127,7 @@ export function ListSettings() {
         )}
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
-        <Toast dark />
+        <Toast />
         <button className={'cta' + (off ? ' off' : '')} onClick={next}>{noStores ? 'Mindestens einen Laden wählen' : isEdit ? 'Änderungen speichern' : name ? 'Weiter zu den Läden' : 'Erst einen Namen eingeben'}</button>
       </div>
     </div>

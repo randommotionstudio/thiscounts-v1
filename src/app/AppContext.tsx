@@ -50,6 +50,8 @@ export interface AppCtx {
   toastText: string | null;
   /** True during the short fade-out before the toast is removed */
   toastLeaving: boolean;
+  /** The toast's colour, fixed when it appears: green on the list and in the store, dark elsewhere */
+  toastDark: boolean;
   route: Route;
   navigate: (to: string, replace?: boolean) => void;
   back: (to: string) => void;
@@ -101,6 +103,9 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const [activeId, setActiveId] = useState<string | null>(() => lsGet(LS_ACTIVE));
   const [toastText, setToastText] = useState<string | null>(null);
   const [toastLeaving, setToastLeaving] = useState(false);
+  const [toastDark, setToastDark] = useState(false);
+  const routeName = useRef(route.name);
+  routeName.current = route.name;
   const [draft, setDraft] = useState<ListDraft | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -112,6 +117,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const toast = useCallback((text: string) => {
     clearTimeout(toastTimer.current);
     setToastText(text);
+    setToastDark(!['list', 'store', 'spontan', 'missing'].includes(routeName.current));
     setToastLeaving(false);
     toastTimer.current = setTimeout(() => {
       setToastLeaving(true); // fade out (.toast-leaving), then remove
@@ -186,14 +192,14 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       list, items, allItems,
       mainStore, mainName: mainStore ? mainStore.name : (data.stores[0]?.name || '–'),
       selectedStores: data.stores.filter(s => list.storeIds.includes(s.id)),
-      setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
+      setActiveList, toast, toastText, toastLeaving, toastDark, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
       guessDept: name => data.memory[memoryId(name)]?.category || guessDeptFromName(name),
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
       standIn: trip.standIn, setStandIn, tripMoves: trip.moves, moveForTrip,
       onlyStop: trip.only, visited: trip.visited, startOnly, endOnly,
     };
-  }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip, startOnly, endOnly]);
+  }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, toastDark, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip, startOnly, endOnly]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

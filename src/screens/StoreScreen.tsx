@@ -265,7 +265,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
             {!onlyHere && (
               <button onClick={skipStore} style={{ textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>Heute auslassen</div>
-                <div style={{ fontSize: 13, color: '#8A7A6D' }}>Die offenen Artikel bleiben auf der Liste für nächstes Mal.</div>
+                <div style={{ fontSize: 13, color: '#8A7A6D' }}>Die offenen Artikel bleiben auf der Liste.</div>
               </button>
             )}
             <button onClick={() => navigate(paths.plan)} style={{ textAlign: 'left', height: 48, padding: '0 16px', border: 'none', borderTop: onlyHere ? 'none' : '1px solid #EADCCD', background: 'none', fontSize: 15, fontWeight: 600, color: '#2A1F17', cursor: 'pointer' }}>Zum Plan</button>

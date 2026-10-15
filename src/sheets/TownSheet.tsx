@@ -9,7 +9,7 @@ export function TownSheet({ towns, current, stores, onPick, onClose }: {
   towns: Town[]; current: string | null; stores: Store[]; onPick: (townId: string) => void; onClose: () => void;
 }) {
   return (
-    <Sheet title="Wo wird heute eingekauft?" sub={'Gilt nur auf diesem Gerät und nur für diesen Einkauf. Danach geht’s wieder in ' + towns[0]?.name + ' los.'} onClose={onClose} scrollBody>
+    <Sheet title="Wo wird heute eingekauft?" sub={'Gilt nur für diesen Einkauf. Danach wird die Route wieder in ' + towns[0]?.name + ' geplant.'} onClose={onClose} scrollBody>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
         {towns.map(t => {
           const here = storesInTown(stores, towns, t.id), on = t.id === current;

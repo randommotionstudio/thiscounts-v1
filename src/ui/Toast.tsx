@@ -5,8 +5,9 @@ import { useApp } from '../app/AppContext';
  * (main button / tab bar) – place it as the first child of `.bottom-fade` – so it never covers a button,
  * and it floats, so nothing on the screen shifts when it appears.
  */
-export function Toast({ dark = false }: { dark?: boolean }) {
-  const { toastText, toastLeaving } = useApp();
+export function Toast() {
+  // The colour comes with the toast (where it was shown), so it doesn't change when switching tabs
+  const { toastText, toastLeaving, toastDark: dark } = useApp();
   if (!toastText) return null;
   return (
     <div role="status" className={(dark ? 'toast-float' : 'toast-inline toast-overlay') + (toastLeaving ? ' toast-leaving' : '')}

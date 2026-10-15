@@ -137,11 +137,11 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
         <div style={{ fontSize: 13, fontWeight: 600, color: '#8A7A6D' }}>{store.branch}</div>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: (headH || 150) + 16 }}>
-        <p style={{ margin: '0 0 16px', color: '#6F6055', fontSize: 15, textWrap: 'pretty' }}>
-          {isEdit
-            ? 'Gespeichert ' + agoText(age) + '. Eine Abteilung antippen, um sie zu verschieben oder zu entfernen.'
-            : 'Alle Abteilungen in der Reihenfolge antippen, in der sie durchlaufen werden. Bisher gilt die Standard-Reihenfolge von ' + store.name + '.'}
-        </p>
+        {!isEdit && (
+          <p style={{ margin: '0 0 16px', color: '#6F6055', fontSize: 15, textWrap: 'pretty' }}>
+            {'Alle Abteilungen in der Reihenfolge antippen, in der sie durchlaufen werden. Bisher gilt die Standard-Reihenfolge von ' + store.name + '.'}
+          </p>
+        )}
         <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCCD', marginBottom: 20 }}>
           <button onClick={() => setGuide(g => !g)} style={{ width: '100%', minHeight: 48, padding: '12px 14px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer', textAlign: 'left' }}>
             <span style={{ fontWeight: 600, fontSize: 15, color: INK }}>Bitte diesem Weg folgen</span>
@@ -160,7 +160,8 @@ function RefineEditor({ store, storePath, fromProfile, label }: { store: Store; 
             <button onClick={() => { setOrder([...base]); setPick(null); }} style={{ border: 'none', background: 'none', padding: '6px 0', color: '#C9581A', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{isEdit ? 'Ursprüngliche Reihenfolge' : 'Zurücksetzen'}</button>
           )}
         </div>
-        <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 12, textWrap: 'pretty' }}>{placed ? 'Eine nummerierte Abteilung antippen, um sie zu verschieben.' : 'Die Kasse kommt automatisch ans Ende.'}</div>
+        <div style={{ fontSize: 13, color: '#6F6055', marginBottom: isEdit ? 6 : 12, textWrap: 'pretty' }}>{placed ? 'Eine nummerierte Abteilung antippen, um sie zu verschieben oder zu entfernen.' : 'Die Kasse kommt automatisch ans Ende.'}</div>
+        {isEdit && <div style={{ fontSize: 13, color: '#6F6055', marginBottom: 12 }}>{'Gespeichert ' + agoText(age) + '.'}</div>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {order.map((d, i) => (
             <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', maxWidth: '100%' }}>
