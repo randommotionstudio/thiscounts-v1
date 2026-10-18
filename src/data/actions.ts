@@ -102,10 +102,23 @@ export function allHere(items: Item[], list: List, storeId: string) {
 
 /** "Einkauf abschließen": history for checked items, delete them, reset the trip. */
 export function finishShopping(list: List, items: Item[]) {
+  closeTrip(list, items, Timestamp.now(), () => doc(historyCol()));
+  endSession();
+}
+
+/**
+ * V1.8: a trip nobody finished (no activity for SESSION_STALE_MS) is closed like "Einkauf abschließen".
+ * Every phone may notice it at the same time, so the writes are identical on all of them: history ids come from
+ * the item ids and the time is the abandoned trip's last activity – nothing is counted twice.
+ */
+export function finishAbandonedTrip(list: List, items: Item[], lastActivityMs: number) {
+  closeTrip(list, items, Timestamp.fromMillis(lastActivityMs), i => doc(historyCol(), 'auto-' + i.id));
+}
+
+function closeTrip(list: List, items: Item[], at: Timestamp, historyDoc: (i: Item) => ReturnType<typeof doc>) {
   const batch = writeBatch(db);
-  const now = Timestamp.now();
   items.filter(i => i.checked).forEach(i => {
-    batch.set(doc(historyCol()), { name: i.name, qty: i.qty, storeId: i.storeId, listId: list.id, completedAt: now });
+    batch.set(historyDoc(i), { name: i.name, qty: i.qty, storeId: i.storeId, listId: list.id, completedAt: at });
     batch.delete(itemRef(i.listId, i.id));
   });
   // Sets and deletes can't fail on a missing document, so this batch is safe; the list update goes separately.
@@ -113,7 +126,6 @@ export function finishShopping(list: List, items: Item[]) {
   updateList(list.id, { tripOrder: null, deferred: [], mainFree: false, skipped: [] });
   // Items held back for "next time" are back on the next trip
   items.filter(i => !i.checked && (i.nextTrip || i.pendingDecision)).forEach(i => updateItem(i, { nextTrip: false, pendingDecision: false }));
-  endSession();
 }
 
 // ---------- V1.1: shopping session ----------

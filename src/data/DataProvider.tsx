@@ -30,6 +30,8 @@ export interface Data {
   sessions: Record<string, Session>;
   /** The sessions snapshot has arrived (from cache or server) */
   sessionsReady: boolean;
+  /** V1.8: the sessions come from the server (not just this phone's cache) – safe to judge who is shopping */
+  sessionsFresh: boolean;
   /** V1.1: Profil → "Beim Einkaufen" */
   notifyWhileShopping: boolean;
   /** V1.2: everyone's profile picture by uid (missing → initial on orange) */
@@ -102,6 +104,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [sessions, setSessions] = useState<Record<string, Session>>({});
   const [sessionsReady, setSessionsReady] = useState(false);
+  const [sessionsFresh, setSessionsFresh] = useState(false);
   const [notifyWhileShopping, setNotify] = useState(true);
   const [myAvatar, setMyAvatar] = useState<AvatarPref>(normalizeAvatar(null));
   const [otherAvatars, setOtherAvatars] = useState<Record<string, AvatarPref>>({});
@@ -163,7 +166,8 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         return { id: d.id, name: x.name || '', qty: str(x.qty), storeId: str(x.storeId), listId: x.listId || '', completedAtMs: ms(x.completedAt) };
       }));
     }, onErr);
-    const u6 = onSnapshot(sessionsCol(), snap => {
+    const u6 = onSnapshot(sessionsCol(), { includeMetadataChanges: true }, snap => {
+      setSessionsFresh(!snap.metadata.fromCache);
       const m: Record<string, Session> = {};
       snap.docs.forEach(d => {
         const x = d.data(opts);
@@ -239,11 +243,11 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
     towns: hh?.towns || [],
-    stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping,
+    stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, sessionsFresh, notifyWhileShopping,
     avatars: { ...otherAvatars, [user.uid]: myAvatar },
     members, invites,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [members, invites, hh, denied, stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
+  }), [members, invites, hh, denied, stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, sessionsFresh, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

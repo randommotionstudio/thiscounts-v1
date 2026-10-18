@@ -11,6 +11,7 @@ import { useConnection, type Conn } from './useConnection';
 import { ask, holdForNextTrip } from './shopping';
 import { lsGet, lsSet } from './localStore';
 import { useTripState } from './useTripState';
+import * as actions from '../data/actions';
 import type { Route } from './router';
 
 export interface ListDraft {
@@ -79,6 +80,8 @@ export interface AppCtx {
   onlyStop: string | null;
   /** V1.8: stops of this trip in the order this phone went there */
   visited: string[];
+  /** V1.8: this phone's trip has expired (no activity for SESSION_STALE_MS) – it ends instead of going on */
+  tripExpired: boolean;
   startOnly: (stopId: string) => void;
   endOnly: () => void;
 }
@@ -150,6 +153,31 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
 
+  // V1.8: a trip nobody finished (no activity on this list for SESSION_STALE_MS, e.g. the shopper never tapped
+  // "Einkauf abschließen") is closed: its checked items go to the history and off the list, the next trip starts
+  // normally. Only with fresh data from the server and a connection, so an old cached view can't end a real trip.
+  const closedTrip = useRef<string | null>(null);
+  // This phone's own trip: over once neither its session nor its last stop change is recent
+  const mine = data.sessions[user.uid];
+  const tripExpired = !!currentStop && now - trip.touchedAt >= SESSION_STALE_MS
+    && !(mine && mine.listId === list.id && now - mine.updatedAtMs < SESSION_STALE_MS);
+  useEffect(() => { if (tripExpired) setCurrentStop(null); }, [tripExpired]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!data.sessionsFresh || conn === 'offline') return;
+    const checked = items.filter(i => i.checked);
+    if (!checked.length) return;
+    const onThisList = Object.values(data.sessions).filter(s => s.listId === list.id);
+    if (onThisList.some(s => now - s.updatedAtMs < SESSION_STALE_MS)) return;
+    const key = list.id + '|' + checked.map(i => i.id).sort().join(',');
+    if (closedTrip.current === key) return;
+    closedTrip.current = key;
+    const last = onThisList.sort((a, b) => b.updatedAtMs - a.updatedAtMs)[0];
+    // Same time on every phone: the trip's last activity (or, without a session, the hour)
+    actions.finishAbandonedTrip(list, items, last ? last.updatedAtMs : Math.floor(now / 3600000) * 3600000);
+    const who = last && last.uid !== user.uid ? data.members[last.uid]?.name || null : null;
+    toast(who ? 'Der Einkauf von ' + who + ' wurde automatisch abgeschlossen' : 'Der letzte Einkauf wurde automatisch abgeschlossen');
+  }, [data.sessionsFresh, data.sessions, conn, items, list, now]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const value = useMemo<AppCtx>(() => {
     const allItems = Object.values(data.itemsByList).flat();
     // V1.5: names come from the member entries. Until both original testers have one, the other tester
@@ -191,9 +219,9 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       guessStore: name => data.memory[memoryId(name)]?.storeId || null,
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
       standIn: trip.standIn, setStandIn, tripMoves: trip.moves, moveForTrip,
-      onlyStop: trip.only, visited: trip.visited, startOnly, endOnly,
+      onlyStop: trip.only, visited: trip.visited, startOnly, endOnly, tripExpired,
     };
-  }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip, startOnly, endOnly]);
+  }, [now, user, data, list, items, setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, currentStop, setCurrentStop, towns, town, setTown, townStores, trip, setStandIn, moveForTrip, startOnly, endOnly, tripExpired]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

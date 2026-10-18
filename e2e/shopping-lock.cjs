@@ -37,35 +37,47 @@ const cta = P => P.locator('.bottom-fade button.cta');
   await A.screenshot({ path: SHOTS + 'lock-01-locked.png' });
   ok(await cta(B).count() === 0 || await B.locator('button:has-text("Weiter zu trinkgut")').count() === 1, 'Anna herself carries on as usual');
 
-  // A forgotten trip: 90 minutes without activity → the lock lifts
+  // A forgotten trip (the overnight report): Anna checks off everything at Netto but never taps on.
+  await check(B, 'Milch');
+  await A.waitForTimeout(800);
+  const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/items', { headers: owner })).json()).documents || []).map(d => d.fields.name.stringValue).sort();
+  const history = async () => ((await (await fetch(REST + '/history', { headers: owner })).json()).documents || []).map(d => d.fields.name.stringValue).sort();
+  ok(JSON.stringify(await items()) === JSON.stringify(['Bananen', 'Milch', 'Wasser']), 'while Anna is active nothing is closed');
+  // … 90 minutes without activity:
   const sess = await (await fetch(REST + '/sessions', { headers: owner })).json();
   const annaSession = sess.documents[0].name.split('/').pop();
   await fetch(REST + '/sessions/' + annaSession + '?updateMask.fieldPaths=updatedAt', { method: 'PATCH', headers: owner, body: JSON.stringify({ fields: { updatedAt: { timestampValue: new Date(Date.now() - 91 * 60000).toISOString() } } }) });
-  await A.waitForTimeout(800);
-  ok(await cta(A).isEnabled(), 'after 90 minutes without activity the lock lifts');
-  ok(await A.getByText('Anna kauft gerade ein.').count() === 0, '… and the message is gone');
+  await A.locator('[role=status]', { hasText: 'Der Einkauf von Anna wurde automatisch abgeschlossen' }).waitFor({ timeout: 8000 })
+    .then(() => ok(true, 'Michi sees: "Der Einkauf von Anna wurde automatisch abgeschlossen"'), () => ok(false, 'toast about the closed trip'));
+  await A.screenshot({ path: SHOTS + 'lock-03-auto-closed.png' });
+  await A.waitForTimeout(1500); // Anna's phone may close it at the same time – that must not count twice
+  ok(JSON.stringify(await items()) === JSON.stringify(['Wasser']), 'the checked items are off the list: ' + (await items()).join(', '));
+  ok(JSON.stringify(await history()) === JSON.stringify(['Bananen', 'Milch']), 'and in the history exactly once: ' + (await history()).join(', '));
+  ok(await A.getByText('Anna kauft gerade ein.').count() === 0 && await cta(A).isEnabled(), 'the lock lifts');
+  ok(await A.locator('.card').count() === 1 && /Einkauf starten bei trinkgut/.test(await cta(A).innerText()), 'Michi starts a normal trip: "' + (await cta(A).innerText()) + '"');
 
-  // Anna carries on (fresh activity) → locked again; she finishes → free again
-  await check(B, 'Milch');
-  await waitText(A, 'Anna kauft gerade ein.');
-  ok(await cta(A).isDisabled(), 'Anna is active again → locked again');
-  await B.click('button:has-text("Weiter zu trinkgut")');
-  await check(B, 'Wasser');
-  await B.click('button:has-text("Einkauf abschließen")');
-  await A.waitForTimeout(800);
-  ok(await A.getByText('Anna kauft gerade ein.').count() === 0, 'Anna finished → message gone');
-  await A.click('.tab:has-text("Liste")');
-  await add(A, ['Butter']);
-  await A.click('.tab:has-text("Plan")');
-  ok(await cta(A).isEnabled() && /Einkauf starten bei Netto/.test(await cta(A).innerText()), 'after Anna\'s trip Michi can start');
+  // Anna's phone, still open on Netto, goes back to the plan instead of shopping on (and locking Michi again)
+  await B.waitForURL(/\/plan$/, { timeout: 8000 }).then(() => ok(true, 'Anna\'s open phone returns to the plan'), () => ok(false, 'Anna\'s phone returns to the plan: ' + B.url()));
+  await A.waitForTimeout(1500);
+  ok(await A.getByText('Anna kauft gerade ein.').count() === 0 && await cta(A).isEnabled(), 'Michi stays unlocked');
+  // Anna opens the app hours later where she left it (store screen, trip expired on her phone too) → plan, no lock
+  await B.evaluate(() => localStorage.setItem('thisCounts.trip.wocheneinkauf', JSON.stringify({ stop: 'netto', town: null, standIn: false, moves: {}, only: null, visited: ['netto'], touchedAt: Date.now() - 2 * 3600000 })));
+  await B.goto('http://127.0.0.1:4173/laden/netto');
+  await B.waitForURL(/\/plan$/, { timeout: 8000 }).then(() => ok(true, 'reopened on an expired trip → plan'), () => ok(false, 'reopened on an expired trip → plan: ' + B.url()));
+  await A.waitForTimeout(1500);
+  ok(await A.getByText('Anna kauft gerade ein.').count() === 0 && await cta(A).isEnabled(), '… and Michi is still unlocked');
 
   // Michi shops → Anna is locked; Michi himself is not
   await cta(A).click();
-  await A.waitForTimeout(300);
-  await check(A, 'Butter');
-  await B.click('.tab:has-text("Plan")').catch(() => {});
+  await check(A, 'Wasser');
+  await B.goto('http://127.0.0.1:4173/plan');
   await waitText(B, 'Michi kauft gerade ein.');
   ok(await cta(B).isDisabled(), 'and now Anna waits for Michi');
   await B.screenshot({ path: SHOTS + 'lock-02-other-way.png' });
+  // Michi finishes properly → Anna is free again
+  await A.click('button:has-text("Einkauf abschließen")');
+  await B.waitForTimeout(1000);
+  ok(await B.getByText('Michi kauft gerade ein.').count() === 0, 'Michi finished → Anna can start again');
+  ok(JSON.stringify(await history()) === JSON.stringify(['Bananen', 'Milch', 'Wasser']), 'history: Bananen, Milch, Wasser');
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

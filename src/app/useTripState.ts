@@ -18,6 +18,8 @@ export interface TripState {
   only: string | null;
   /** V1.8: the stops of this trip in the order you went there (the trip follows it, e.g. after "Hier starten" at another store) */
   visited: string[];
+  /** V1.8: when this phone last went to a stop (with the session, tells whether the trip has expired) */
+  touchedAt: number;
 }
 
 const KEY = 'thisCounts.trip.';
@@ -32,6 +34,7 @@ const clean = (v: Partial<TripState>): TripState => ({
   moves: v.moves && typeof v.moves === 'object' ? v.moves : {},
   only: typeof v.only === 'string' ? v.only : null,
   visited: Array.isArray(v.visited) ? v.visited.filter((x): x is string => typeof x === 'string') : [],
+  touchedAt: typeof v.touchedAt === 'number' ? v.touchedAt : 0,
 });
 
 function read(listId: string): TripState {
@@ -63,8 +66,8 @@ export function useTripState(listId: string) {
   // Going anywhere but the "Nur hier" stop (or ending the trip) ends "Nur hier"
   // Ending the trip (null) forgets where you've been
   const visit = (t: TripState, stop: string | null) => (!stop ? [] : t.visited.includes(stop) ? t.visited : [...t.visited, stop]);
-  const setStop = useCallback((stop: string | null) => update(t => ({ ...t, stop, only: stop && stop === t.only ? t.only : null, visited: visit(t, stop) })), [update]);
-  const startOnly = useCallback((stop: string) => update(t => ({ ...t, stop, only: stop, visited: visit(t, stop) })), [update]);
+  const setStop = useCallback((stop: string | null) => update(t => ({ ...t, stop, only: stop && stop === t.only ? t.only : null, visited: visit(t, stop), touchedAt: stop ? Date.now() : 0 })), [update]);
+  const startOnly = useCallback((stop: string) => update(t => ({ ...t, stop, only: stop, visited: visit(t, stop), touchedAt: Date.now() })), [update]);
   const endOnly = useCallback(() => update(t => ({ ...t, only: null })), [update]);
   // Stand-ins and temporary moves belong to one trip in one town: a new town (or the end of the trip) clears them
   const setTown = useCallback((town: string | null) => update(t => ({ ...t, town, standIn: false, moves: {} })), [update]);

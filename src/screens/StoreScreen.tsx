@@ -61,7 +61,8 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   // Waits for the sessions snapshot, so a reload mid-trip continues the trip instead of starting a new one.
   const [session, setSession] = useState<ReturnType<typeof enterStore>['session'] | null>(null);
   useEffect(() => {
-    if (waiting || !data.sessionsReady || (session && session.storeId === cur.id)) return;
+    // An expired trip (opened again after 90 minutes without activity) doesn't start shopping again – it ends
+    if (waiting || !data.sessionsReady || app.tripExpired || (session && session.storeId === cur.id)) return;
     const doneStops = spontaneous ? [] : route.filter(s => s.id !== cur.id && doneOf(s)).map(s => s.id);
     const r = spontaneous
       ? enterStore(list.id, cur.id, 1, 1, data.sessions[user.uid], doneStops, orderKey, app.town, true)
@@ -76,7 +77,20 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   const floor = session && session.storeId === cur.id && session.orderKey === orderKey ? session.position : 0;
   const pi = posInfo(curItems.map(i => ({ category: i.category, checked: i.checked, lateFromOther: lateFromOther(i) })), order, floor);
   const checkedHere = curItems.filter(i => i.checked).length;
-  useEffect(() => { if (session) reportProgress(cur.id, pi.pos, orderKey); }, [session, cur.id, pi.pos, checkedHere, orderKey]);
+  // Only real activity keeps the trip alive: ticks disappearing (e.g. the trip was closed on another phone) don't count
+  const prevChecked = useRef(checkedHere);
+  useEffect(() => {
+    const dropped = checkedHere < prevChecked.current;
+    prevChecked.current = checkedHere;
+    if (session && !dropped && app.currentStop) reportProgress(cur.id, pi.pos, orderKey);
+  }, [session, cur.id, pi.pos, checkedHere, orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // V1.8: the trip ended underneath this screen (expired, or closed on another phone) → back to the plan
+  const hadStop = useRef(!!app.currentStop);
+  useEffect(() => {
+    if (hadStop.current && !app.currentStop) { endLocalSession(); navigate(paths.plan, true); }
+    hadStop.current = !!app.currentStop;
+  }, [app.currentStop]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- V1.1 in-app banner (R2): a new item lands here in a category we've already passed ----
   // An item counts once it is on the trip *at this stop* — e.g. also after a Rückfrage answered with "mitnehmen".
