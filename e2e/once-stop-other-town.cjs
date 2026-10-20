@@ -17,6 +17,8 @@ const S = s => ({ stringValue: s }), T = { timestampValue: new Date().toISOStrin
   await P.click('button:has-text("Einsortieren")').catch(() => {}); await P.locator(IN).blur(); await P.waitForTimeout(800);
   await P.getByText('Brezen', { exact: true }).click(); await P.waitForTimeout(400); await P.screenshot({ path: SHOTS + '219-dbg.png' }); await P.click('button:has-text("+ Einmaliger Stopp")', { timeout: 5000 }); await P.waitForTimeout(300); await P.screenshot({ path: SHOTS + '219-dbg2.png' });
   await P.locator('.sheet').getByText('Bäcker Schuhbeck', { exact: true }).click(); await P.waitForTimeout(3600);
+  await P.screenshot({ path: SHOTS + '219-once-chip.png' });
+  ok(await P.locator('[role=img][aria-label="Einmaliger Stopp"]').count() === 1 && await P.getByText('1×').count() === 0, 'one-time stop shows the detour icon (no "1×")');
 
   await P.click('.tab:has-text("Plan")'); await P.waitForTimeout(500); await P.screenshot({ path: SHOTS + '219-dbg3.png' });
   const hh = await (await fetch(H, { headers: auth })).json(); console.log('   towns field:', JSON.stringify(hh.fields.towns || null).slice(0, 120));
