@@ -47,5 +47,6 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |
+| store-memory | The store remembered for an item is per list (old shared assignments count for the first list only); the category stays shared |
 | only-here | "Nur hier einkaufen": a one-store trip that ends there; "Ganze Route"; the tidied stop menu ("Nochmal hierhin") |
 | trip-order | "Hier starten" makes the trip follow your order; the order row (also with two stores) with a movable main store and "Zurücksetzen"; "Heute auslassen" in the plan ("Doch mitnehmen") and in the store |

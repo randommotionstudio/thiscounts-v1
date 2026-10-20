@@ -4,7 +4,7 @@ import { useData, type Data } from '../data/DataProvider';
 import { otherTester, personFor, type Person } from '../config/household';
 import { SESSION_STALE_MS } from '../lib/logic';
 import { joinNames } from '../lib/people';
-import { guessDeptFromName, storesInTown } from '../lib/logic';
+import { guessDeptFromName, rememberedStore, storesInTown } from '../lib/logic';
 import type { Item, List, Session, Store, Town } from '../lib/types';
 import { memoryId } from '../data/refs';
 import { useConnection, type Conn } from './useConnection';
@@ -216,7 +216,7 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
       selectedStores: data.stores.filter(s => list.storeIds.includes(s.id)),
       setActiveList, toast, toastText, toastLeaving, route, navigate, back, conn, draft, setDraft, currentStop, setCurrentStop,
       guessDept: name => data.memory[memoryId(name)]?.category || guessDeptFromName(name),
-      guessStore: name => data.memory[memoryId(name)]?.storeId || null,
+      guessStore: name => rememberedStore(data.memory[memoryId(name)], list.id, data.allLists[0]?.id ?? null),
       towns, town, townName: towns.find(t => t.id === town)?.name ?? null, setTown, townStores,
       standIn: trip.standIn, setStandIn, tripMoves: trip.moves, moveForTrip,
       onlyStop: trip.only, visited: trip.visited, startOnly, endOnly, tripExpired,

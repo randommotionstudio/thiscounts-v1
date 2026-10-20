@@ -104,7 +104,11 @@ export interface Session {
 }
 
 export interface MemoryEntry {
+  /** Before V1.9: one store for all lists (now only counts for the household's first list) */
   storeId: string | null;
+  /** V1.9: remembered store per list (list id → store id; null = "automatic" chosen on purpose) */
+  stores: Record<string, string | null>;
+  /** Shared by all lists */
   category: string | null;
 }
 

@@ -1,7 +1,7 @@
 // All writes. Field-level updates only (last change wins per field), never whole-document
 // overwrites, so two people editing different fields of the same item don't clobber each other.
 import {
-  Timestamp, deleteDoc, deleteField, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
+  FieldPath, Timestamp, deleteDoc, deleteField, doc, serverTimestamp, setDoc, updateDoc, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { PATH_VERSION, normName, onTrip } from '../lib/logic';
@@ -43,10 +43,10 @@ export function setChecked(item: Item, checked: boolean) {
   updateItem(item, { checked, checkedBy: checked ? uid() : null });
 }
 
-/** setStore(): fixed store (or null = automatic) + remembered for this name */
+/** setStore(): fixed store (or null = automatic) + remembered for this name – on this list only (V1.9) */
 export function setItemStore(item: Item, storeId: string | null) {
   updateItem(item, { storeId, once: false, onceStopName: null, parked: false, nextTrip: false, pendingDecision: false });
-  report(setDoc(memoryRef(item.name), { name: normName(item.name), storeId }, { merge: true }));
+  report(setDoc(memoryRef(item.name), { name: normName(item.name), stores: { [item.listId]: storeId } }, { merge: true }));
 }
 
 /** setDept(): category for every item with this name, remembered for next time */
@@ -284,6 +284,9 @@ export function deleteStore(storeId: string, lists: List[], itemsByList: Record<
     (itemsByList[l.id] || []).filter(i => i.storeId === storeId).forEach(i => updateItem(i, { storeId: null, once: false }));
   }
   Object.values(memory).filter(m => m.storeId === storeId).forEach(m => report(updateDoc(doc(memoryCol(), m.id), { storeId: null })));
+  // V1.9: per-list memories of this store (field paths, so list ids with "-" are fine)
+  Object.values(memory).forEach(m => Object.entries(m.stores).filter(([, s]) => s === storeId)
+    .forEach(([l]) => report(updateDoc(doc(memoryCol(), m.id), new FieldPath('stores', l), null))));
   report(deleteDoc(storeRef(storeId)));
 }
 

@@ -82,7 +82,7 @@ Gibt es eure Läden auch in einem anderen Ort (z. B. Netto in Prien **und** in F
 - **Personen pro Liste:** Beim Erstellen oder Bearbeiten einer Liste gibt es den Abschnitt **„Wer ist dabei“**. Ein Haken heißt: diese Person sieht die Liste. Ihr selbst seid immer dabei. Nur wer dabei ist, sieht die Liste und ihre Artikel.
 - **Neue Leute:** Wer neu in den Haushalt kommt, ist automatisch bei allen Listen dabei. Soll jemand eine Liste nicht sehen, nehmt den Haken in der Liste wieder raus.
 - **Vorschläge pro Liste:** „Üblich auf dieser Liste“ zeigt jetzt nur, was ihr mit genau dieser Liste gekauft habt – auf der Baumarkt-Liste also keine Milch. Die Start-Vorschläge (Milch, Brot …) erscheinen nur, solange eine Liste noch keine eigenen üblichen Artikel hat.
-- **Gemerkt für alle Listen:** Welcher Laden und welche Kategorie zu einem Artikel gehören, merkt sich die App weiterhin für alle Listen gemeinsam.
+- **Laden pro Liste, Kategorie für alle:** Welchem Laden ein Artikel zugeordnet ist, merkt sich die App für jede Liste einzeln (Wasser kann im Wocheneinkauf zu trinkgut gehören und in einer anderen Liste zu REWE). Die Kategorie gilt weiterhin für alle Listen. Bisherige Zuordnungen gelten für die erste Liste (Wocheneinkauf); andere Listen lernen ihre eigenen.
 - Im Listen-Menü steht bei jeder Liste, mit wem ihr sie teilt – oder „nur für dich“.
 
 ## Neu in Version 1.8: Nur hier einkaufen

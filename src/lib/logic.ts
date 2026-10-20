@@ -1,6 +1,6 @@
 // Pure app logic, ported from the design prototype (thisCounts V1.dc.html).
 // Names in comments refer to the prototype's methods so behaviour can be compared.
-import type { HistoryEntry, Item, List, Stop, Store, Town } from './types';
+import type { HistoryEntry, Item, List, MemoryEntry, Stop, Store, Town } from './types';
 
 export const UNKNOWN = 'Unbekannt';
 
@@ -238,6 +238,18 @@ export function upgradeOrder(order: string[], legacy: boolean): string[] {
 
 export const tint = (d: string) => (d === UNKNOWN ? '#FDE4D1' : (ZONES.find(z => z[1].includes(d)) || ['#F3EADF'])[0]);
 export const icon = (d: string) => (d === UNKNOWN ? '/icons/help.svg' : '/icons/' + (DEPT_ICON[d] || 'shopping-basket') + '.svg');
+
+// ---------- V1.9 Remembered store per list ----------
+
+/**
+ * The store remembered for an item name on a list. Each list remembers its own; the single store remembered
+ * before V1.9 only counts for the household's first list (where nearly all of them were made).
+ */
+export function rememberedStore(entry: { storeId: MemoryEntry['storeId']; stores: MemoryEntry['stores'] } | undefined, listId: string, firstListId: string | null): string | null {
+  if (!entry) return null;
+  if (Object.prototype.hasOwnProperty.call(entry.stores, listId)) return entry.stores[listId];
+  return listId === firstListId ? entry.storeId : null;
+}
 
 // ---------- Stops and route ----------
 

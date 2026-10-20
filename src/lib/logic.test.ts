@@ -455,3 +455,25 @@ describe('stand-in stores (Bernau: DM, ALDI, Denns)', () => {
     expect(its[1].storeId).toBe('edeka');
   });
 });
+
+// ---------- V1.9 Remembered store per list ----------
+import { rememberedStore } from './logic';
+
+describe('rememberedStore', () => {
+  const e = (storeId: string | null, stores: Record<string, string | null> = {}) => ({ storeId, stores });
+  it('each list remembers its own store', () => {
+    const m = e(null, { a: 'netto', b: 'rewe' });
+    expect(rememberedStore(m, 'a', 'a')).toBe('netto');
+    expect(rememberedStore(m, 'b', 'a')).toBe('rewe');
+    expect(rememberedStore(m, 'c', 'a')).toBeNull();
+  });
+  it('the old shared store only counts for the first list', () => {
+    expect(rememberedStore(e('trinkgut'), 'first', 'first')).toBe('trinkgut');
+    expect(rememberedStore(e('trinkgut'), 'other', 'first')).toBeNull();
+  });
+  it('a store set on the first list (also "automatic") wins over the old one', () => {
+    expect(rememberedStore(e('trinkgut', { first: 'rewe' }), 'first', 'first')).toBe('rewe');
+    expect(rememberedStore(e('trinkgut', { first: null }), 'first', 'first')).toBeNull();
+  });
+  it('nothing remembered', () => { expect(rememberedStore(undefined, 'a', 'a')).toBeNull(); });
+});

@@ -155,7 +155,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       const m: Data['memory'] = {};
       snap.docs.forEach(d => {
         const x = d.data(), cat = str(x.category);
-        m[d.id] = { id: d.id, storeId: str(x.storeId), category: cat && upgradeCategory(cat, str(x.name) || d.id) };
+        const stores: Record<string, string | null> = {};
+        if (x.stores && typeof x.stores === 'object') for (const [l, s] of Object.entries(x.stores)) stores[l] = str(s);
+        m[d.id] = { id: d.id, storeId: str(x.storeId), stores, category: cat && upgradeCategory(cat, str(x.name) || d.id) };
       });
       setMemory(m);
     }, onErr);

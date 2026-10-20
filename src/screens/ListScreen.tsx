@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
 import * as actions from '../data/actions';
-import { memoryId } from '../data/refs';
 import {
   ALL_DEPTS, UNKNOWN, effStore, icon, normName, parseEntry, pickFor, stopById, tint, usualChips, USUAL_MAX, type Chip, type Pick,
 } from '../lib/logic';
@@ -128,7 +127,7 @@ export function ListScreen() {
 
   // ---- Store assignment ----
   const setStore = (it: Item, sid: string | null) => {
-    const had = data.memory[memoryId(it.name)]?.storeId || null;
+    const had = guessStore(it.name);
     actions.setItemStore(it, sid);
     setExpanded(null);
     if (sid && sid !== had) toast('Gemerkt: ' + it.name + ' künftig bei ' + (data.stores.find(s => s.id === sid)?.name || ''));
