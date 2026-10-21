@@ -379,9 +379,18 @@ export function tripPlan(items: Item[], list: List, allStores: Store[], townStor
   const custom = [...ids].filter(id => id.startsWith('once:')).map(id => stopById(id, townStores, items)!);
   const unavailable = list.mainStoreId || list.storeIds.length ? trip.filter(i => !stopOf(i)) : [];
   // V1.8 "Heute auslassen": off this trip's route; the items keep their store and simply stay on the list
+  // V1.9: one-time stops (free text) placed in the trip order go right after the stop before them there;
+  // the others stay at the end ("Ohne feste Reihenfolge")
+  const seq: Stop[] = o.map(storeToStop);
+  const placedIds = ord ? ord.filter(id => custom.some(c => c.id === id)) : [];
+  for (const id of placedIds) {
+    const before = ord!.slice(0, ord!.indexOf(id)).reverse().find(x => seq.some(s => s.id === x));
+    seq.splice(before ? seq.findIndex(s => s.id === before) + 1 : 0, 0, custom.find(c => c.id === id)!);
+  }
+  const loose = custom.filter(c => !placedIds.includes(c.id));
   const sk = list.skipped || [];
-  const all = [...o.map(storeToStop), ...custom];
-  return { route: all.filter(s => !sk.includes(s.id)), skipped: all.filter(s => sk.includes(s.id)), stopOf, temp, unavailable, mainId: main, candidates };
+  const all = [...seq, ...loose];
+  return { route: all.filter(s => !sk.includes(s.id)), skipped: all.filter(s => sk.includes(s.id)), loose: loose.map(c => c.id), stopOf, temp, unavailable, mainId: main, candidates };
 }
 
 /**

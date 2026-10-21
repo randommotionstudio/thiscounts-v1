@@ -23,7 +23,7 @@ const resetBtn = { border: 'none', background: 'none', padding: '6px 0', color: 
 export function PlanScreen() {
   const app = useApp();
   const { list, items, navigate, toast, data } = app;
-  const { route, fullRoute, skipped, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, unavailable, temp, previewIn, orderIn } = useTrip();
+  const { route, fullRoute, skipped, loose, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, unavailable, temp, previewIn, orderIn } = useTrip();
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [headRef, headH] = useHeaderHeight();
@@ -80,7 +80,8 @@ export function PlanScreen() {
 
   // Sorting: stores you've already been to on this trip stay where they are; everything else moves – the main store
   // too, for this trip only ("immer zuerst" until it's moved; "Zurücksetzen" or the end of the trip puts it first again)
-  const plannedIds = route.filter(s => !s.custom).map(s => s.id);
+  // V1.9: one-time stops (e.g. "Apotheke") can be moved between the stores too
+  const plannedIds = route.map(s => s.id);
   const fixedLabel = (id: string) => (id === app.currentStop ? 'gerade hier' : app.visited.includes(id) ? 'schon besucht' : null);
   const orderChanged = (awayTown ? !!list.townOrder[awayTown] : !!list.tripOrder) || list.mainFree;
   const mainNote = list.mainFree ? 'Hauptladen · heute verschoben' : 'Hauptladen · immer zuerst';
@@ -132,9 +133,9 @@ export function PlanScreen() {
   };
 
   const card = (s: Stop, idx: number) => {
-    const key = 'stop:' + s.id, sortThis = sorting && !s.custom, done = doneOf(s), at = sortable.indexOf(s.id);
+    const key = 'stop:' + s.id, sortThis = sorting, done = doneOf(s), at = sortable.indexOf(s.id);
     return (
-      <StopCard key={s.id} stop={s} idx={idx} items={itemsAt(s.id)} done={done}
+      <StopCard key={s.id} stop={s} idx={idx} items={itemsAt(s.id)} done={done} loose={loose.includes(s.id)}
         isCur={s.id === app.currentStop} isNext={!!nextStore && s.id === nextStore.id} insteadOf={insteadOf}
         menuOpen={menu === key} onToggleMenu={() => setMenu(m => (m === key ? null : key))}
         running={!!app.currentStop}
@@ -145,8 +146,8 @@ export function PlanScreen() {
     );
   };
 
-  const planned = route.map((s, i) => [s, i] as const).filter(([s]) => !s.custom);
-  const manual = route.map((s, i) => [s, i] as const).filter(([s]) => s.custom);
+  const planned = route.map((s, i) => [s, i] as const).filter(([s]) => !loose.includes(s.id));
+  const manual = route.map((s, i) => [s, i] as const).filter(([s]) => loose.includes(s.id));
 
   return (
     <div className="screen">

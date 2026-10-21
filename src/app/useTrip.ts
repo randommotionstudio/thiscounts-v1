@@ -49,6 +49,6 @@ export function useTrip() {
       app.navigate(paths.list, true);
       app.toast(message ? message(done) : 'Einkauf abgeschlossen · ' + done + ' Artikel erledigt');
     };
-    return { route, fullRoute: plan.route, skipped: plan.skipped, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
+    return { route, fullRoute: plan.route, skipped: plan.skipped, loose: plan.loose, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, temp: plan.temp, unavailable: plan.unavailable, townStores, previewIn, orderIn };
   }, [app, list, items, data.stores, townStores, town, towns, standIn, tripMoves]);
 }

@@ -30,8 +30,10 @@ function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
 }
 
 /** One stop of the route: number, logo, the items as chips (dashed = only here for this trip), menu or sort arrows */
-export function StopCard({ stop: s, idx, items, done, isCur, isNext, running, insteadOf, menuOpen, onToggleMenu, sort, onStart, onOnly, onAllHere, allCount, onSkip }: {
+export function StopCard({ stop: s, idx, items, done, loose, isCur, isNext, running, insteadOf, menuOpen, onToggleMenu, sort, onStart, onOnly, onAllHere, allCount, onSkip }: {
   stop: Stop; idx: number; items: Item[]; done: boolean; isCur: boolean; isNext: boolean;
+  /** V1.9: a one-time stop without a place in the order yet ("Ohne feste Reihenfolge") – shows "?" instead of a number */
+  loose: boolean;
   /** A trip is under way on this phone ("Jetzt hierhin" instead of "Hier starten") */
   running: boolean;
   /** For stand-in items: the store they're here instead of */
@@ -75,14 +77,16 @@ export function StopCard({ stop: s, idx, items, done, isCur, isNext, running, in
     return (
       <div className="card" style={{ border: '2px solid #fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: done ? '#B9DFC4' : isCur ? ACC : PALE, border: '2px dashed #F3752E', boxSizing: 'border-box', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>?</div>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', background: done ? '#B9DFC4' : isCur ? ACC : PALE, border: '2px dashed #F3752E', boxSizing: 'border-box', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{loose ? '?' : idx + 1}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
             <div style={{ fontSize: 12, color: '#8A7A6D' }}>Einmaliger Stopp</div>
           </div>
-          {entries.length > 0 && <Dots onClick={toggle} />}
+          {!sort && entries.length > 0 && <Dots onClick={toggle} />}
+          {sort && !sort.fixed && <UpDown onUp={sort.onUp} onDown={sort.onDown} noUp={sort.noUp} noDown={sort.noDown} />}
+          {sort && sort.fixed && <span style={{ fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>{sort.fixed}</span>}
         </div>
-        {menuOpen && entries.length > 0 && <Menu entries={entries} />}
+        {menuOpen && !sort && entries.length > 0 && <Menu entries={entries} />}
         {status}
       </div>
     );

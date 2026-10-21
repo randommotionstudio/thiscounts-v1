@@ -30,7 +30,7 @@ Die Liste „Wocheneinkauf“ teilt ihr automatisch miteinander.
 - **Kategorie ändern:** Auf das kleine Symbol links neben dem Artikel tippen.
 - **Menge ändern:** Auf die Menge (mit dem Stift) tippen.
 - **Löschen:** Artikel nach links wischen, dann auf das rote „Löschen“ tippen.
-- **Einmaliger Stopp:** Artikel antippen → „+ Einmaliger Stopp“, z. B. „Apotheke“.
+- **Einmaliger Stopp:** Artikel antippen → „+ Einmaliger Stopp“, z. B. „Apotheke“. Im Plan steht er zuerst unter „Ohne feste Reihenfolge“; mit „Reihenfolge ändern“ lässt er sich per Pfeil zwischen die Läden schieben (z. B. zwischen Netto und REWE) und bekommt dann eine Nummer.
 - **Plan:** Zeigt eure Route mit allen Stopps. Mit „Ändern“ könnt ihr die Reihenfolge nur für diesen Einkauf umstellen.
 - **Im Laden:** Artikel abhaken. Die Gruppen kommen in der Reihenfolge, in der ihr durch den Laden geht.
 - **Nicht gefunden:** Artikel zu einem anderen Laden schieben (auch nur einen Teil davon) oder zurück auf die Liste setzen.

@@ -153,6 +153,12 @@ describe('route', () => {
     expect(p.skipped.map(s => s.id)).toEqual(['b', 'once:apotheke']);
     expect(p.stopOf(items[1])).toBe('b');
   });
+  it('a one-time stop placed in the trip order sits between the stores; unplaced ones stay at the end', () => {
+    const items = [item({ storeId: 'b' }), item({ storeId: 'c' }), item(), item({ once: true, onceStopName: 'Apotheke' }), item({ once: true, onceStopName: 'Post' })];
+    const p = tripPlan(items, list({ tripOrder: ['b', 'once:apotheke', 'c'] }), STORES, STORES);
+    expect(p.route.map(s => s.id)).toEqual(['a', 'b', 'once:apotheke', 'c', 'once:post']);
+    expect(p.loose).toEqual(['once:post']);
+  });
   it('deferred go last in deferral order, free-text stops after them', () => {
     const items = [item({ storeId: 'b' }), item({ storeId: 'c' }), item(), item({ once: true, onceStopName: ' Apotheke' }), item({ once: true, onceStopName: 'apotheke ' })];
     const r = route(items, list({ deferred: ['c', 'a'] }), STORES);
