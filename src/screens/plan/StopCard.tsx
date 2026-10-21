@@ -77,7 +77,7 @@ export function StopCard({ stop: s, idx, items, done, loose, isCur, isNext, runn
     return (
       <div className="card" style={{ border: '2px solid #fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: done ? '#B9DFC4' : isCur ? ACC : PALE, border: '2px dashed #F3752E', boxSizing: 'border-box', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{loose ? '?' : idx + 1}</div>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', background: done ? '#B9DFC4' : isCur ? ACC : PALE, border: loose ? '2px dashed #F3752E' : 'none', boxShadow: !loose && !done && isNext && !isCur ? 'inset 0 0 0 2px ' + ACC : 'none', boxSizing: 'border-box', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{loose ? '?' : idx + 1}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="ellipsis" style={{ fontWeight: 600 }}>{s.name}</div>
             <div style={{ fontSize: 12, color: '#8A7A6D' }}>Einmaliger Stopp</div>

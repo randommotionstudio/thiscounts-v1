@@ -22,6 +22,8 @@ const bottom = P => P.locator('.bottom-fade button.ellipsis').first();
   await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'Netto,REWE,Apotheke', 'planned: Netto, REWE, then Apotheke');
   ok(await A.getByText('Ohne feste Reihenfolge').count() === 1, 'Apotheke under "Ohne feste Reihenfolge"');
+  const ring = () => A.locator('.card', { hasText: 'Apotheke' }).locator('div[style*="dashed"]').count();
+  ok(await ring() === 1, 'unplaced: dashed ring around "?"');
   await A.click('button:has-text("Reihenfolge ändern")');
   const apo = A.locator('.card', { hasText: 'Apotheke' });
   ok(await apo.locator('button[title="Nach oben"]').count() === 1, 'while sorting, Apotheke has arrows too');
@@ -31,6 +33,7 @@ const bottom = P => P.locator('.bottom-fade button.ellipsis').first();
   await A.screenshot({ path: SHOTS + 'once-order-sorting.png' });
   await A.click('.bottom-fade button.cta:has-text("Fertig")');
   ok(await apo.getByText('2', { exact: true }).count() === 1, 'Apotheke is stop 2');
+  ok(await ring() === 0, 'placed: no dashed ring any more');
   ok(await A.getByText('Reihenfolge für heute geändert').count() === 1, 'note: "Reihenfolge für heute geändert"');
   await A.screenshot({ path: SHOTS + 'once-order-plan.png' });
 
