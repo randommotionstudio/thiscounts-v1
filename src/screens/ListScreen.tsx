@@ -40,7 +40,7 @@ export function ListScreen() {
   const [deptPick, setDeptPick] = useState<string | null>(null);
   const [onceFor, setOnceFor] = useState<string | null>(null);
   const inRef = useRef<HTMLInputElement>(null);
-  const focusAt = useRef(0);
+  const touchY = useRef(0);
   const [headRef, headH] = useHeaderHeight();
 
   // V1.6: who else is on this list (and on each list in the list menu)
@@ -189,9 +189,11 @@ export function ListScreen() {
   const keepFocus = (e: React.MouseEvent) => { if (inFocus) e.preventDefault(); };
   const qDept = qName ? guessDept(qName) : '';
 
-  const onListScroll = () => {
-    if (swiped) setSwiped(null);
-    if (inFocus && Date.now() - focusAt.current > 500) inRef.current?.blur();
+  const onListScroll = () => { if (swiped) setSwiped(null); };
+  // Dragging the list closes the keyboard. Only a finger counts: when typing filters the list,
+  // the browser scrolls by itself, and that must not close the keyboard after the first letter.
+  const onListTouchMove = (e: React.TouchEvent) => {
+    if (inFocus && Math.abs(e.touches[0].clientY - touchY.current) > 8) inRef.current?.blur();
   };
 
   const n = items.length;
@@ -228,7 +230,7 @@ export function ListScreen() {
         )}
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <input ref={inRef} value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addEntry(); }}
-            onFocus={() => { focusAt.current = Date.now(); setInFocus(true); }} onBlur={() => setInFocus(false)}
+            onFocus={() => setInFocus(true)} onBlur={() => setInFocus(false)}
             enterKeyHint="done" placeholder="z. B. 5 Bananen, 500 g Mehl …" aria-label="Artikel hinzufügen"
             style={{ flex: 1, minWidth: 0, height: 50, border: '1px solid rgba(255,255,255,.8)', borderRadius: 999, padding: '0 18px', fontSize: 16, background: 'rgba(255,255,255,.7)', color: INK, outline: 'none', boxSizing: 'border-box', boxShadow: '0 2px 10px rgba(42,31,23,.06)' }} />
           <button onMouseDown={keepFocus} onClick={addEntry} aria-label="Hinzufügen" style={{ width: 50, height: 50, border: 'none', borderRadius: 999, background: INK, color: '#FBF5EE', fontSize: 26, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>+</button>
@@ -239,7 +241,7 @@ export function ListScreen() {
         )}
       </div>
 
-      <div className="scroll" onScroll={onListScroll} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
+      <div className="scroll" onScroll={onListScroll} onTouchStart={e => { touchY.current = e.touches[0].clientY; }} onTouchMove={onListTouchMove} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
           {sections.map(sec => (
             <div key={sec.title} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
