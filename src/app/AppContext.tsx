@@ -133,14 +133,16 @@ export function AppProvider({ user, route, navigate, back, children }: { user: U
   const town = homeTown && trip.town && towns.some(t => t.id === trip.town) ? trip.town : homeTown;
   const townStores = useMemo(() => storesInTown(data.stores, towns, town), [data.stores, towns, town]);
 
-  // Someone finished the trip (checked items are gone) → no current stop any more on this phone either
-  const checkedCount = items.filter(i => i.checked).length;
-  const prevChecked = useRef({ listId: list.id, n: checkedCount });
+  // Someone finished the trip (the checked items were deleted) → no current stop any more on this phone either.
+  // Unchecking everything by hand leaves the items on the list – that's not the end of the trip.
+  const checkedKey = items.filter(i => i.checked).map(i => i.id).join(',');
+  const prevChecked = useRef({ listId: list.id, ids: checkedKey ? checkedKey.split(',') : [] });
   useEffect(() => {
     const p = prevChecked.current;
-    if (p.listId === list.id && p.n > 0 && checkedCount === 0 && currentStop) setCurrentStop(null);
-    prevChecked.current = { listId: list.id, n: checkedCount };
-  }, [list.id, checkedCount]); // eslint-disable-line react-hooks/exhaustive-deps
+    const gone = p.ids.length > 0 && p.ids.every(id => !items.some(i => i.id === id));
+    if (p.listId === list.id && !checkedKey && gone && currentStop) setCurrentStop(null);
+    prevChecked.current = { listId: list.id, ids: checkedKey ? checkedKey.split(',') : [] };
+  }, [list.id, checkedKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A Rückfrage left unanswered (app closed, sheet gone) counts as "Beim nächsten Einkauf"
   useEffect(() => {

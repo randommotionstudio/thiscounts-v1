@@ -8,7 +8,7 @@ import {
   CHECK_AFTER, UNKNOWN, ageDays, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
-import { Avatar, CatIcon, ConnPill, LabeledRule, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
+import { Avatar, CatIcon, ConnBadge, LabeledRule, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
 import { LeaveSheet } from '../sheets/LeaveSheet';
 import { RefinePrompt } from './store/RefinePrompt';
 import { Toast } from '../ui/Toast';
@@ -221,7 +221,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
 
   return (
     <div className="screen">
-      <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
+      <div ref={headRef} style={{ position: 'relative', zIndex: 2, padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>{spontaneous ? 'Spontaner Einkauf' : onlyHere ? 'Nur dieser Laden' : 'Stopp ' + (Math.max(curIdx, 0) + 1) + ' von ' + route.length}</span>
@@ -239,7 +239,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           </div>
           <span style={{ fontSize: 13, fontWeight: 600 }}>{doneCount} von {curItems.length}</span>
         </div>
-        {app.conn !== 'online' && <div style={{ display: 'flex', marginTop: 10 }}><ConnPill conn={app.conn} dark /></div>}
+        <ConnBadge conn={app.conn} dark />
       </div>
       <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
         <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12, textWrap: 'pretty' }}>

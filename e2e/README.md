@@ -46,6 +46,7 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | once-stop-other-town | A one-time stop at a store in another town waits and is never replaced |
 | once-stop-order | One-time stops (e.g. Apotheke) can be moved between the stores in „Reihenfolge ändern“; placed ones get a number and the trip follows |
 | keyboard-first-letter | Typing the first letter (the list filters and jumps up) no longer closes the keyboard; dragging the list with a finger still does |
+| sync-pill-and-uncheck | The offline/sync indicator floats on the header edge and moves nothing (a tap still hits the item it aimed at); unchecking every item doesn't end the trip |
 | invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |

@@ -9,7 +9,7 @@ import { ElsewhereSheet } from '../sheets/ElsewhereSheet';
 import { StandInSheet } from '../sheets/StandInSheet';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { TownSheet } from '../sheets/TownSheet';
-import { ActionChip, Avatar, ConnPill, LabeledRule, TabBar, useHeaderHeight } from '../ui/kit';
+import { ActionChip, Avatar, ConnBadge, LabeledRule, TabBar, useHeaderHeight } from '../ui/kit';
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 import { SkippedSection } from './plan/SkippedSection';
@@ -152,9 +152,8 @@ export function PlanScreen() {
   return (
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 20px) 20px 10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px 10px', fontSize: 13, color: '#8A7A6D', fontWeight: 600, minHeight: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', fontSize: 13, color: '#8A7A6D', fontWeight: 600, minHeight: 24 }}>
           <span>{route.length} {route.length === 1 ? 'Stopp' : 'Stopps'} · {list.name}</span>
-          <ConnPill conn={app.conn} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '4px 0 0' }}>
           <h1 className="h1" style={{ margin: 0 }}>Route</h1>
@@ -165,6 +164,7 @@ export function PlanScreen() {
             </button>
           )}
         </div>
+        <ConnBadge conn={app.conn} />
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 98px)' }}>
         {parked.length > 0 && <div style={{ marginBottom: 12, fontSize: 13, color: '#8A7A6D' }}>{parked.map(i => i.name).join(', ') + (parked.length > 1 ? ' warten' : ' wartet') + ' auf der Liste ohne Laden.'}</div>}

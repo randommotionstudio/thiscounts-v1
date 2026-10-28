@@ -11,7 +11,7 @@ import { OnceSheet } from '../sheets/OnceSheet';
 import { AskSheet } from '../sheets/AskSheet';
 import { UsualChips } from './list/UsualChips';
 import { QtySheet } from '../sheets/QtySheet';
-import { Avatar, AvatarStack, CatIcon, ConnPill, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
+import { Avatar, AvatarStack, CatIcon, ConnBadge, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useMarkSince } from '../app/markSince';
 import { joinNames } from '../lib/people';
@@ -203,7 +203,6 @@ export function ListScreen() {
   return (
     <div className="screen">
       <div ref={headRef} className="glass-head" style={{ padding: 'calc(var(--safe-top) + 20px) 20px 10px' }}>
-        {app.conn !== 'online' && <div style={{ display: 'flex', margin: '0 0 6px' }}><ConnPill conn={app.conn} /></div>}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <button onClick={() => { setListMenu(v => !v); setExpanded(null); }} style={{ display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', padding: 0, margin: 0, color: INK, cursor: 'pointer', minWidth: 0, textAlign: 'left' }}>
             <h1 className="h1 ellipsis">{list.name}</h1>
@@ -239,6 +238,7 @@ export function ListScreen() {
           <UsualChips pool={pool} searching={searching} showAll={showAll} isOn={chipOn} deptOf={guessDept}
             onToggle={toggleChip} onToggleAll={() => setChipsAll(v => !v)} keepFocus={keepFocus} />
         )}
+        <ConnBadge conn={app.conn} />
       </div>
 
       <div className="scroll" onScroll={onListScroll} onTouchStart={e => { touchY.current = e.touches[0].clientY; }} onTouchMove={onListTouchMove} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
