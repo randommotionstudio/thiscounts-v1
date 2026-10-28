@@ -80,7 +80,7 @@ const check = async (P, name) => P.locator('[role=checkbox]', { has: P.getByText
   await B.screenshot({ path: SHOTS + '84-B-trinkgut.png' });
 
   // Profil switch off → no banner, tags still show
-  await B.click('button[title="Mehr"]'); await B.click('[data-menu-keep] button:has-text("Zum Plan")');
+  await B.click('button[title="Mehr"]'); await B.click('button:has-text("Zum Plan")');
   await B.click('.tab:has-text("Profil")');
   await B.click('[role=switch]');
   await B.waitForTimeout(300);

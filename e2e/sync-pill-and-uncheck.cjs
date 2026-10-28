@@ -1,7 +1,7 @@
 // Tester bugs: (1) the "Wird synchronisiert …" / "Offline" indicator pushed the list down, so a tap landed on the
 // item below – now it floats above the main button, toasts stack above it, nothing moves. (2) Unchecking every
 // checked item ended the trip. (3) The ⋯ menus (store, plan) only closed with ⋯ – now a tap anywhere else closes
-// them, and that tap does nothing else.
+// them, and the tap still does what it does there.
 const { chromium, SHOTS, phone, login, resetDb, waitText } = require('./lib.cjs');
 const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
 const IN = 'input[placeholder^="z. B. 5 Bananen"]';
@@ -29,6 +29,8 @@ const PILL = 'Offline · Änderungen werden gespeichert';
     ok(Math.abs(before.y - after.y) < 1, label + ': the indicator appears, nothing moves (' + Math.round(before.y) + ' → ' + Math.round(after.y) + ')');
     const p = await pill(), b = await button.boundingBox();
     ok(p.y + p.height <= b.y && b.y - (p.y + p.height) < 30, label + ': it sits just above the main button (' + Math.round(p.y + p.height) + ' ≤ ' + Math.round(b.y) + ')');
+    const bar = await A.getByText(PILL).locator('..').boundingBox();
+    ok(Math.abs(bar.x - b.x) < 1 && Math.abs(bar.x + bar.width - (390 - b.x)) < 1, label + ': as wide as the buttons (' + Math.round(bar.x) + '–' + Math.round(bar.x + bar.width) + ')');
     return () => a.ctx.setOffline(false);
   };
   let online = await still('Liste', A.getByText('Bananen', { exact: true }), A.locator('.bottom-fade button.cta'));
@@ -57,6 +59,11 @@ const PILL = 'Offline · Änderungen werden gespeichert';
   await A.touchscreen.tap(200, 64); await A.waitForTimeout(300); // on the header, away from the menu
   ok(await menuItems() === 0, 'plan: a tap elsewhere closes it');
   await A.locator('.card', { hasText: 'REWE' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(200);
+  await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(300);
+  ok(await A.locator('h1:has-text("Wocheneinkauf")').count() === 1, 'plan: with the menu open, a tap on "Liste" goes straight there');
+  await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
+  ok(await menuItems() === 0, '… and the menu is closed when coming back');
+  await A.locator('.card', { hasText: 'REWE' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(200);
   await A.locator('.card', { hasText: 'Netto' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(200);
   ok(await A.locator('.card', { hasText: 'Netto' }).locator('[role=menuitem]').count() > 0 && await A.locator('.card', { hasText: 'REWE' }).locator('[role=menuitem]').count() === 0, 'plan: ⋯ of another store switches to its menu');
   await A.locator('.card', { hasText: 'Netto' }).locator('button[title="Mehr"]').click(); await A.waitForTimeout(200);
@@ -80,13 +87,12 @@ const PILL = 'Offline · Änderungen werden gespeichert';
   const bb = await row(A, 'Bananen').boundingBox();
   await A.touchscreen.tap(bb.x + 60, bb.y + bb.height / 2); await A.waitForTimeout(300);
   ok(await A.locator('button:has-text("Heute auslassen")').count() === 0, 'store: a tap elsewhere closes it');
-  ok(!(await isChecked(A, 'Bananen')), '… without checking the item that was tapped');
+  ok(await isChecked(A, 'Bananen'), '… and the tapped item is checked right away');
   await more.click(); await A.waitForTimeout(250);
   await more.click(); await A.waitForTimeout(250);
   ok(await A.locator('button:has-text("Heute auslassen")').count() === 0, 'store: ⋯ again still closes it');
 
   // ---- Unchecking everything doesn't end the trip ----
-  await row(A, 'Bananen').click(); await A.waitForTimeout(300);
   await row(A, 'Brot').click(); await A.waitForTimeout(300);
   await row(A, 'Bananen').click(); await A.waitForTimeout(1000);
   ok(!(await isChecked(A, 'Brot')) && !(await isChecked(A, 'Bananen')), 'all ticks undone');

@@ -20,20 +20,27 @@ export function LogoTile({ store, size, radius, initialSize, bordered = true, st
   );
 }
 
-/** Offline / syncing indicator. Nothing is shown while online and synced. */
-export function ConnPill({ conn, dark }: { conn: Conn; dark?: boolean }) {
+/**
+ * Offline / syncing indicator, as wide as the buttons below it. Outlined and see-through, so it reads as a status
+ * and not as another button. Nothing is shown while online and synced.
+ */
+export function ConnPill({ conn }: { conn: Conn }) {
   if (conn === 'online') return null;
+  const off = conn === 'offline';
   return (
-    <span className={'pill' + (dark ? ' dark' : '')}>
-      <span className="pill-dot" style={{ background: conn === 'offline' ? '#C9581A' : '#8A7A6D' }} />
-      {conn === 'offline' ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}
-    </span>
+    <div style={{ height: 30, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '0 12px',
+      background: 'rgba(255,253,250,.72)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)',
+      border: '1px solid ' + (off ? 'rgba(201,88,26,.45)' : 'rgba(138,122,109,.4)'), color: off ? '#9C4412' : '#6F6055',
+      fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: off ? '#C9581A' : '#8A7A6D', flexShrink: 0 }} />
+      <span className="ellipsis">{off ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}</span>
+    </div>
   );
 }
 
 /**
- * Closes an open menu when tapping anywhere else. That tap only closes the menu – it doesn't also check an item
- * or press a button underneath. The menu and its ⋯ button are marked with `data-menu-keep`.
+ * Closes an open menu when tapping anywhere else; the tap still does what it does there (check an item, press a
+ * button). The menu and its ⋯ button are marked with `data-menu-keep`.
  */
 export function useTapAway(open: boolean, close: () => void) {
   const closeRef = useRef(close);
@@ -43,12 +50,6 @@ export function useTapAway(open: boolean, close: () => void) {
     const down = (e: PointerEvent) => {
       if (e.target instanceof Element && e.target.closest('[data-menu-keep]')) return;
       closeRef.current();
-      // The click of this same tap arrives after the menu is closed: swallow it
-      const until = Date.now() + 800;
-      const swallow = (c: MouseEvent) => { off(); if (Date.now() < until) { c.stopPropagation(); c.preventDefault(); } };
-      const off = () => document.removeEventListener('click', swallow, true);
-      document.addEventListener('click', swallow, true);
-      setTimeout(off, 800);
     };
     document.addEventListener('pointerdown', down, true);
     return () => document.removeEventListener('pointerdown', down, true);

@@ -127,9 +127,6 @@ input::placeholder { color: #A89888; }
 /* Fades a toast out before it is removed (comes after .toast-float so its animation wins) */
 .toast-leaving { animation: toastOut .28s ease forwards; }
 
-.pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--pale); color: var(--muted-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.pill.dark { background: #4A3B2E; color: #F8C5A0; }
-.pill-dot { width: 6px; height: 6px; border-radius: 50%; display: block; flex-shrink: 0; }
 
 .logo-tile { background: #fff; border: 1px solid var(--line); box-sizing: border-box; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .logo-img { display: block; background-position: center; background-size: contain; background-repeat: no-repeat; }

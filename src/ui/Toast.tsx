@@ -19,11 +19,7 @@ export function Toast({ conn: withConn }: { conn?: boolean }) {
           {toastText}
         </div>
       )}
-      {showConn && (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <span style={{ display: 'flex', borderRadius: 999, boxShadow: '0 2px 10px rgba(42,31,23,.14)' }}><ConnPill conn={conn} /></span>
-        </div>
-      )}
+      {showConn && <ConnPill conn={conn} />}
     </div>
   );
 }

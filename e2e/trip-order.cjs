@@ -35,7 +35,6 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'REWE,Netto', 'plan follows the trip: REWE, Netto');
   ok((await menu(A, 'Netto'))[0] === 'Jetzt hierhin', 'during the trip: "Jetzt hierhin"');
-  await A.locator('.card', { hasText: 'Netto' }).locator('button[title="Mehr"]').click(); // close the menu again
   await A.click('button.cta:has-text("Weiter einkaufen bei REWE")');
   await check(A, 'Crispy Choccies');
   await A.click('button:has-text("Weiter zu Netto")');

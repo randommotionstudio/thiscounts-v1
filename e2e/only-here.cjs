@@ -43,7 +43,6 @@ const items = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   ok(await A.locator('button:has-text("Einkauf abschließen")').count() === 1 && await A.getByText(/Weiter zu/).count() === 0, 'bottom button: "Einkauf abschließen", no "Weiter zu Netto"');
   await A.locator('button[title="Mehr"], button[aria-label="Mehr"]').last().click().catch(() => {});
   ok(await A.getByText('Heute auslassen').count() === 0, 'no "Heute auslassen" on a one-store trip');
-  await A.locator('.bottom-fade button[title="Mehr"]').click(); // close the menu again
   await A.screenshot({ path: SHOTS + 'only-02-store.png' });
   await B.click('.tab:has-text("Plan")');
   await waitText(B, 'Michi kauft gerade ein.').then(() => ok(true, 'Anna sees Michi shopping (and waits)'), () => ok(false, 'Anna sees Michi shopping'));
