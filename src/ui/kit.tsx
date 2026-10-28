@@ -22,7 +22,8 @@ export function LogoTile({ store, size, radius, initialSize, bordered = true, st
 
 /**
  * Offline / syncing indicator, as wide as the buttons below it. Outlined and see-through, so it reads as a status
- * and not as another button. Nothing is shown while online and synced.
+ * and not as another button. Calm for both states: a note, not a warning – nothing needs fixing, changes are kept.
+ * Nothing is shown while online and synced.
  */
 export function ConnPill({ conn }: { conn: Conn }) {
   if (conn === 'online') return null;
@@ -30,10 +31,11 @@ export function ConnPill({ conn }: { conn: Conn }) {
   return (
     <div style={{ height: 30, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '0 12px',
       background: 'rgba(255,253,250,.72)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)',
-      border: '1px solid ' + (off ? 'rgba(201,88,26,.45)' : 'rgba(138,122,109,.4)'), color: off ? '#9C4412' : '#6F6055',
+      border: '1px solid rgba(138,122,109,.4)', color: '#6F6055',
       fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: off ? '#C9581A' : '#8A7A6D', flexShrink: 0 }} />
-      <span className="ellipsis">{off ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}</span>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#8A7A6D', flexShrink: 0 }} />
+      {/* 1px down: optically centred (capitals sat 1.5px above the middle) */}
+      <span className="ellipsis" style={{ position: 'relative', top: 1 }}>{off ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}</span>
     </div>
   );
 }

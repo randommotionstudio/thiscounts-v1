@@ -166,7 +166,7 @@ export function PlanScreen() {
           )}
         </div>
       </div>
-      <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 98px)' }}>
+      <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 98px)' }}>
         {parked.length > 0 && <div style={{ marginBottom: 12, fontSize: 13, color: '#8A7A6D' }}>{parked.map(i => i.name).join(', ') + (parked.length > 1 ? ' warten' : ' wartet') + ' auf der Liste ohne Laden.'}</div>}
         {!route.length && (
           <div style={{ textAlign: 'center', padding: '30px 12px' }}>

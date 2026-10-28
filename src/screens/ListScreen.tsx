@@ -240,7 +240,7 @@ export function ListScreen() {
         )}
       </div>
 
-      <div className="scroll" onScroll={onListScroll} onTouchStart={e => { touchY.current = e.touches[0].clientY; }} onTouchMove={onListTouchMove} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
+      <div className="scroll" onScroll={onListScroll} onTouchStart={e => { touchY.current = e.touches[0].clientY; }} onTouchMove={onListTouchMove} style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
           {sections.map(sec => (
             <div key={sec.title} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
