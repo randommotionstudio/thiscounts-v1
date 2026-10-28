@@ -33,9 +33,15 @@ export function ConnPill({ conn }: { conn: Conn }) {
       background: 'rgba(255,253,250,.72)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)',
       border: '1px solid rgba(138,122,109,.4)', color: '#6F6055',
       fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#8A7A6D', flexShrink: 0 }} />
-      {/* 1px down: optically centred (capitals sat 1.5px above the middle) */}
-      <span className="ellipsis" style={{ position: 'relative', top: 1 }}>{off ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}</span>
+      {/* Lucide cloud-off / refresh-cw, inline so they show without a connection */}
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+        {off
+          ? <><path d="m2 2 20 20" /><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193" /><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07" /></>
+          : <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>}
+      </svg>
+      {/* Trimmed to capitals and baseline, so the text is centred the same way on every phone; the even padding
+          keeps umlauts and descenders (g, p) from being cut off */}
+      <span className="ellipsis" style={{ textBox: 'trim-both cap alphabetic', padding: '5px 0' }}>{off ? 'Offline · Änderungen werden gespeichert' : 'Wird synchronisiert …'}</span>
     </div>
   );
 }

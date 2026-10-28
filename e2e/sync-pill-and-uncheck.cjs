@@ -31,6 +31,11 @@ const PILL = 'Offline · Änderungen werden gespeichert';
     ok(p.y + p.height <= b.y && b.y - (p.y + p.height) < 30, label + ': it sits just above the main button (' + Math.round(p.y + p.height) + ' ≤ ' + Math.round(b.y) + ')');
     const bar = await A.getByText(PILL).locator('..').boundingBox();
     ok(Math.abs(bar.x - b.x) < 1 && Math.abs(bar.x + bar.width - (390 - b.x)) < 1, label + ': as wide as the buttons (' + Math.round(bar.x) + '–' + Math.round(bar.x + bar.width) + ')');
+    const txt = await A.getByText(PILL).boundingBox();
+    ok(Math.abs((txt.y + txt.height / 2) - (bar.y + bar.height / 2)) < 0.6, label + ': text centred in the indicator (capitals to baseline)');
+    const clip = await A.getByText(PILL).evaluate(e => { const r = document.createRange(); r.selectNodeContents(e); const t = r.getBoundingClientRect(), b = e.getBoundingClientRect(); return { top: t.top - b.top, bottom: b.bottom - t.bottom }; });
+    ok(clip.top >= 0 && clip.bottom >= 0, label + ': umlauts and descenders are not cut off (' + clip.top.toFixed(1) + ' / ' + clip.bottom.toFixed(1) + ')');
+    ok(await A.getByText(PILL).locator('..').locator('svg').count() === 1, label + ': with an icon');
     return () => a.ctx.setOffline(false);
   };
   let online = await still('Liste', A.getByText('Bananen', { exact: true }), A.locator('.bottom-fade button.cta'));
@@ -42,7 +47,8 @@ const PILL = 'Offline · Änderungen werden gespeichert';
   await toast.waitFor({ timeout: 3000 }); await A.waitForTimeout(400);
   const t = await toast.boundingBox(), p1 = await pill();
   ok(Math.abs(p0.y - p1.y) < 1, 'a toast appears: the indicator stays where it is');
-  ok(t.y + t.height <= p1.y, 'the toast stacks above the indicator (' + Math.round(t.y + t.height) + ' ≤ ' + Math.round(p1.y) + ')');
+  ok(t.y + t.height <= p1.y && p1.y - (t.y + t.height) < 20, 'the toast stacks right above the indicator (' + Math.round(t.y + t.height) + ' ≤ ' + Math.round(p1.y) + ')');
+  ok(Math.abs(t.x - 20) < 1 && Math.abs(t.width - 350) < 1, 'the toast is as wide as the buttons');
   await A.screenshot({ path: SHOTS + 'sync-pill-list.png' });
   await online(); await A.waitForTimeout(500);
   ok(await A.getByText(PILL).count() === 0, 'back online: the indicator is gone');
@@ -100,5 +106,22 @@ const PILL = 'Offline · Änderungen werden gespeichert';
   ok(await A.getByText('Stopp 1 von 2').count() === 1, 'trip goes on: "Stopp 1 von 2"');
   await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('.bottom-fade button.cta:has-text("Weiter einkaufen bei Netto")').count() === 1, 'plan: "Weiter einkaufen bei Netto"');
+
+  // ---- A sheet covers the indicator (it used to sit on top of the leave popup's button) ----
+  await A.click('button.cta:has-text("Weiter einkaufen bei Netto")'); await waitText(A, 'Bananen');
+  await a.ctx.setOffline(true); await A.getByText(PILL).waitFor({ timeout: 3000 });
+  await A.locator('.bottom-fade button.ellipsis').first().click();
+  await waitText(A, 'Artikel offen'); await A.waitForTimeout(500);
+  const pb = await A.getByText(PILL).locator('..').boundingBox();
+  // (the indicator lets taps through, so make it hit-testable just for this check)
+  const onTop = await A.evaluate(([x, y, text]) => {
+    const bar = [...document.querySelectorAll('div')].find(d => d.textContent === text && d.querySelector('svg'));
+    for (let e = bar; e; e = e.parentElement) e.style.pointerEvents = 'auto';
+    const el = document.elementFromPoint(x, y);
+    return !!el && bar.contains(el);
+  }, [pb.x + pb.width / 2, pb.y + pb.height / 2, PILL]);
+  ok(!onTop, 'the leave popup covers the indicator');
+  await A.screenshot({ path: SHOTS + 'sync-pill-under-sheet.png' });
+  await a.ctx.setOffline(false);
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });
