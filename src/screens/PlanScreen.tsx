@@ -9,7 +9,7 @@ import { ElsewhereSheet } from '../sheets/ElsewhereSheet';
 import { StandInSheet } from '../sheets/StandInSheet';
 import { StoreSheet } from '../sheets/StoreSheet';
 import { TownSheet } from '../sheets/TownSheet';
-import { ActionChip, Avatar, ConnBadge, LabeledRule, TabBar, useHeaderHeight } from '../ui/kit';
+import { ActionChip, Avatar, LabeledRule, TabBar, useHeaderHeight, useTapAway } from '../ui/kit';
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 import { SkippedSection } from './plan/SkippedSection';
@@ -26,6 +26,7 @@ export function PlanScreen() {
   const { route, fullRoute, skipped, loose, onlyStop, goOnly, itemsAt, doneOf, nextStore, goStore, finish, stopOf, unavailable, temp, previewIn, orderIn } = useTrip();
   const [planSort, setPlanSort] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
+  useTapAway(menu !== null, () => setMenu(null));
   const [headRef, headH] = useHeaderHeight();
   const [elsewhere, setElsewhere] = useState<'pick' | 'new' | null>(null);
   const [townPick, setTownPick] = useState(false);
@@ -164,7 +165,6 @@ export function PlanScreen() {
             </button>
           )}
         </div>
-        <ConnBadge conn={app.conn} />
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 98px)' }}>
         {parked.length > 0 && <div style={{ marginBottom: 12, fontSize: 13, color: '#8A7A6D' }}>{parked.map(i => i.name).join(', ') + (parked.length > 1 ? ' warten' : ' wartet') + ' auf der Liste ohne Laden.'}</div>}
@@ -214,7 +214,7 @@ export function PlanScreen() {
         )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
-        <Toast />
+        <Toast conn />
         {/* Everything left was put off for today, but something is checked already → the trip can still be finished */}
         {(route.length > 0 || items.some(i => i.checked)) && (
           <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>

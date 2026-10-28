@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { LOGOS, logoUrl } from '../lib/logic';
 import type { Conn } from '../app/useConnection';
 import { DEFAULT_AVATAR, avColor, avatarIconUrl, type AvatarPref } from '../lib/avatar';
@@ -32,16 +32,27 @@ export function ConnPill({ conn, dark }: { conn: Conn; dark?: boolean }) {
 }
 
 /**
- * The indicator floating on the header's bottom edge. It takes no space, so showing it never moves the list
- * (a tap meant for one item would land on the one below). Taps go through it.
+ * Closes an open menu when tapping anywhere else. That tap only closes the menu – it doesn't also check an item
+ * or press a button underneath. The menu and its ⋯ button are marked with `data-menu-keep`.
  */
-export function ConnBadge({ conn, dark }: { conn: Conn; dark?: boolean }) {
-  if (conn === 'online') return null;
-  return (
-    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, transform: 'translateY(50%)', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 3 }}>
-      <span style={{ display: 'flex', borderRadius: 999, boxShadow: '0 2px 10px rgba(42,31,23,.16)' }}><ConnPill conn={conn} dark={dark} /></span>
-    </div>
-  );
+export function useTapAway(open: boolean, close: () => void) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => {
+      if (e.target instanceof Element && e.target.closest('[data-menu-keep]')) return;
+      closeRef.current();
+      // The click of this same tap arrives after the menu is closed: swallow it
+      const until = Date.now() + 800;
+      const swallow = (c: MouseEvent) => { off(); if (Date.now() < until) { c.stopPropagation(); c.preventDefault(); } };
+      const off = () => document.removeEventListener('click', swallow, true);
+      document.addEventListener('click', swallow, true);
+      setTimeout(off, 800);
+    };
+    document.addEventListener('pointerdown', down, true);
+    return () => document.removeEventListener('pointerdown', down, true);
+  }, [open]);
 }
 
 export function TabBar({ active, go }: { active: 'list' | 'plan' | 'profile'; go: (p: string) => void }) {

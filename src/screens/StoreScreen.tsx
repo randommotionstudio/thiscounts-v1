@@ -8,7 +8,7 @@ import {
   CHECK_AFTER, UNKNOWN, ageDays, icon, movePatch, onTrip, posInfo, stopById, storeGroups, storeOrderInfo, storeToStop, tint,
 } from '../lib/logic';
 import type { Item, Stop } from '../lib/types';
-import { Avatar, CatIcon, ConnBadge, LabeledRule, LogoTile, RoundCheck, useHeaderHeight } from '../ui/kit';
+import { Avatar, CatIcon, LabeledRule, LogoTile, RoundCheck, useHeaderHeight, useTapAway } from '../ui/kit';
 import { LeaveSheet } from '../sheets/LeaveSheet';
 import { RefinePrompt } from './store/RefinePrompt';
 import { Toast } from '../ui/Toast';
@@ -33,6 +33,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   const { route, onlyStop, itemsAt, doneOf, goStore, finish, stopOf, temp, townStores } = useTrip();
   const onlyHere = !spontaneous && !!onlyStop && onlyStop.id === stopId;
   const [menu, setMenu] = useState(false);
+  useTapAway(menu, () => setMenu(false));
   const [leaving, setLeaving] = useState(false);
   const [headRef] = useHeaderHeight();
   const [notif, setNotif] = useState<{ title: string; body: string; by: string | null } | null>(null);
@@ -221,7 +222,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
 
   return (
     <div className="screen">
-      <div ref={headRef} style={{ position: 'relative', zIndex: 2, padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
+      <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#C9B8A6' }}>{spontaneous ? 'Spontaner Einkauf' : onlyHere ? 'Nur dieser Laden' : 'Stopp ' + (Math.max(curIdx, 0) + 1) + ' von ' + route.length}</span>
@@ -239,7 +240,6 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           </div>
           <span style={{ fontSize: 13, fontWeight: 600 }}>{doneCount} von {curItems.length}</span>
         </div>
-        <ConnBadge conn={app.conn} dark />
       </div>
       <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
         <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12, textWrap: 'pretty' }}>
@@ -263,7 +263,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           onConfirm={() => { if (store) { actions.confirmStoreOrder(store); toast('Danke! Weg bei ' + cur.name + ' bestätigt'); } }} />
       </div>
       <div className="bottom-fade" style={{ padding: '24px 20px calc(var(--safe-bottom) + 20px)' }}>
-        <Toast />
+        <Toast conn />
         {notif && (
           <div role="status" style={{ marginBottom: 10, background: '#2A1F17', color: '#FBF5EE', borderRadius: 20, padding: '12px 10px 12px 14px', boxShadow: '0 14px 34px rgba(42,31,23,.3)', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'toastIn .3s ease' }}>
             <Avatar person={personOf(notif.by)} size={36} onDark />
@@ -275,7 +275,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           </div>
         )}
         {menu && (
-          <div style={{ marginBottom: 10, background: 'rgba(255,253,250,.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)', backdropFilter: 'blur(22px) saturate(1.6)', border: '1px solid rgba(255,255,255,.75)', borderRadius: 22, boxShadow: '0 12px 32px rgba(42,31,23,.16)', overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'toastIn .2s ease' }}>
+          <div data-menu-keep style={{ marginBottom: 10, background: 'rgba(255,253,250,.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)', backdropFilter: 'blur(22px) saturate(1.6)', border: '1px solid rgba(255,255,255,.75)', borderRadius: 22, boxShadow: '0 12px 32px rgba(42,31,23,.16)', overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'toastIn .2s ease' }}>
             {!onlyHere && (
               <button onClick={skipStore} style={{ textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>Heute auslassen</div>
@@ -292,7 +292,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
         ) : (
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={goNext} className="ellipsis" style={{ flex: 1, minWidth: 0, height: 56, borderRadius: 999, border: '1px solid rgba(255,255,255,.55)', background: allDone ? '#F3752E' : '#F3EADF', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 28px rgba(42,31,23,.18), inset 0 1px 0 rgba(255,255,255,.55)', padding: '0 16px' }}>{nextLabel}</button>
-          <button onClick={() => setMenu(m => !m)} title="Mehr" style={{ width: 56, height: 56, border: '1px solid rgba(255,255,255,.75)', borderRadius: 999, background: 'rgba(255,253,250,.42)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)', backdropFilter: 'blur(18px) saturate(1.5)', boxShadow: '0 10px 30px rgba(42,31,23,.16), inset 0 1px 0 rgba(255,255,255,.9)', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+          <button onClick={() => setMenu(m => !m)} title="Mehr" data-menu-keep style={{ width: 56, height: 56, border: '1px solid rgba(255,255,255,.75)', borderRadius: 999, background: 'rgba(255,253,250,.42)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)', backdropFilter: 'blur(18px) saturate(1.5)', boxShadow: '0 10px 30px rgba(42,31,23,.16), inset 0 1px 0 rgba(255,255,255,.9)', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />

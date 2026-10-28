@@ -11,7 +11,7 @@ import { OnceSheet } from '../sheets/OnceSheet';
 import { AskSheet } from '../sheets/AskSheet';
 import { UsualChips } from './list/UsualChips';
 import { QtySheet } from '../sheets/QtySheet';
-import { Avatar, AvatarStack, CatIcon, ConnBadge, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
+import { Avatar, AvatarStack, CatIcon, LogoTile, TabBar, useHeaderHeight } from '../ui/kit';
 import { SwipeRow } from '../ui/SwipeRow';
 import { useMarkSince } from '../app/markSince';
 import { joinNames } from '../lib/people';
@@ -238,7 +238,6 @@ export function ListScreen() {
           <UsualChips pool={pool} searching={searching} showAll={showAll} isOn={chipOn} deptOf={guessDept}
             onToggle={toggleChip} onToggleAll={() => setChipsAll(v => !v)} keepFocus={keepFocus} />
         )}
-        <ConnBadge conn={app.conn} />
       </div>
 
       <div className="scroll" onScroll={onListScroll} onTouchStart={e => { touchY.current = e.touches[0].clientY; }} onTouchMove={onListTouchMove} style={{ padding: '0 20px calc(var(--safe-bottom) + 160px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 161px)' }}>
@@ -329,7 +328,7 @@ export function ListScreen() {
         )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
-        <Toast />
+        <Toast conn />
         <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
           <button className={'cta' + (n ? '' : ' off')} onClick={() => navigate(paths.plan)}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>
         </div>

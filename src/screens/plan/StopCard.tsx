@@ -11,7 +11,7 @@ type MenuEntry = { label: string; sub?: string; onClick: () => void };
 /** The stop's ⋯ menu */
 function Menu({ entries }: { entries: MenuEntry[] }) {
   return (
-    <div role="menu" style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div role="menu" data-menu-keep style={{ marginTop: 10, background: '#FBF5EE', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {entries.map((e, i) => (
         <button key={e.label} role="menuitem" onClick={e.onClick} style={menuBtn(i === 0)}>
           {e.label}{e.sub && <span style={{ color: '#8A7A6D', fontWeight: 500 }}> · {e.sub}</span>}
@@ -23,7 +23,7 @@ function Menu({ entries }: { entries: MenuEntry[] }) {
 
 function Dots({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
-    <button onClick={onClick} title="Mehr" className="dots" style={{ width: 36, height: 36, border: 'none', borderRadius: '50%', background: 'none', color: '#6F6055', cursor: 'pointer', flexShrink: 0, marginRight: -8, padding: 0 }}>
+    <button onClick={onClick} title="Mehr" data-menu-keep className="dots" style={{ width: 36, height: 36, border: 'none', borderRadius: '50%', background: 'none', color: '#6F6055', cursor: 'pointer', flexShrink: 0, marginRight: -8, padding: 0 }}>
       <span /><span /><span />
     </button>
   );

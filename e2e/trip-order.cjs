@@ -35,6 +35,7 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await A.click('text=‹ Zum Plan'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'REWE,Netto', 'plan follows the trip: REWE, Netto');
   ok((await menu(A, 'Netto'))[0] === 'Jetzt hierhin', 'during the trip: "Jetzt hierhin"');
+  await A.locator('.card', { hasText: 'Netto' }).locator('button[title="Mehr"]').click(); // close the menu again
   await A.click('button.cta:has-text("Weiter einkaufen bei REWE")');
   await check(A, 'Crispy Choccies');
   await A.click('button:has-text("Weiter zu Netto")');
@@ -47,7 +48,11 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   // ---- The order row with two stores; the main store moves too ----
   await add(A, ['Pfefferminztee', 'Crispy Choccies']);
   await A.click('button:has-text("Einsortieren")').catch(() => {});
-  await assign(A, 'Crispy Choccies', 'REWE');
+  // Remembered from the first trip – unless that hasn't arrived yet: then assign it again
+  await A.getByText('Crispy Choccies', { exact: true }).click(); await A.waitForTimeout(200);
+  const rewe = A.locator('button', { hasText: /^REWE$/ });
+  if (await rewe.count()) await rewe.click(); else await A.getByText('Crispy Choccies', { exact: true }).click();
+  await A.waitForTimeout(200);
   await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok(await A.locator('button:has-text("Reihenfolge ändern")').count() === 1 && await A.locator('button:has-text("Woanders einkaufen")').count() === 1, 'two stores: chips "Reihenfolge ändern" and "Woanders einkaufen" under the route');
   ok(await A.getByText('Reihenfolge ·').count() === 0, 'no order row at the top any more');
