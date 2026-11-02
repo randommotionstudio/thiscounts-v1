@@ -434,7 +434,8 @@ export function storeGroups<T extends { category: string }>(items: T[], order: s
 
 export interface Chip { name: string; qty: string | null }
 
-const HISTORY_WINDOW_MS = 56 * 24 * 60 * 60 * 1000;
+/** Suggestions only look this far back – and only this much history is loaded (DataProvider) */
+export const HISTORY_WINDOW_MS = 56 * 24 * 60 * 60 * 1000;
 /** Bought on at least this many shopping trips in the window → suggested without typing */
 const OFTEN_TRIPS = 2;
 

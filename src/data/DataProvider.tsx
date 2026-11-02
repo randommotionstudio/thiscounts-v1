@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
-  type DocumentData, type DocumentSnapshot, type QuerySnapshot, type Timestamp, limit, onSnapshot, orderBy, query,
+  type DocumentData, type DocumentSnapshot, type QuerySnapshot, Timestamp, limit, onSnapshot, orderBy, query, where,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { ALL_DEPTS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from '../lib/logic';
+import { ALL_DEPTS, HISTORY_WINDOW_MS, UNKNOWN, isLegacyOrder, upgradeCategory, upgradeOrder } from '../lib/logic';
 import type { Branch, HistoryEntry, Invite, Item, List, Member, MemoryEntry, Session, Store, Town } from '../lib/types';
 import { historyCol, householdRef, invitesCol, itemsCol, listsCol, membersCol, memoryCol, sessionsCol, storesCol, userRef, usersCol } from './refs';
 import { normalizeAvatar, type AvatarPref } from '../lib/avatar';
@@ -161,7 +161,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       });
       setMemory(m);
     }, onErr);
-    const u5 = onSnapshot(query(historyCol(), orderBy('completedAt', 'desc'), limit(1500)), { includeMetadataChanges: true }, snap => {
+    // Only the weeks the suggestions look at: the history keeps growing, loading it stays the same size
+    const since = Timestamp.fromMillis(Date.now() - HISTORY_WINDOW_MS);
+    const u5 = onSnapshot(query(historyCol(), where('completedAt', '>=', since), orderBy('completedAt', 'desc'), limit(1500)), { includeMetadataChanges: true }, snap => {
       track('history', snap);
       setHistory(snap.docs.map(d => {
         const x = d.data(opts);
