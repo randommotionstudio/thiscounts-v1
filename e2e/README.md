@@ -49,6 +49,7 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | sync-pill-and-uncheck | The offline/sync indicator (icon, centred text) sits above the main button, as wide as the buttons, under any open sheet, toasts stack above it, nothing moves (a tap still hits the item it aimed at); the ⋯ menus in plan and store close on a tap elsewhere (and the tap still works there); unchecking every item doesn't end the trip |
 | indicator-end-space | Scrolled to the end, the last item stops above the offline/sync indicator and the main button (list, plan, store) |
 | history-window | Only the last 8 weeks of history are loaded onto the phone (1,000 older purchases stay on the server); suggestions unchanged |
+| tab-switch-steady | After a tab switch the content lands in place in the first frame, no jump of a few pixels |
 | invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |

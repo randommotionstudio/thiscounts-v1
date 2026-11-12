@@ -168,7 +168,12 @@ export function useHeaderHeight(): [(el: HTMLElement | null) => void, number] {
   const ro = useRef<ResizeObserver | null>(null);
   const ref = useCallback((el: HTMLElement | null) => {
     if (ro.current) { ro.current.disconnect(); ro.current = null; }
-    if (!el || typeof ResizeObserver === 'undefined') return;
+    if (!el) return;
+    // Measured right away, before the first frame is drawn – otherwise that frame shows the content at the
+    // estimated position and it jumps a few pixels after a tab switch
+    const now = el.offsetHeight;
+    if (now) setH(now);
+    if (typeof ResizeObserver === 'undefined') return;
     ro.current = new ResizeObserver(() => { const nh = el.offsetHeight; if (nh) setH(nh); });
     ro.current.observe(el);
   }, []);
