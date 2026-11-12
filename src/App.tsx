@@ -5,6 +5,7 @@ import { DataProvider, useData } from './data/DataProvider';
 import { AppProvider, useApp } from './app/AppContext';
 import { useRouter } from './app/router';
 import { joinError, joinWithCode, useJoining } from './app/join';
+import { hideLaunch } from './app/launch';
 import { normalizeCode } from './lib/people';
 import { Login } from './screens/Login';
 import { ListScreen } from './screens/ListScreen';
@@ -36,6 +37,9 @@ export function App() {
   const router = useRouter();
   const joining = useJoining();
   useEffect(() => onAuthStateChanged(auth, setUser), []);
+  // Logged out (or registering): the login screen is complete right away
+  const loggedOut = !isConfigured || user === null || joining;
+  useEffect(() => { if (loggedOut) hideLaunch(); }, [loggedOut]);
 
   if (!isConfigured) {
     return <Frame><Centered><img src="/brand/app-icon-v13-144.png" alt="" style={{ width: 72, height: 72, borderRadius: 18 }} />thisCounts ist noch nicht mit der Datenbank verbunden.</Centered></Frame>;
@@ -53,6 +57,8 @@ export function App() {
 
 function Main({ user, route, navigate, back }: { user: User } & ReturnType<typeof useRouter>) {
   const data = useData();
+  // The first screen is complete (or there is nothing more to wait for) → the launch screen fades out
+  useEffect(() => { if (data.complete || data.denied) hideLaunch(); }, [data.complete, data.denied]);
   if (data.denied) return <Denied user={user} />;
   if (!data.ready) return <Loading />;
   return (

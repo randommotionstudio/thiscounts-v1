@@ -13,6 +13,9 @@ import { onWritesChange, writesInFlight } from './write';
 export interface Data {
   /** false until the household is known (first login only — afterwards it comes from the cache) */
   ready: boolean;
+  /** Every piece (items, avatars, history for the suggestions …) has arrived at least once, from the phone or the
+   *  server – the first screen is complete. The launch screen waits for this. */
+  complete: boolean;
   /** Firestore refused access (account not in the rules) */
   denied: boolean;
   defaultCategoryOrder: string[];
@@ -112,6 +115,9 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   const [invites, setInvites] = useState<Invite[]>([]);
   const joined = useRef(false);
   const [pendingMap, setPendingMap] = useState<Record<string, boolean>>({});
+  // Which listeners have delivered (or failed) at least once
+  const [seen, setSeen] = useState<Record<string, true>>({});
+  const mark = (k: string) => setSeen(s => (s[k] ? s : { ...s, [k]: true }));
   const seeded = useRef(false);
   const listSeeded = useRef(false);
   const [listsGone, setListsGone] = useState(false);
@@ -122,7 +128,8 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     const p = snap.metadata.hasPendingWrites;
     setPendingMap(m => (m[key] === p ? m : { ...m, [key]: p }));
   };
-  const onErr = (e: { code?: string }) => {
+  const onErr = (k: string) => (e: { code?: string }) => {
+    mark(k);
     console.warn('[thisCounts] listener error', e);
     if (e.code === 'permission-denied') setDenied(true);
   };
@@ -130,7 +137,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
   // Household + the collections that don't depend on anything else
   useEffect(() => {
     const u1 = onSnapshot(householdRef(), { includeMetadataChanges: true }, snap => {
-      track('household', snap);
+      track('household', snap); mark('household');
       if (snap.exists()) {
         const order = strArr(snap.data()?.defaultCategoryOrder);
         setHh({ exists: true, order: order.length ? upgradeOrder(order, isLegacyOrder(order)) : ALL_DEPTS, towns: toTowns(snap.data()?.towns) });
@@ -139,19 +146,19 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         seeded.current = true;
         seedHousehold(user.uid);
       }
-    }, onErr);
+    }, onErr('household'));
     const u2 = onSnapshot(storesCol(), { includeMetadataChanges: true }, snap => {
-      track('stores', snap);
+      track('stores', snap); mark('stores');
       setStores(snap.docs.map(toStore).sort((a, b) => a.createdAtMs - b.createdAtMs || a.id.localeCompare(b.id)));
-    }, onErr);
+    }, onErr('stores'));
     const u3 = onSnapshot(listsCol(), { includeMetadataChanges: true }, snap => {
-      track('lists', snap);
+      track('lists', snap); mark('lists');
       setListsGone(snap.empty && !snap.metadata.fromCache);
       if (!snap.metadata.fromCache) setListsServer(true);
       setLists(snap.docs.map(toList).sort((a, b) => a.createdAtMs - b.createdAtMs || a.id.localeCompare(b.id)));
-    }, onErr);
+    }, onErr('lists'));
     const u4 = onSnapshot(memoryCol(), { includeMetadataChanges: true }, snap => {
-      track('memory', snap);
+      track('memory', snap); mark('memory');
       const m: Data['memory'] = {};
       snap.docs.forEach(d => {
         const x = d.data(), cat = str(x.category);
@@ -160,16 +167,16 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         m[d.id] = { id: d.id, storeId: str(x.storeId), stores, category: cat && upgradeCategory(cat, str(x.name) || d.id) };
       });
       setMemory(m);
-    }, onErr);
+    }, onErr('memory'));
     // Only the weeks the suggestions look at: the history keeps growing, loading it stays the same size
     const since = Timestamp.fromMillis(Date.now() - HISTORY_WINDOW_MS);
     const u5 = onSnapshot(query(historyCol(), where('completedAt', '>=', since), orderBy('completedAt', 'desc'), limit(1500)), { includeMetadataChanges: true }, snap => {
-      track('history', snap);
+      track('history', snap); mark('history');
       setHistory(snap.docs.map(d => {
         const x = d.data(opts);
         return { id: d.id, name: x.name || '', qty: str(x.qty), storeId: str(x.storeId), listId: x.listId || '', completedAtMs: ms(x.completedAt) };
       }));
-    }, onErr);
+    }, onErr('history'));
     const u6 = onSnapshot(sessionsCol(), { includeMetadataChanges: true }, snap => {
       setSessionsFresh(!snap.metadata.fromCache);
       const m: Record<string, Session> = {};
@@ -183,18 +190,19 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       });
       setSessions(m);
       setSessionsReady(true);
-    }, onErr);
+    }, onErr('sessions'));
     const u7 = onSnapshot(userRef(user.uid), snap => {
+      mark('me');
       setNotify(snap.get('notifyWhileShopping') !== false);
       setMyAvatar(normalizeAvatar(snap.get('avatar')));
-    }, onErr);
+    }, onErr('me'));
     // Everyone's avatar. Needs the V1.2 rules (users readable by the household); with older rules
     // this just fails quietly and the others keep the default avatar.
     const u8 = onSnapshot(usersCol(), snap => {
       const m: Record<string, AvatarPref> = {};
       snap.docs.forEach(d => { m[d.id] = normalizeAvatar(d.get('avatar')); });
-      setOtherAvatars(m);
-    }, e => console.warn('[thisCounts] avatars not readable (update firestore.rules)', e));
+      setOtherAvatars(m); mark('users');
+    }, e => { mark('users'); console.warn('[thisCounts] avatars not readable (update firestore.rules)', e); });
     // V1.5: members and invites. Needs the V1.5 rules; with older ones this fails quietly (names fall back to the testers).
     const u9 = onSnapshot(membersCol(), snap => {
       const m: Record<string, Member> = {};
@@ -202,11 +210,11 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
         const x = d.data(opts);
         m[d.id] = { uid: d.id, name: str(x.name) || '', email: str(x.email) || '', joinedAtMs: ms(x.joinedAt, Date.now()) };
       });
-      setMembers(m);
+      setMembers(m); mark('members');
       if (!snap.metadata.fromCache) setMembersReady(true);
       // The two original testers get their entry the first time they open this version
       if (!snap.metadata.fromCache && !m[user.uid] && !joined.current) { joined.current = true; joinAsTester(user); }
-    }, e => console.warn('[thisCounts] members not readable (update firestore.rules)', e));
+    }, e => { mark('members'); console.warn('[thisCounts] members not readable (update firestore.rules)', e); });
     const u10 = onSnapshot(invitesCol(), snap => {
       setInvites(snap.docs.map(d => {
         const x = d.data(opts);
@@ -236,14 +244,18 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
       track('items:' + id, snap);
       const items = snap.docs.map(d => toItem(id, d)).sort((a, b) => b.createdAtMs - a.createdAtMs || a.id.localeCompare(b.id));
       setItemsByList(m => ({ ...m, [id]: items }));
-    }, e => console.warn('[thisCounts] items not readable (taken off the list?)', id, e)));
+    }, e => { mark('items:' + id); console.warn('[thisCounts] items not readable (taken off the list?)', id, e); }));
     setItemsByList(m => Object.fromEntries(Object.entries(m).filter(([k]) => ids.includes(k))));
     setPendingMap(m => Object.fromEntries(Object.entries(m).filter(([k]) => !k.startsWith('items:') || ids.includes(k.slice(6)))));
     return () => unsubs.forEach(u => u());
   }, [listIds]);
 
+  const ready = !!hh && lists.length > 0;
+  const complete = ready && ['stores', 'lists', 'memory', 'history', 'sessions', 'me', 'users', 'members'].every(k => seen[k])
+    && lists.every(l => itemsByList[l.id] || seen['items:' + l.id]);
   const value = useMemo<Data>(() => ({
-    ready: !!hh && lists.length > 0,
+    ready,
+    complete,
     denied,
     defaultCategoryOrder: hh?.order || ALL_DEPTS,
     towns: hh?.towns || [],
@@ -251,7 +263,7 @@ export function DataProvider({ user, children }: { user: User; children: ReactNo
     avatars: { ...otherAvatars, [user.uid]: myAvatar },
     members, invites,
     pending: openWrites > 0 || Object.values(pendingMap).some(Boolean),
-  }), [members, invites, hh, denied, stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, sessionsFresh, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
+  }), [ready, complete, members, invites, hh, denied, stores, lists, allLists, itemsByList, memory, history, sessions, sessionsReady, sessionsFresh, notifyWhileShopping, otherAvatars, myAvatar, user.uid, pendingMap, openWrites]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

@@ -27,6 +27,8 @@ export default defineConfig({
       workbox: {
         // The whole app shell (code, fonts, icons, logos) is precached so the app starts without reception.
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        // The iPhone launch images are fetched by iOS itself – not every phone needs all of them
+        globIgnores: ['launch/**'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
