@@ -19,3 +19,6 @@ tsconfig.tsbuildinfo
 # Browser tests (e2e/run.sh)
 e2e/shots
 e2e/.dist
+
+# Netlify CLI link state
+.netlify
