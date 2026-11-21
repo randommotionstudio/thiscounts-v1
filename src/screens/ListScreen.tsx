@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
+import { usePlanGate } from '../app/usePlanGate';
 import * as actions from '../data/actions';
 import {
   ALL_DEPTS, UNKNOWN, effStore, icon, normName, parseEntry, pickFor, stopById, tint, usualChips, USUAL_MAX, type Chip, type Pick,
@@ -24,6 +25,7 @@ const ACC = '#F3752E', SOFT = '#FDE4D1', LINE = '#EADCCD', PALE = '#F3EADF', INK
 
 export function ListScreen() {
   const app = useApp();
+  const { goPlan, sheet: planGate } = usePlanGate();
   const { list, items, data, othersOn, personOf, shopper, mainName, selectedStores, navigate, toast, guessDept, guessStore } = app;
 
   const [newItem, setNewItem] = useState('');
@@ -327,9 +329,9 @@ export function ListScreen() {
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         <Toast conn />
         <div style={{ padding: '0 20px 10px', pointerEvents: 'auto' }}>
-          <button className={'cta' + (n ? '' : ' off')} onClick={() => navigate(paths.plan)}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>
+          <button className={'cta' + (n ? '' : ' off')} onClick={goPlan}>{n ? 'Einkaufsplan ansehen · ' + n + ' Artikel' : 'Noch keine Artikel'}</button>
         </div>
-        <TabBar active="list" go={navigate} />
+        <TabBar active="list" go={p => (p === paths.plan ? goPlan() : navigate(p))} />
       </div>
 
       {listMenu && (
@@ -384,6 +386,7 @@ export function ListScreen() {
         <QtySheet key={pick.editId} initial={pick} dept={guessDept(pick.name)} onClose={() => setPick(null)}
           onSave={q => { const it = items.find(i => i.id === pick.editId); if (it) actions.updateItem(it, { qty: q }); setPick(null); }} />
       )}
+      {planGate}
     </div>
   );
 }

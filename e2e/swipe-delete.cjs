@@ -46,6 +46,8 @@ const IN = 'input[placeholder^="z. B. 5 Bananen"]';
   // 3. tap on the open row closes it (no store options)
   r2 = await rowBox('Milch');
   await touch([[r2.x + 120, r2.y + r2.height / 2]]);
+  // (the row slides closed – wait for it)
+  for (let i = 0; i < 10 && (await rowBox('Milch')).x <= 15; i++) await A.waitForTimeout(100);
   ok((await rowBox('Milch')).x > 15 && await A.getByText('Automatisch (Netto)').count() === 0, 'tap on open row just closes it');
 
   // 4. short swipe (less than half) snaps back

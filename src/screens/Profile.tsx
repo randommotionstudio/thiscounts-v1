@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { useApp } from '../app/AppContext';
 import { paths } from '../app/router';
+import { usePlanGate } from '../app/usePlanGate';
 import { auth } from '../firebase';
 import * as actions from '../data/actions';
 import { StoreSheet, type StoreSheetState } from '../sheets/StoreSheet';
@@ -16,6 +17,7 @@ import { Toast } from '../ui/Toast';
 /** Profil (reduced for V1): who you are, who you share with, and the household's stores. */
 export function Profile() {
   const app = useApp();
+  const { goPlan, sheet: planGate } = usePlanGate();
   const { me, others, othersLabel, data, toast, navigate } = app;
   const [invite, setInvite] = useState<{ code: string; expiresAtMs: number } | null>(null);
   const [sheet, setSheet] = useState<StoreSheetState | null>(null);
@@ -182,7 +184,7 @@ export function Profile() {
       </div>
       <div className="bottom-fade" style={{ paddingTop: 24, pointerEvents: 'none' }}>
         <Toast />
-        <TabBar active="profile" go={navigate} />
+        <TabBar active="profile" go={p => (p === paths.plan ? goPlan() : navigate(p))} />
       </div>
       {invite && (
         <InviteSheet code={invite.code} expiresAtMs={invite.expiresAtMs} onShare={shareInvite} onWithdraw={withdraw} onClose={() => setInvite(null)}
@@ -211,6 +213,7 @@ export function Profile() {
           )}
         </Sheet>
       )}
+      {planGate}
     </div>
   );
 }
