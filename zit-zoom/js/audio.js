@@ -70,12 +70,6 @@ export class Sound {
     s.stop(t + dur + 0.02);
   }
 
-  /** The throb every ripe pimple pulses to. */
-  throb(accent) {
-    this.tone({ f0: accent ? 86 : 74, f1: 42, dur: 0.17, vol: accent ? 0.34 : 0.22, attack: 0.006 });
-    this.hiss({ dur: 0.05, vol: 0.03, type: 'lowpass', f0: 500 });
-  }
-
   jump() { this.tone({ type: 'triangle', f0: 330, f1: 640, dur: 0.1, vol: 0.12 }); }
   flap() { this.hiss({ dur: 0.12, vol: 0.12, f0: 2500, f1: 900, q: 0.8 }); }
   pound() { this.hiss({ dur: 0.09, vol: 0.1, f0: 2200, f1: 300, q: 0.7 }); }

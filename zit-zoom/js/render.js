@@ -1,7 +1,7 @@
 // Canvas renderer. Everything is drawn procedurally; no image assets.
 
 import { BIOMES, BIOME_LEN, biomeAt } from './course.js';
-import { ripeness, pimpleHeight, BEAT, FOAM_MAX_GAP, MUTATION_INFO, MUTATION_TIME, TWEEZER_T, TWEEZER_LEN } from './game.js';
+import { ripeness, pimpleHeight, headHalf, FOAM_MAX_GAP, MUTATION_INFO, MUTATION_TIME, TWEEZER_LEN } from './game.js';
 import { drawDex, skinById } from './skins.js';
 import { hash32 } from './rng.js';
 
@@ -131,14 +131,14 @@ export class Renderer {
 
     const pal = paletteAt(d.x + vw * 0.3);
     const t = game.t;
-    const off = game.beatOffset();
-    const pulse = Math.exp(-(off * off) / (2 * 0.04 * 0.04));
+    const pulse = 0;
     this.drawBackground(ctx, pal, game);
     this.drawGround(ctx, pal, game);
     this.drawDecals(ctx, game);
     this.drawPimples(ctx, game, pulse, pal);
     this.drawHazards(ctx, game);
     this.drawPickups(ctx, game, t);
+    this.drawPreview(ctx, game);
     this.drawGhost(ctx, game);
     this.drawDexNow(ctx, game);
     this.drawParticles(ctx, game);
@@ -307,22 +307,58 @@ export class Renderer {
       const sx = this.X(p.x);
       if (sx < -p.w || sx > vw + p.w) continue;
       const st = ripeness(p);
-      this.drawPimple(ctx, p, st, pulse, game, stuck && stuck.p === p ? stuck : null, pal);
+      // A gentle, unsynchronised glisten on ripe pimples (purely cosmetic).
+      const shimmer = 0.3 * (0.5 + 0.5 * Math.sin(game.t * 3.2 + p.id * 1.9));
+      this.drawPimple(ctx, p, st, pulse + shimmer, game, stuck && stuck.p === p ? stuck : null, pal);
     }
-    const tg = game.target;
-    if (tg && !game.dex.grounded && !game.dead) {
-      // Approach ring: shrinks onto the head exactly on the throb.
-      const st = ripeness(tg);
-      const ph = (game.t % BEAT) / BEAT;
-      const hh = pimpleHeight(tg, st);
-      const cx = this.X(tg.x);
-      const cy = this.Y(tg.base + hh * 0.75);
-      const r = tg.w * 0.3 * (1 + 1.6 * (1 - ph));
-      ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.6 * ph})`;
-      ctx.lineWidth = 2.2;
-      ell(ctx, cx, cy, r, r * 0.55);
+  }
+
+  /** The aiming aid: a drop line and a marker where a slam right now would land. */
+  drawPreview(ctx, game) {
+    const pv = game.landingPreview();
+    if (!pv) return;
+    const COLORS = {
+      perfect: '255,216,74', great: '255,255,255', ok: '255,170,110', cyst: '255,255,255',
+      red: '255,90,90', danger: '255,59,59', skin: '255,255,255', stomp: '198,255,122',
+    };
+    const c = COLORS[pv.kind];
+    const x = this.X(pv.x);
+    const y0 = this.Y(game.dex.y) - 2;
+    const y1 = this.Y(pv.y);
+    const strong = pv.kind !== 'skin';
+    ctx.save();
+    ctx.setLineDash([3, 6]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = `rgba(${c},${strong ? 0.75 : 0.35})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y0);
+    ctx.lineTo(x, y1 - 5);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (pv.kind === 'danger' || pv.kind === 'red') {
+      ctx.strokeStyle = `rgba(${c},0.95)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x - 7, y1 - 9);
+      ctx.lineTo(x + 7, y1 + 1);
+      ctx.moveTo(x + 7, y1 - 9);
+      ctx.lineTo(x - 7, y1 + 1);
+      ctx.stroke();
+    } else {
+      if (pv.kind === 'perfect') {
+        const g = ctx.createRadialGradient(x, y1 - 3, 1, x, y1 - 3, 22);
+        g.addColorStop(0, 'rgba(255,230,120,0.75)');
+        g.addColorStop(1, 'rgba(255,230,120,0)');
+        ctx.fillStyle = g;
+        ell(ctx, x, y1 - 3, 22, 14);
+        ctx.fill();
+      }
+      ctx.strokeStyle = `rgba(${c},${strong ? 0.95 : 0.4})`;
+      ctx.lineWidth = pv.kind === 'perfect' ? 3.5 : 2.5;
+      ell(ctx, x, y1 - 2, pv.kind === 'perfect' ? 11 : 9, pv.kind === 'perfect' ? 4.5 : 3.5);
       ctx.stroke();
     }
+    ctx.restore();
   }
 
   drawPimple(ctx, p, st, pulse, game, stuck, pal) {
@@ -476,7 +512,8 @@ export class Renderer {
     ctx.fill();
     const over = st === 'over';
     const capY = Y - ry * (over ? 0.68 : 0.72);
-    const capRx = rx * (over ? 0.56 : 0.42);
+    // The head is drawn exactly as wide as the Perfect zone.
+    const capRx = headHalf(p) * sxk * (over ? 1.12 : 1.05);
     const capRy = ry * (over ? 0.5 : 0.38);
     const g = ctx.createRadialGradient(cx - capRx * 0.3, capY - capRy * 0.4, 1, cx, capY, capRx);
     if (over) {
@@ -554,21 +591,18 @@ export class Renderer {
           break;
         }
         case 'tweezers': {
-          if (z.t < 0) break;
+          if (z.tip === undefined) break;
           const by = this.Y(z.base);
-          const prog = clamp(z.t / TWEEZER_T[0], 0, 1);
-          const active = z.t < TWEEZER_T[3];
-          if (active) {
-            // the tell: a shadow that grows and darkens
-            ctx.fillStyle = `rgba(40,20,20,${0.12 + 0.33 * prog})`;
-            ell(ctx, sx, by + 1, 10 + 26 * prog, 3 + 3 * prog);
-            ctx.fill();
-            if (z.t < TWEEZER_T[0]) {
-              ctx.strokeStyle = `rgba(220,40,40,${0.6 * (0.5 + 0.5 * Math.sin(z.t * 30))})`;
-              ctx.lineWidth = 2;
-              ell(ctx, sx, by + 1, 14 + 26 * prog, 5 + 3 * prog);
-              ctx.stroke();
-            }
+          const prog = z.shadow || 0;
+          // the tell: a shadow that grows and darkens before each snap
+          ctx.fillStyle = `rgba(40,20,20,${0.1 + 0.35 * prog})`;
+          ell(ctx, sx, by + 1, 10 + 26 * prog, 3 + 3 * prog);
+          ctx.fill();
+          if (prog > 0 && !z.closed && z.tip > 300) {
+            ctx.strokeStyle = `rgba(220,40,40,${0.7 * prog})`;
+            ctx.lineWidth = 2;
+            ell(ctx, sx, by + 1, 14 + 26 * prog, 5 + 3 * prog);
+            ctx.stroke();
           }
           const tip = z.tip ?? 360;
           const tipY = by - tip;
@@ -786,7 +820,7 @@ export class Renderer {
     } else if (d.stuck) {
       squash = d.stuck.kind === 'cyst' ? 0.3 + d.stuck.charge * 0.5 : 0.5;
       look = -0.5;
-    } else if (d.pounding) {
+    } else if (d.slamming) {
       angle = 0.45;
       squash = -0.45;
       look = -1;
@@ -1011,12 +1045,8 @@ export class Renderer {
     ctx.fill();
     ctx.stroke();
 
-    // streak + throb light
+    // streak
     const cx = W / 2;
-    const r = 6 + 4 * pulse;
-    ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.6 * pulse})`;
-    ell(ctx, cx, top + 58, r, r);
-    ctx.fill();
     if (game.streak > 0) {
       const mult = game.multiplier;
       const colr = mult >= 4 ? '#ff7ad9' : mult >= 3 ? '#ffb84d' : mult >= 2 ? '#fff36b' : '#ffffff';

@@ -8,7 +8,7 @@ function layout(seed, until = LOOP_LEN * 2) {
   const c = new Course(seed);
   c.ensure(until);
   return {
-    pimples: c.pimples.map((p) => [p.type, p.x.toFixed(6), p.w.toFixed(6), p.ripeAt.toFixed(6)]),
+    pimples: c.pimples.map((p) => [p.type, p.x.toFixed(6), p.w.toFixed(6), p.ripe]),
     hazards: c.hazards.map((z) => [z.type, z.x.toFixed(6)]),
     pickups: c.pickups.map((k) => [k.kind, k.x.toFixed(6)]),
   };
@@ -48,7 +48,7 @@ test('the tutorial stretch is only ripe whiteheads', () => {
   assert.ok(early.length >= 6);
   for (const p of early) {
     assert.equal(p.type, 'white');
-    assert.equal(p.ripeAt, 0);
+    assert.equal(p.ripe, 'ripe');
   }
   assert.equal(c.hazards.filter((z) => z.x < TUTORIAL_END).length, 0);
 });
@@ -64,8 +64,21 @@ test('pimples never overlap and gaps stay jumpable', () => {
       assert.ok(gap < 1000, `seed ${seed}: gap too big at x=${ps[i].x.toFixed(0)}`);
     }
     for (const p of ps) {
+      if (p.ripe === 'over') continue; // launch pads before hair may be converted from another type
       const d = PIMPLE_DIMS[p.type];
       assert.ok(p.w >= d.w[0] && p.w <= d.w[1]);
+    }
+  }
+});
+
+test('the pimple before hair is always a yellow launch pad', () => {
+  for (const seed of [5, 6, 7, 8]) {
+    const c = new Course(seed);
+    c.ensure(LOOP_LEN * 2);
+    for (const z of c.hazards.filter((h) => h.type === 'hair')) {
+      const pad = c.pimples.filter((p) => p.x < z.x).at(-1);
+      assert.equal(pad.ripe, 'over');
+      assert.ok(z.x - pad.x >= 110, 'hair too close to its launch pad');
     }
   }
 });

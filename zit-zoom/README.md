@@ -30,14 +30,15 @@ Create a **new** Netlify site from this repository with:
 
 | GDD area | In the browser PoC |
 | --- | --- |
-| Core loop | Auto-run, tap = jump, tap in air = ground-pound (fixed 0.09 s drop so it's easy to time), hold on cysts |
-| Pop timing | Global throb at ≈143 BPM: pimples pulse, the HUD light pulses, an approach ring closes on the next target. Perfect ±50 ms, Great ±105 ms, same size all game |
-| Landing position | Front edge = flat and fast, back edge = high but slower |
-| Ripeness | Red (bump, no pop) → whitehead → overripe (mega launch + screen splatter). Ripening starts as pimples approach, so your speed decides what you arrive at |
+| Core loop | Auto-run, tap = jump, tap in air = slam straight down (no drift), hold on cysts. A marker under Dex shows exactly where a slam lands: gold = head |
+| Pop grading | **Aim, not a beat** (changed after the first playtest, see below): head = Perfect, dome = Great, rim = OK. Zones never shrink; difficulty comes from speed |
+| Terrain | Fields of 3–6 pimples so every launch passes over several: you pick your landing. Gaps between fields hold spikes, hair or a mosquito |
+| Landing position | Missing the head tilts the launch: back edge = higher, front edge = faster |
+| Ripeness | Fixed per pimple and visible from afar: red (don't land), white, yellow (mega launch + screen splatter). The pad before hair is always yellow |
 | Streak | ×2 at 5, ×3 at 10, ×4 at 20; Great keeps the streak, OK and Miss reset it |
 | Foam wall | Speeds up over the run; your speed pushes it back; gauge in the HUD |
 | Pimple types | Whitehead, Blackhead, Cluster (+ bonus for all 3), Cyst (hold, release at full charge, over-hold penalty), Zit Volcano (airborne Goo section) |
-| Hazards | Tweezers (shadow tell, they aim at your arrival time), fringe and hair forest, ingrown hairs, mosquitoes (stomp them), acne cream, sweat (misses cost double) |
+| Hazards | Tweezers snapping on a loop over one pimple (shadow tell; only dangerous at skin level), fringe and hair forest, ingrown-hair spikes in gaps, mosquitoes (land on them to bounce; touching from below knocks you down), acne cream racing you to a pimple, sweat (misses cost double) |
 | Mutations | Hard Shell, Wings, Sticky Legs, Spore Cloud, each 10 s with its catch. Unlocked by reaching biomes (Skin Charts aren't built yet) |
 | World | Forehead → Nose → Chin → Back → Armpit, then loops with a new skin tone |
 | Modes | Endless; Daily Pop (same course for everyone from the UTC date, best score per day, ghost of your best run) |
@@ -45,6 +46,20 @@ Create a **new** Netlify site from this repository with:
 | Feel | Slow-mo flash, screen shake, goo particles and decals, synthesised Web Audio sounds, haptics |
 
 **Not in the PoC yet:** bosses (Pore Strip, Magnifying Mirror, Washcloth), Skin Charts, Game Center leaderboards and achievements, StoreKit, iCloud sync and clip sharing. Scores and saves live in `localStorage` on the device.
+
+## Changed after playtest 1
+
+Feedback: timing was too hard, chaining pops felt impossible, and it played like a pimple-popper simulator rather than a game.
+
+| Was | Now | Why |
+| --- | --- | --- |
+| Perfect = land on a global beat (±50 ms) while also being over the pimple | Perfect = slam onto the head; a marker shows where you'll land | Two constraints at once made many Perfects impossible; the beat was abstract |
+| Ground-pound drifted forward | Slam drops straight down | Where you tap is where you land |
+| One pimple at a time, random spacing | Fields of 3–6 pimples under every arc | Chaining is always possible; picking a target is the decision |
+| Ripeness changed over time | Fixed, readable colours | Lets you plan a route |
+| Hazards were mostly obstacles | Hazards change which pimple you pick (tweezers, cream, spikes in gaps, yellow pad before hair, mosquito stepping stones) | Gives the pop mechanic decisions |
+
+This departs from the GDD's "pulse" timing. Bot runs with human-like tap error (σ = 30 ms) now last a median of ~40 s, land ~55% Perfects and reach streaks of 10+. The previous design couldn't chain past 1.
 
 ## Browser stand-ins for the Apple frameworks
 
@@ -74,7 +89,7 @@ Create a **new** Netlify site from this repository with:
 
 These map to the GDD's open questions:
 
-- Timing windows (`PERFECT_WIN`, `GREAT_WIN`, `BEAT` in `js/game.js`): do misses feel like your own fault?
+- Landing zones (`PERFECT_FRAC`, `GREAT_FRAC` in `js/game.js`) and speed (`MAX_SPEED`, Perfect speed bonus): do misses feel like your own fault?
 - Launch-angle split: is the front vs. back edge choice readable and worth making?
 - Foam pressure (`FOAM_BASE`, `FOAM_RAMP`) vs. speed economy (`DECAY_*`, Perfect/Great speed bonus).
 - Portrait vs. landscape: both work here. Portrait zooms in and moves Dex left to keep the look-ahead.
