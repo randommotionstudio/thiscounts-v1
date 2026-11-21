@@ -79,7 +79,7 @@ const order = P => P.evaluate(() => { const g = document.querySelector('.scroll 
   await A.waitForTimeout(400);
   await A.click('text=‹ Zum Plan'); await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(500);
   const kiwiRow = A.locator('div', { has: A.getByText('Kiwi', { exact: true }) }).filter({ hasText: 'Netto' }).last();
-  ok(await kiwiRow.count() > 0 && await A.getByText('Offen · Laden wählen').count() === 0, 'on the list Kiwi still has its store (Netto), no "Laden wählen"');
+  ok(await kiwiRow.count() > 0 && await A.getByText('Laden wählen', { exact: true }).count() === 0, 'on the list Kiwi still has its store (Netto), no "Laden wählen"');
 
   // ---- ⋯ "Netto führt Gurke nicht" → no store, and Netto isn't suggested for it any more ----
   await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
@@ -99,6 +99,6 @@ const order = P => P.evaluate(() => { const g = document.querySelector('.scroll 
   const st = mem.fields && mem.fields.stores && mem.fields.stores.mapValue.fields.wocheneinkauf;
   ok(!!st && 'nullValue' in st, 'Netto is no longer remembered for Gurke on this list');
   await A.click('text=‹ Zum Plan'); await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(500);
-  ok(await A.getByText('Offen · Laden wählen').count() === 1, 'on the list: Gurke "Offen · Laden wählen"');
+  ok(await A.getByText('Laden wählen', { exact: true }).count() === 1, 'on the list: Gurke "Laden wählen"');
   await browser.close();
 })().catch(e => { console.error('ERROR', e.message); process.exit(1); });

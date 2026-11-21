@@ -291,7 +291,7 @@ export function ListScreen() {
                         border: isAuto ? '1px dashed #B8A696' : '1px solid transparent' }}>
                         {isAuto && <span title="Automatisch" style={{ width: 14, height: 14, margin: '0 6px 0 -4px', borderRadius: '50%', background: 'currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.85 }}><span style={{ color: '#fff', fontSize: 9, fontWeight: 800, lineHeight: 1 }}>A</span></span>}
                         {isOnce && <span role="img" aria-label="Einmaliger Stopp" title="Einmaliger Stopp" style={{ width: 14, height: 14, margin: '0 6px 0 -3px', flexShrink: 0, backgroundColor: 'currentColor', WebkitMask: 'url(/icons/split.svg) center/contain no-repeat', mask: 'url(/icons/split.svg) center/contain no-repeat' }} />}
-                        <span className="ellipsis" style={{ lineHeight: 1.2 }}>{it.parked ? 'Offen · Laden wählen' : effName}</span>
+                        <span className="ellipsis" style={{ lineHeight: 1.2 }}>{it.parked ? 'Laden wählen' : effName}</span>
                       </div>
                     </div>
                     </SwipeRow>

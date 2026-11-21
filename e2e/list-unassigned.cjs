@@ -1,4 +1,4 @@
-// Items without a store ("Offen · Laden wählen", e.g. after "… führt … nicht") used to be left out of the trip
+// Items without a store ("Laden wählen", e.g. after "… führt … nicht") used to be left out of the trip
 // silently. Now, on the way from the list (or profile) to the plan, a store has to be chosen first; closing the
 // choice stays where it was. Not during a trip.
 const { chromium, SHOTS, phone, login, resetDb, waitText, REST } = require('./lib.cjs');
@@ -24,8 +24,8 @@ const onPlan = P => P.locator('h1:text-is("Route")').count().then(n => n === 1);
   await add(A, ['Bananen', 'Paprika', 'Milch', 'Brot']);
   await A.waitForTimeout(800);
   await park('Paprika');
-  await waitText(A, 'Offen · Laden wählen');
-  ok(await A.getByText('Schwarz markierte Artikel').count() === 0, 'list: no extra note, "Offen · Laden wählen" speaks for itself');
+  await A.getByText('Laden wählen', { exact: true }).waitFor({ timeout: 10000 });
+  ok(await A.getByText('Schwarz markierte Artikel').count() === 0, 'list: no extra note, "Laden wählen" speaks for itself');
 
   // ---- The Plan tab asks for a store first ----
   await A.click('.tab:has-text("Plan")');
@@ -68,7 +68,7 @@ const onPlan = P => P.locator('h1:text-is("Route")').count().then(n => n === 1);
   // ---- During a trip: no stop ----
   await A.click('button.cta:has-text("Einkauf starten")'); await A.waitForTimeout(800);
   await A.click('text=‹ Zum Plan'); await A.click('.tab:has-text("Liste")'); await A.waitForTimeout(400);
-  await park('Bananen'); await waitText(A, 'Offen · Laden wählen');
+  await park('Bananen'); await A.getByText('Laden wählen', { exact: true }).waitFor({ timeout: 10000 });
   await A.click('.tab:has-text("Plan")');
   await A.waitForSelector('h1:text-is("Route")', { timeout: 5000 }).then(() => ok(true, 'during a trip the plan opens straight away'), () => ok(false, 'during a trip the plan opens straight away'));
   await browser.close();

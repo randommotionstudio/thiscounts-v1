@@ -5,7 +5,7 @@ import * as actions from '../data/actions';
 import { StorePickSheet } from '../sheets/StorePickSheet';
 
 /**
- * On the way to the plan (from the list or the profile): items without a store ("Offen · Laden wählen", e.g. after
+ * On the way to the plan (from the list or the profile): items without a store ("Laden wählen", e.g. after
  * "… führt … nicht") would silently stay behind on the trip. So first a store is chosen for each – the plan only
  * opens once every item has one; closing the choice stays where it was. Rare, so it may stop you. Not during a
  * trip: there "… führt … nicht" was just said on purpose.

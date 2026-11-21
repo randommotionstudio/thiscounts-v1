@@ -99,7 +99,7 @@ export function backToList(item: Item) {
   updateItem(item, { nextTrip: true, checked: false, checkedBy: null });
 }
 
-/** "… führt diesen Artikel nicht": back on the list without a store ("Offen · Laden wählen"), and the store isn't
+/** "… führt diesen Artikel nicht": back on the list without a store ("Laden wählen"), and the store isn't
  *  suggested for it on this list any more */
 export function notCarried(item: Item, storeId: string) {
   parkItem(item);
