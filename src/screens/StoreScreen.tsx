@@ -28,7 +28,8 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
  * `spontaneous` ("Woanders einkaufen"): the whole list at this store. Nothing is reassigned – what isn't
  * checked off simply stays with its usual store.
  */
-/** Checked items move to the bottom of their category this long after the last tap or scroll */
+/** Checked items move to the bottom of their category (and finished categories close) this long after the last
+ *  tap or scroll */
 const SINK_AFTER_MS = 800;
 
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
@@ -121,26 +122,40 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   const groups = storeGroups(curItems.filter(i => !maybeNotHere(i)), order);
   const notHereGroups = storeGroups(curItems.filter(i => maybeNotHere(i)), order);
 
-  // Checked items move to the bottom of their category – once the hands are still for a moment (no tap, no
-  // scrolling), so a row never moves under a finger about to tap, and travelling there instead of jumping
+  // Checked items move to the bottom of their category, and a category with everything checked closes to its title
+  // (a tap opens it again). Only once the hands are still for a moment (no tap, no scrolling), so nothing moves
+  // under a finger about to tap – and travelling there instead of jumping.
   const flip = useFlip<HTMLDivElement>();
-  const checkedKey = curItems.filter(i => i.checked).map(i => i.id).sort().join(',');
-  const [sunk, setSunk] = useState(checkedKey);
+  const groupKey = (area: string, g: { dept: string }) => area + ':' + g.dept;
+  const now = {
+    sunk: curItems.filter(i => i.checked).map(i => i.id).sort().join(','),
+    done: [...groups.map(g => ['here', g] as const), ...notHereGroups.map(g => ['nothere', g] as const)]
+      .filter(([, g]) => g.items.every(i => i.checked)).map(([a, g]) => groupKey(a, g)).sort().join(','),
+  };
+  const [settled, setSettled] = useState(now);
+  // Finished categories opened again by tapping their title
+  const [opened, setOpened] = useState<string[]>([]);
   const settle = useRef<number | undefined>(undefined);
-  const latest = useRef(checkedKey);
-  latest.current = checkedKey;
+  const latest = useRef(now);
+  latest.current = now;
   const settleLater = () => {
-    if (latest.current === sunk && settle.current === undefined) return;
+    const l = latest.current;
+    if (l.sunk === settled.sunk && l.done === settled.done && settle.current === undefined) return;
     clearTimeout(settle.current);
     settle.current = window.setTimeout(() => {
       settle.current = undefined;
+      const next = latest.current, was = settled.done.split(','), is = next.done.split(',');
       flip.capture();
-      setSunk(latest.current);
+      // A category that has just been finished closes, even if it was opened before
+      setOpened(o => o.filter(k => was.includes(k) && is.includes(k)));
+      setSettled(next);
     }, SINK_AFTER_MS);
   };
-  useEffect(settleLater, [checkedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(settleLater, [now.sunk, now.done]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => clearTimeout(settle.current), []);
-  const sunkIds = new Set(sunk ? sunk.split(',') : []);
+  const sunkIds = new Set(settled.sunk ? settled.sunk.split(',') : []);
+  const doneGroups = new Set(settled.done ? settled.done.split(',') : []);
+  const toggleGroup = (k: string) => { flip.capture(); setOpened(o => (o.includes(k) ? o.filter(x => x !== k) : [...o, k])); };
   const insteadOf = (i: Item) => { const t = spontaneous ? null : temp(i); return t ? data.stores.find(s => s.id === t.from)?.name || null : null; };
   const doneCount = curItems.filter(i => i.checked).length;
   const allDone = curItems.length > 0 && doneCount === curItems.length;
@@ -208,14 +223,37 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   const refineState = !orderInfo ? null : !orderInfo.isSet ? 'offer' : age != null && age >= CHECK_AFTER ? 'check' : 'cooldown';
   const goRefine = () => navigate(paths.refine(cur.id));
 
-  const renderGroup = (g: ReturnType<typeof storeGroups<Item>>[number], n: number) => (
-    <div key={g.dept}>
-      <div data-flip={'dept:' + g.dept} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ width: 22, height: 22, borderRadius: '50%', background: tint(g.dept), color: '#2A1F17', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n + 1}</span>
-        <CatIcon src={icon(g.dept)} size={16} opacity={0.7} label={g.label} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#6F6055', textTransform: 'uppercase', letterSpacing: '.05em' }}>{g.label}</span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+  const renderGroup = (g: ReturnType<typeof storeGroups<Item>>[number], n: number, area: 'here' | 'nothere') => {
+    const k = groupKey(area, g);
+    const done = doneGroups.has(k) && g.items.every(i => i.checked);
+    const closed = done && !opened.includes(k);
+    const title = (
+      <>
+        <span style={{ width: 22, height: 22, borderRadius: '50%', background: tint(g.dept), color: '#2A1F17', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n + 1}</span>
+        {done
+          ? <span role="img" aria-label="Erledigt" style={{ width: 16, height: 16, borderRadius: '50%', background: '#3E9B5F', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6 9 17l-5-5" /></svg>
+            </span>
+          : <CatIcon src={icon(g.dept)} size={16} opacity={0.7} label={g.label} />}
+        <span className="ellipsis" style={{ fontSize: 13, fontWeight: 700, color: '#6F6055', textTransform: 'uppercase', letterSpacing: '.05em', minWidth: 0 }}>{g.label}</span>
+      </>
+    );
+    return (
+    <div key={k}>
+      {done ? (
+        <button data-flip={'dept:' + k} onClick={() => toggleGroup(k)} aria-expanded={!closed}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: 0, margin: '0 0 8px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit' }}>
+          {title}
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>
+            {g.items.length} erledigt
+            <span style={{ width: 6, height: 6, borderRight: '2px solid #8A7A6D', borderBottom: '2px solid #8A7A6D', transform: closed ? 'translateY(-2px) rotate(45deg)' : 'translateY(1px) rotate(-135deg)', display: 'block' }} />
+          </span>
+        </button>
+      ) : (
+        <div data-flip={'dept:' + k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>{title}</div>
+      )}
+      <div data-flip-h={k} aria-hidden={closed || undefined} inert={closed || undefined}
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', padding: '0 0 2px', margin: '0 0 -2px', ...(closed ? { height: 0, padding: 0, margin: 0 } : null) }}>
         {[...g.items.filter(i => !sunkIds.has(i.id)), ...g.items.filter(i => sunkIds.has(i.id))].map(i => {
           const isNew = lateFromOther(i) && !i.checked;
           const passed = isNew && pi.passed(i.category);
@@ -235,13 +273,14 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
                   )}
                 </div>
               </div>
-              {!spontaneous && <button onClick={e => { e.stopPropagation(); navigate(paths.missing(cur.id, i.id)); }} style={{ height: 40, padding: '0 12px', border: 'none', borderRadius: 12, background: '#F3EADF', color: '#6F6055', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Nicht gefunden</button>}
+              {!spontaneous && <button onClick={e => { e.stopPropagation(); navigate(paths.missing(cur.id, i.id)); }} style={{ height: 40, padding: '0 14px', border: 'none', borderRadius: 999, background: '#F3EADF', color: '#6F6055', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Nicht gefunden</button>}
             </div>
           );
         })}
       </div>
     </div>
-  );
+    );
+  };
 
   if (waiting) return null;
 
@@ -271,14 +310,14 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           {spontaneous ? 'Die ganze Liste, sortiert nach dem Weg durch diese Filiale. Was hier nicht abgehakt wird, bleibt bei seinem Laden.' : 'Sortiert nach dem Weg durch diese Filiale'}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {groups.map((g, n) => renderGroup(g, n))}
+          {groups.map((g, n) => renderGroup(g, n, 'here'))}
         </div>
         {notHereGroups.length > 0 && (
           <div style={{ marginTop: 26 }}>
             <LabeledRule style={{ margin: '0 4px 4px' }}>Gibt's hier vermutlich nicht</LabeledRule>
             <div style={{ fontSize: 12, color: '#8A7A6D', textAlign: 'center', margin: '0 8px 14px' }}>Diese Abteilungen sind nicht auf eurem Weg durch {cur.name}.</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: 0.75 }}>
-              {notHereGroups.map((g, n) => renderGroup(g, groups.length + n))}
+              {notHereGroups.map((g, n) => renderGroup(g, groups.length + n, 'nothere'))}
             </div>
           </div>
         )}

@@ -99,6 +99,8 @@ const PILL = 'Offline · Änderungen werden gespeichert';
   ok(await A.locator('button:has-text("Heute auslassen")').count() === 0, 'store: ⋯ again still closes it');
 
   // ---- Unchecking everything doesn't end the trip ----
+  // (finished categories have closed by now – open them, as one would to untick something)
+  for (const t of await A.locator('button[aria-expanded="false"]').all()) { await t.click(); await A.waitForTimeout(400); }
   await row(A, 'Brot').click(); await A.waitForTimeout(300);
   await row(A, 'Bananen').click(); await A.waitForTimeout(1000);
   ok(!(await isChecked(A, 'Brot')) && !(await isChecked(A, 'Bananen')), 'all ticks undone');

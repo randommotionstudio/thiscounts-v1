@@ -14,8 +14,8 @@ export function OnceSheet({ itemName, suggestions, stores, currentStoreId, onClo
     <Sheet title="Einmaliger Stopp" sub={<>Nur für „{itemName}“ – danach verschwindet der Stopp wieder.</>} onClose={onClose}>
       <div style={{ display: 'flex', gap: 8, marginTop: 16, flexShrink: 0 }}>
         <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); }} placeholder="Wohin? z. B. Apotheke" enterKeyHint="done"
-          style={{ flex: 1, minWidth: 0, height: 48, border: 'none', borderRadius: 14, background: '#fff', boxShadow: '0 1px 0 #EADCCD', padding: '0 16px', fontSize: 16, color: '#2A1F17', outline: 'none', boxSizing: 'border-box' }} />
-        <button onClick={submit} disabled={!t} style={{ height: 48, padding: '0 18px', border: 'none', borderRadius: 14, background: t ? '#F3752E' : '#F3EADF', color: '#2A1F17', fontSize: 15, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Hinzufügen</button>
+          style={{ flex: 1, minWidth: 0, height: 48, border: 'none', borderRadius: 999, background: '#fff', boxShadow: '0 1px 0 #EADCCD', padding: '0 18px', fontSize: 16, color: '#2A1F17', outline: 'none', boxSizing: 'border-box' }} />
+        <button onClick={submit} disabled={!t} style={{ height: 48, padding: '0 18px', border: 'none', borderRadius: 999, background: t ? '#F3752E' : '#F3EADF', color: '#2A1F17', fontSize: 15, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Hinzufügen</button>
       </div>
       {suggestions.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10, flexShrink: 0 }}>

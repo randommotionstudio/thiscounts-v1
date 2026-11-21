@@ -148,8 +148,8 @@ export function StoreSheet({ initial, towns, defaultTown = null, homeGuess = '',
               </>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button onClick={() => setAdding(null)} style={{ flex: 1, height: 44, borderRadius: 14, border: '2px solid #D8CBBD', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={addBranch} disabled={!canAdd} style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', background: canAdd ? '#F3752E' : '#E3D5C6', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: canAdd ? 'pointer' : 'default' }}>Filiale hinzufügen</button>
+              <button onClick={() => setAdding(null)} style={{ flex: 1, height: 44, borderRadius: 999, border: '2px solid #D8CBBD', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={addBranch} disabled={!canAdd} style={{ flex: 1, height: 44, borderRadius: 999, border: 'none', background: canAdd ? '#F3752E' : '#E3D5C6', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: canAdd ? 'pointer' : 'default' }}>Filiale hinzufügen</button>
             </div>
           </div>
         )}

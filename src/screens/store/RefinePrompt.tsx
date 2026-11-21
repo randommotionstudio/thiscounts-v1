@@ -39,8 +39,8 @@ export function RefinePrompt({ state, age, onRefine, onConfirm }: {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={onConfirm} style={{ flex: 1, height: 44, borderRadius: 14, border: '2px solid #F3752E', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Passt noch</button>
-          <button onClick={onRefine} style={{ flex: 1, height: 44, borderRadius: 14, border: 'none', background: '#F3752E', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Anpassen</button>
+          <button onClick={onConfirm} style={{ flex: 1, height: 44, borderRadius: 999, border: '2px solid #F3752E', background: 'transparent', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Passt noch</button>
+          <button onClick={onRefine} style={{ flex: 1, height: 44, borderRadius: 999, border: 'none', background: '#F3752E', color: '#2A1F17', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Anpassen</button>
         </div>
       </div>
     );

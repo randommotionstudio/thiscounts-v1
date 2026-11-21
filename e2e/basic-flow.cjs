@@ -19,7 +19,7 @@ async function add(p, list) { for (const t of list) { await p.fill(IN, t); await
   await A.click('button:has-text("Einkauf starten bei Netto")');
   for (const n of ['Bananen', 'Hafermilch']) await A.getByText(n, { exact: true }).click();
   await A.locator('div:has(> div > div > div:text-is("Brot"))').locator('button:has-text("Nicht gefunden")').click();
-  await A.click('button:has-text("Zurück auf die Einkaufsliste setzen")');
+  await A.click('button:has-text("Zurück auf die Liste")');
   await A.waitForTimeout(200);
   await A.screenshot({ path: SHOTS + '30-A-after-park.png' });
   await A.click('button:has-text("Einkauf abschließen")');

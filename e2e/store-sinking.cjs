@@ -60,7 +60,7 @@ const order = P => P.evaluate(() => { const g = document.querySelector('.scroll 
     await waitText(A, name + ' woanders holen');
   };
   await missing('Kiwi');
-  await A.click('button:has-text("Zurück auf die Einkaufsliste setzen")');
+  await A.click('button:has-text("Zurück auf die Liste")');
   await waitText(A, 'Kiwi ist zurück auf der Einkaufsliste');
   ok(await row(A, 'Kiwi').waitFor({ state: 'detached', timeout: 3000 }).then(() => true, () => false), 'Kiwi is off this trip');
   // the toast is covered by a sheet that opens on top (leave popup)

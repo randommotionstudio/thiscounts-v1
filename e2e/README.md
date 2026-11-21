@@ -52,6 +52,7 @@ Screenshots and logs end up in `e2e/shots/` (not committed).
 | tab-switch-steady | After a tab switch the content lands in place in the first frame, no jump of a few pixels |
 | launch-screen | The launch screen shows from the first moment and fades only once avatars, items and suggestions are final; at most 1.5 s, logged out straight to the login, offline too |
 | store-sinking | Checked items travel to the bottom of their category after a short pause (never while tapping), back up when unchecked; "Nicht gefunden" → back on the list keeps the store, ⋯ "… führt … nicht" clears it; toasts sit under sheets |
+| store-collapse | A finished category closes to its title (green check, "N erledigt") after a pause, shrinking; a tap opens it, unchecking reopens it, finished again it closes |
 | invites | Inviting from the profile, registering from the link or with a typed code, a used/expired/made-up code is refused (also by the rules), joining from "kein Zugriff", names of N people |
 | shopping-lock | One shopper at a time: the plan is locked while someone else shops, lifts after finishing or 90 minutes without activity |
 | list-people | Who is on which list: choosing people, the database refusing items of lists you're not on, late joiners on all lists, per-list suggestions, a list of your own when you're on none |

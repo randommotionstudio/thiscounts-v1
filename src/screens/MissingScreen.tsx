@@ -103,7 +103,7 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
                   <div style={{ fontSize: 13, color: '#8A7A6D' }}>{reason(primary, !!later[0])}</div>
                 </div>
               </div>
-              <button onClick={() => move(primary)} style={{ marginTop: 14, width: '100%', height: 50, border: 'none', borderRadius: 14, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => move(primary)} style={{ marginTop: 14, width: '100%', height: 50, border: 'none', borderRadius: 999, background: '#F3752E', color: '#2A1F17', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                 {(q.found > 0 ? 'Rest (' + q.restText + ') zu ' : 'Zu ') + primary.name + ' verschieben'}
               </button>
             </div>
@@ -137,10 +137,11 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
           </div>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={park} className="ellipsis" style={{ flex: 1, minWidth: 0, height: 50, border: '2px solid #2A1F17', borderRadius: 16, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', padding: '0 12px' }}>Zurück auf die Einkaufsliste setzen</button>
+          {/* Same look as "Einkauf abschließen" in the store (before it turns orange) */}
+          <button onClick={park} className="ellipsis" style={{ flex: 1, minWidth: 0, height: 56, borderRadius: 999, border: '1px solid rgba(255,255,255,.55)', background: '#F3EADF', color: '#2A1F17', fontSize: 17, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 28px rgba(42,31,23,.18), inset 0 1px 0 rgba(255,255,255,.55)', padding: '0 16px' }}>Zurück auf die Liste</button>
           {/* A stand-in store not having it changes nothing: the item keeps its usual store either way */}
           {!temp(mi) && (
-            <button onClick={() => setMenu(m => !m)} title="Mehr" data-menu-keep style={{ width: 50, height: 50, border: '2px solid #2A1F17', borderRadius: 16, background: 'transparent', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+            <button onClick={() => setMenu(m => !m)} title="Mehr" data-menu-keep style={{ width: 56, height: 56, border: '1px solid rgba(255,255,255,.75)', borderRadius: 999, background: 'rgba(255,253,250,.42)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)', backdropFilter: 'blur(18px) saturate(1.5)', boxShadow: '0 10px 30px rgba(42,31,23,.16), inset 0 1px 0 rgba(255,255,255,.9)', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
