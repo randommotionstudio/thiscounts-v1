@@ -1,0 +1,16 @@
+{
+  "name": "Zit Zoom",
+  "short_name": "Zit Zoom",
+  "description": "Pop pimples. Outrun the face wash.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#f7c9a9",
+  "theme_color": "#f3a99b",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

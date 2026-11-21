@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd6c4"/>
+      <stop offset="1" stop-color="#f3a08e"/>
+    </linearGradient>
+    <radialGradient id="dome" cx="0.38" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ffb6a6"/>
+      <stop offset="0.55" stop-color="#ec7b6c"/>
+      <stop offset="1" stop-color="#c4524a"/>
+    </radialGradient>
+    <radialGradient id="cap" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.65" stop-color="#fff3d0"/>
+      <stop offset="1" stop-color="#efcf98"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M0 382 Q256 360 512 382 V512 H0Z" fill="#e79a7f"/>
+  <ellipse cx="256" cy="384" rx="190" ry="20" fill="#e05050" opacity="0.3"/>
+  <path d="M96 384 A160 150 0 0 1 416 384 Z" fill="url(#dome)"/>
+  <ellipse cx="256" cy="282" rx="72" ry="54" fill="url(#cap)"/>
+  <ellipse cx="206" cy="270" rx="18" ry="11" fill="#fff" opacity="0.9" transform="rotate(-25 206 270)"/>
+  <g fill="#fff6c9" stroke="#e2b45a" stroke-width="6">
+    <circle cx="140" cy="150" r="22"/>
+    <circle cx="372" cy="128" r="28"/>
+    <circle cx="256" cy="90" r="18"/>
+  </g>
+</svg>

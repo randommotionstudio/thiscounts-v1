@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Zit Zoom</title>
+  <meta name="description" content="A one-thumb endless runner: time your ground-pounds on pimples and stay ahead of the face wash.">
+  <meta name="theme-color" content="#f3a99b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zit Zoom">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div id="safe-probe" aria-hidden="true"></div>
+  <!-- iOS haptic tick: toggling a native switch plays it (see js/feel.js) -->
+  <label id="haptic-switch" class="haptic-switch" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+
+  <canvas id="game"></canvas>
+
+  <button id="pause-btn" class="pause-btn hidden" type="button" aria-label="Pause"><span></span><span></span></button>
+
+  <section id="screen-menu" class="screen" aria-label="Main menu">
+    <div class="card menu-card">
+      <h1 class="logo" aria-label="Zit Zoom"><span class="logo-zit">ZIT</span><span class="logo-zoom">ZOOM</span></h1>
+      <p class="tag">Pop pimples. Outrun the face wash.</p>
+      <button class="btn primary" type="button" data-action="endless">
+        <span>Endless</span><small id="best-endless">Best 0</small>
+      </button>
+      <button class="btn daily" type="button" data-action="daily">
+        <span>Daily Pop</span><small id="daily-label">Today</small>
+      </button>
+      <div class="row">
+        <button class="btn soft" type="button" data-action="skins"><span>Skins</span><small id="skins-count">1 / 8</small></button>
+        <button class="btn soft" type="button" data-action="help"><span>How to play</span></button>
+      </div>
+      <div class="meta">
+        <span class="goo-pill" id="goo-total" title="Goo">0</span>
+        <button class="toggle" type="button" id="sound-toggle" aria-pressed="true">Sound</button>
+        <button class="toggle" type="button" id="haptics-toggle" aria-pressed="true">Haptics</button>
+      </div>
+    </div>
+    <p class="foot">Browser proof of concept · fully on-device · no ads, no tracking</p>
+  </section>
+
+  <section id="screen-over" class="screen hidden" aria-label="Run over">
+    <div class="card over-card">
+      <h2 id="over-title" class="over-title">FOAMED!</h2>
+      <p id="over-sub" class="sub"></p>
+      <div class="score-big" id="over-score">0</div>
+      <div id="over-best" class="best"></div>
+      <dl class="stats" id="over-stats"></dl>
+      <ul id="over-unlocks" class="unlocks"></ul>
+      <button class="btn primary" type="button" data-action="retry"><span>Again</span><small class="kbd-hint">Space</small></button>
+      <div class="row">
+        <button class="btn soft" type="button" data-action="menu"><span>Menu</span></button>
+        <button class="btn soft" type="button" data-action="share" id="share-btn"><span>Share</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-paused" class="screen hidden" aria-label="Paused">
+    <div class="card">
+      <h2 class="over-title">Paused</h2>
+      <button class="btn primary" type="button" data-action="resume"><span>Resume</span></button>
+      <button class="btn soft" type="button" data-action="quit"><span>Quit run</span></button>
+    </div>
+  </section>
+
+  <section id="screen-skins" class="screen hidden" aria-label="Skins">
+    <div class="card wide-card">
+      <div class="card-head">
+        <h2>Skins</h2>
+        <span class="goo-pill" id="skins-goo">0</span>
+      </div>
+      <p class="sub" id="collection-line">Collection 1 / 8</p>
+      <div class="skin-grid" id="skin-grid"></div>
+      <p class="fine">Looks only, never power. Earn Goo by popping (more for Perfects and long streaks). In the iOS app, bundles can also be bought; everything stays earnable.</p>
+      <button class="btn soft" type="button" data-action="menu"><span>Back</span></button>
+    </div>
+  </section>
+
+  <section id="screen-help" class="screen hidden" aria-label="How to play">
+    <div class="card wide-card help-card">
+      <h2>How to play</h2>
+      <ol class="help">
+        <li><b>Tap</b> to jump. <b>Tap in the air</b> to slam down onto a pimple.</li>
+        <li>Ripe pimples <b>throb</b> with the beat. Land right on the throb for a <b class="perfect">PERFECT</b>: the biggest launch, a speed boost and +1 streak.</li>
+        <li>Where you land sets the angle: <b>front edge</b> = flat and fast, <b>back edge</b> = high (over hair, but slower).</li>
+        <li><b class="red">Red</b> bumps aren't ripe yet. <b class="yellow">Yellow</b> ones are overripe: mega launch, but goo splatters your screen.</li>
+        <li>Missing a pimple loses speed. Speed pushes the <b>foam wall</b> back. If it catches you, the run is over. So does any hazard.</li>
+        <li><b>Cysts</b> (on the back): land, <b>hold</b>, let go at full charge. The foam keeps coming while you charge.</li>
+        <li>Grab glowing bacteria for 10-second <b>mutations</b>: Hard Shell, Wings, Sticky Legs, Spore Cloud.</li>
+        <li><b>Daily Pop</b>: the same course for everyone today. Race the ghost of your best run.</li>
+      </ol>
+      <p class="fine">Keyboard: Space / ↑ / W to tap (hold for cysts), P or Esc to pause.</p>
+      <button class="btn primary" type="button" data-action="menu"><span>Got it</span></button>
+    </div>
+  </section>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+</body>
+</html>
