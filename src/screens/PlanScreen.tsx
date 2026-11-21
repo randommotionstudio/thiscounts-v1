@@ -13,6 +13,8 @@ import { ActionChip, Avatar, LabeledRule, TabBar, useHeaderHeight, useTapAway } 
 import { StopCard } from './plan/StopCard';
 import { WaitingSection } from './plan/WaitingSection';
 import { SkippedSection } from './plan/SkippedSection';
+import { UnassignedSection } from './plan/UnassignedSection';
+import { StorePickSheet } from '../sheets/StorePickSheet';
 import { Toast } from '../ui/Toast';
 
 const PALE = '#F3EADF', INK = '#2A1F17';
@@ -31,6 +33,8 @@ export function PlanScreen() {
   const [elsewhere, setElsewhere] = useState<'pick' | 'new' | null>(null);
   const [townPick, setTownPick] = useState(false);
   const [askStandIn, setAskStandIn] = useState<string | null>(null);
+  // "Laden wählen" for an item without a store
+  const [pickFor, setPickFor] = useState<Item | null>(null);
   const multiTown = app.towns.length >= 2;
   // V1.5: one person shops at a time – while someone else is on a trip with this list, nobody else starts one
   const locked = !!app.shopper && !app.currentStop;
@@ -167,7 +171,7 @@ export function PlanScreen() {
         </div>
       </div>
       <div className="scroll" style={{ padding: '0 20px calc(var(--safe-bottom) + 200px)', paddingTop: headH ? headH + 14 : 'calc(var(--safe-top) + 98px)' }}>
-        {parked.length > 0 && <div style={{ marginBottom: 12, fontSize: 13, color: '#8A7A6D' }}>{parked.map(i => i.name).join(', ') + (parked.length > 1 ? ' warten' : ' wartet') + ' auf der Liste ohne Laden.'}</div>}
+        {parked.length > 0 && <UnassignedSection items={parked} onPick={setPickFor} />}
         {!route.length && (
           <div style={{ textAlign: 'center', padding: '30px 12px' }}>
             <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 19 }}>{skipped.length ? 'Heute ist nichts mehr dran' : waiting.length ? 'In ' + app.townName + ' gibt’s nichts zu holen' : 'Noch keine Stopps'}</div>
@@ -246,6 +250,10 @@ export function PlanScreen() {
         )}
         <TabBar active="plan" go={navigate} />
       </div>
+      {pickFor && (
+        <StorePickSheet itemName={pickFor.name} stores={data.stores.filter(s => list.storeIds.includes(s.id))} onClose={() => setPickFor(null)}
+          onPick={id => { actions.setItemStore(pickFor, id); setPickFor(null); toast(pickFor.name + ' kommt mit zu ' + (data.stores.find(s => s.id === id)?.name || '')); }} />
+      )}
       {elsewhere === 'pick' && (
         <ElsewhereSheet stores={data.stores} towns={app.towns} currentTown={app.town} onPick={startSpontaneous} onNewStore={() => setElsewhere('new')} onClose={() => setElsewhere(null)} />
       )}

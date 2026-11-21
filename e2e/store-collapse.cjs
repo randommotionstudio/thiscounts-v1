@@ -55,8 +55,11 @@ const title = P => P.locator('button[aria-expanded]', { hasText: 'Obst' });
   await title(A).click(); await A.waitForTimeout(500);
 
   // ---- Unchecking: not finished any more ----
+  const head = await title(A).elementHandle();
   await row(A, 'Gurke').click(); await A.waitForTimeout(1500);
   ok(await title(A).count() === 0 && await area(A, 'Gurke') > 100, 'one unchecked → a normal category again');
+  // the title row stays the same element and "erledigt" with its arrow only fades (removing it left a dot on iPhones)
+  ok(await head.evaluate(e => e.isConnected && getComputedStyle(e.lastElementChild).opacity === '0'), 'the title row stays, "erledigt" and the arrow fade out');
   // finished again → closes again, although it had been opened by hand
   await row(A, 'Gurke').click(); await A.waitForTimeout(1500);
   ok(await area(A, 'Gurke') < 3 && await title(A).getAttribute('aria-expanded') === 'false', 'finished again → closes again');

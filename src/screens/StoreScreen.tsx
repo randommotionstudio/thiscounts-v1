@@ -240,18 +240,16 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     );
     return (
     <div key={k}>
-      {done ? (
-        <button data-flip={'dept:' + k} onClick={() => toggleGroup(k)} aria-expanded={!closed}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: 0, margin: '0 0 8px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit' }}>
-          {title}
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0 }}>
-            {g.items.length} erledigt
-            <span style={{ width: 6, height: 6, borderRight: '2px solid #8A7A6D', borderBottom: '2px solid #8A7A6D', transform: closed ? 'translateY(-2px) rotate(45deg)' : 'translateY(1px) rotate(-135deg)', display: 'block' }} />
-          </span>
-        </button>
-      ) : (
-        <div data-flip={'dept:' + k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>{title}</div>
-      )}
+      {/* Always the same element, "erledigt" and the arrow only fade: removing the small rotated arrow left a dot
+          behind on iPhones (Safari didn't repaint the spot) */}
+      <button data-flip={'dept:' + k} onClick={() => { if (done) toggleGroup(k); }} aria-expanded={done ? !closed : undefined} tabIndex={done ? 0 : -1}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: 0, margin: '0 0 8px', border: 'none', background: 'none', cursor: done ? 'pointer' : 'default', textAlign: 'left', color: 'inherit', font: 'inherit' }}>
+        {title}
+        <span aria-hidden={!done || undefined} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#8A7A6D', flexShrink: 0, opacity: done ? 1 : 0, transition: 'opacity .2s' }}>
+          {g.items.length} erledigt
+          <span style={{ width: 6, height: 6, borderRight: '2px solid #8A7A6D', borderBottom: '2px solid #8A7A6D', transform: closed ? 'translateY(-2px) rotate(45deg)' : 'translateY(1px) rotate(-135deg)', display: 'block' }} />
+        </span>
+      </button>
       <div data-flip-h={k} aria-hidden={closed || undefined} inert={closed || undefined}
         style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', padding: '0 0 2px', margin: '0 0 -2px', ...(closed ? { height: 0, padding: 0, margin: 0 } : null) }}>
         {[...g.items.filter(i => !sunkIds.has(i.id)), ...g.items.filter(i => sunkIds.has(i.id))].map(i => {

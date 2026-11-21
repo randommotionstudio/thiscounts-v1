@@ -323,9 +323,6 @@ export function ListScreen() {
             <div style={{ fontSize: 14, color: '#8A7A6D', marginTop: 4 }}>Artikel eintippen oder aus den üblichen Artikeln wählen.</div>
           </div>
         )}
-        {items.some(i => i.parked) && !searching && (
-          <p style={{ fontSize: 13, color: '#9C4412', margin: '12px 4px 0' }}>Schwarz markierte Artikel waren nicht verfügbar – für die nächste Runde einen Laden wählen.</p>
-        )}
       </div>
       <div className="bottom-fade" style={{ display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: 24 }}>
         <Toast conn />
