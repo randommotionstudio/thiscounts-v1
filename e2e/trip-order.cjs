@@ -101,8 +101,11 @@ const names = async () => ((await (await fetch(REST + '/lists/wocheneinkauf/item
   await A.click('button:has-text("Weiter zu Edeka")');
   await check(A, 'Joghurt');
   await A.click('button:has-text("Einkauf abschließen")');
-  await waitText(A, 'Einkauf abgeschlossen'); await A.waitForTimeout(600);
-  ok(JSON.stringify(await names()) === JSON.stringify(['Crispy Choccies']), 'Crispy Choccies stays on the list');
+  await waitText(A, 'Einkauf abgeschlossen');
+  // (the finished items reach the server a moment later)
+  let left = await names();
+  for (let i = 0; i < 25 && JSON.stringify(left) !== JSON.stringify(['Crispy Choccies']); i++) { await A.waitForTimeout(200); left = await names(); }
+  ok(JSON.stringify(left) === JSON.stringify(['Crispy Choccies']), 'Crispy Choccies stays on the list: ' + left.join(', '));
   await A.click('.tab:has-text("Plan")'); await A.waitForSelector('h1:text-is("Route")');
   ok((await cards(A)).join(',') === 'REWE' && await A.getByText('Heute nicht').count() === 0, 'next trip: REWE is back on the route');
 

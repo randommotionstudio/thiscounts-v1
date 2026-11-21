@@ -10,6 +10,7 @@ import {
 import type { Item, Stop } from '../lib/types';
 import { Avatar, CatIcon, LabeledRule, LogoTile, RoundCheck, useHeaderHeight, useTapAway } from '../ui/kit';
 import { LeaveSheet } from '../sheets/LeaveSheet';
+import { useFlip } from '../ui/flip';
 import { RefinePrompt } from './store/RefinePrompt';
 import { Toast } from '../ui/Toast';
 
@@ -27,6 +28,9 @@ const forSpontaneous = (i: Item) => !i.pendingDecision && !i.nextTrip;
  * `spontaneous` ("Woanders einkaufen"): the whole list at this store. Nothing is reassigned – what isn't
  * checked off simply stays with its usual store.
  */
+/** Checked items move to the bottom of their category this long after the last tap or scroll */
+const SINK_AFTER_MS = 800;
+
 export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; spontaneous?: boolean }) {
   const app = useApp();
   const { list, navigate, toast, data, user, personOf } = app;
@@ -116,6 +120,27 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     : !!temp(i)?.maybeNot;
   const groups = storeGroups(curItems.filter(i => !maybeNotHere(i)), order);
   const notHereGroups = storeGroups(curItems.filter(i => maybeNotHere(i)), order);
+
+  // Checked items move to the bottom of their category – once the hands are still for a moment (no tap, no
+  // scrolling), so a row never moves under a finger about to tap, and travelling there instead of jumping
+  const flip = useFlip<HTMLDivElement>();
+  const checkedKey = curItems.filter(i => i.checked).map(i => i.id).sort().join(',');
+  const [sunk, setSunk] = useState(checkedKey);
+  const settle = useRef<number | undefined>(undefined);
+  const latest = useRef(checkedKey);
+  latest.current = checkedKey;
+  const settleLater = () => {
+    if (latest.current === sunk && settle.current === undefined) return;
+    clearTimeout(settle.current);
+    settle.current = window.setTimeout(() => {
+      settle.current = undefined;
+      flip.capture();
+      setSunk(latest.current);
+    }, SINK_AFTER_MS);
+  };
+  useEffect(settleLater, [checkedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimeout(settle.current), []);
+  const sunkIds = new Set(sunk ? sunk.split(',') : []);
   const insteadOf = (i: Item) => { const t = spontaneous ? null : temp(i); return t ? data.stores.find(s => s.id === t.from)?.name || null : null; };
   const doneCount = curItems.filter(i => i.checked).length;
   const allDone = curItems.length > 0 && doneCount === curItems.length;
@@ -185,17 +210,17 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
 
   const renderGroup = (g: ReturnType<typeof storeGroups<Item>>[number], n: number) => (
     <div key={g.dept}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <div data-flip={'dept:' + g.dept} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ width: 22, height: 22, borderRadius: '50%', background: tint(g.dept), color: '#2A1F17', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n + 1}</span>
         <CatIcon src={icon(g.dept)} size={16} opacity={0.7} label={g.label} />
         <span style={{ fontSize: 13, fontWeight: 700, color: '#6F6055', textTransform: 'uppercase', letterSpacing: '.05em' }}>{g.label}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {g.items.map(i => {
+        {[...g.items.filter(i => !sunkIds.has(i.id)), ...g.items.filter(i => sunkIds.has(i.id))].map(i => {
           const isNew = lateFromOther(i) && !i.checked;
           const passed = isNew && pi.passed(i.category);
           return (
-            <div key={i.id} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', border: `2px solid ${isNew ? '#F3752E' : '#fff'}`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 8px 8px 12px', minHeight: 60 }}>
+            <div key={i.id} data-flip={i.id} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 0 #EADCCD', border: `2px solid ${isNew ? '#F3752E' : '#fff'}`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 8px 8px 12px', minHeight: 60 }}>
               <div onClick={() => actions.setChecked(i, !i.checked)} role="checkbox" aria-checked={i.checked} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minWidth: 0, alignSelf: 'stretch' }}>
                 <RoundCheck on={i.checked} size={28} color="#3E9B5F" />
                 <div style={{ minWidth: 0 }}>
@@ -221,7 +246,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   if (waiting) return null;
 
   return (
-    <div className="screen">
+    <div className="screen" onPointerDownCapture={settleLater}>
       <div ref={headRef} style={{ padding: 'calc(var(--safe-top) + 20px) 20px 12px', background: '#2A1F17', color: '#FBF5EE' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button className="back-link" style={{ color: '#F8C5A0' }} onClick={() => navigate(paths.plan)}>‹ Zum Plan</button>
@@ -241,7 +266,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
           <span style={{ fontSize: 13, fontWeight: 600 }}>{doneCount} von {curItems.length}</span>
         </div>
       </div>
-      <div className="scroll" style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
+      <div className="scroll" ref={flip.root} onScroll={settleLater} style={{ padding: '16px 20px calc(var(--safe-bottom) + 140px)' }}>
         <div style={{ fontSize: 13, color: '#8A7A6D', marginBottom: 12, textWrap: 'pretty' }}>
           {spontaneous ? 'Die ganze Liste, sortiert nach dem Weg durch diese Filiale. Was hier nicht abgehakt wird, bleibt bei seinem Laden.' : 'Sortiert nach dem Weg durch diese Filiale'}
         </div>

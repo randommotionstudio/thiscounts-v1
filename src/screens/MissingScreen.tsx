@@ -5,7 +5,7 @@ import { useTrip } from '../app/useTrip';
 import * as actions from '../data/actions';
 import { missingQty, movePatch, storeToStop } from '../lib/logic';
 import type { Stop } from '../lib/types';
-import { LogoTile } from '../ui/kit';
+import { LogoTile, useTapAway } from '../ui/kit';
 import { useCurrentStop } from './StoreScreen';
 
 /** Artikel fehlt: move the item to another stop (optionally splitting it), or park it on the list. */
@@ -15,6 +15,8 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
   const { route, townStores, temp } = useTrip();
   const cur = useCurrentStop(stopId);
   const [foundRaw, setFound] = useState(0);
+  const [menu, setMenu] = useState(false);
+  useTapAway(menu, () => setMenu(false));
   const done = useRef(false); // ignore a double tap while we leave the screen
   const mi = items.find(i => i.id === itemId) || null;
   const storePath = paths.store(cur.id);
@@ -49,13 +51,21 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
     app.back(storePath);
     toast(split ? 'Rest von ' + mi.name + ' (' + q.restText + ') wandert zu ' + target.name : mi.name + ' wandert zu ' + target.name + ' · Plan aktualisiert');
   };
+  // Back on the list with its store – usually it's just sold out today. A stand-in item keeps its usual store.
   const park = () => {
     if (done.current) return;
     done.current = true;
-    // A stand-in item keeps its usual store and simply waits for the next trip
-    if (temp(mi)) actions.keepOpenItemsOnList([mi]); else actions.parkItem(mi);
+    actions.backToList(mi);
     app.back(storePath);
     toast(mi.name + ' ist zurück auf der Einkaufsliste');
+  };
+  // ⋯ "Netto führt Schinken nicht": back on the list without a store, to pick another one there
+  const notCarried = () => {
+    if (done.current) return;
+    done.current = true;
+    actions.notCarried(mi, cur.id);
+    app.back(storePath);
+    toast(mi.name + ' ist zurück auf der Einkaufsliste · Laden wählen');
   };
 
   const reason = (s: Stop, onRoute: boolean) => (onRoute ? 'Stopp ' + (route.findIndex(x => x.id === s.id) + 1) + ' · liegt ohnehin auf der Route' : s.branch || 'Nicht auf der heutigen Route');
@@ -118,7 +128,25 @@ export function MissingScreen({ stopId, itemId }: { stopId: string; itemId: stri
         )}
       </div>
       <div style={{ padding: '12px 20px calc(var(--safe-bottom) + 20px)' }}>
-        <button onClick={park} style={{ width: '100%', height: 50, border: '2px solid #2A1F17', borderRadius: 16, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Zurück auf die Einkaufsliste setzen</button>
+        {menu && (
+          <div data-menu-keep role="menu" style={{ marginBottom: 10, background: 'rgba(255,253,250,.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)', backdropFilter: 'blur(22px) saturate(1.6)', border: '1px solid rgba(255,255,255,.75)', borderRadius: 22, boxShadow: '0 12px 32px rgba(42,31,23,.16)', overflow: 'hidden', animation: 'toastIn .2s ease' }}>
+            <button role="menuitem" onClick={notCarried} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', color: '#2A1F17' }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{cur.name} führt {mi.name} nicht</div>
+              <div style={{ fontSize: 13, color: '#8A7A6D' }}>Zurück auf die Liste, dort einen anderen Laden wählen.</div>
+            </button>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={park} className="ellipsis" style={{ flex: 1, minWidth: 0, height: 50, border: '2px solid #2A1F17', borderRadius: 16, background: 'transparent', color: '#2A1F17', fontSize: 15, fontWeight: 600, cursor: 'pointer', padding: '0 12px' }}>Zurück auf die Einkaufsliste setzen</button>
+          {/* A stand-in store not having it changes nothing: the item keeps its usual store either way */}
+          {!temp(mi) && (
+            <button onClick={() => setMenu(m => !m)} title="Mehr" data-menu-keep style={{ width: 50, height: 50, border: '2px solid #2A1F17', borderRadius: 16, background: 'transparent', color: '#2A1F17', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'block' }} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

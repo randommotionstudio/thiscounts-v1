@@ -32,7 +32,7 @@ async function add(p, list) { for (const t of list) { await p.fill(IN, t); await
   await B.waitForTimeout(500);
   await B.screenshot({ path: SHOTS + '32-B-after-finish.png' });
   const brotB = (await B.locator('div:has(> div > div > span:text-is("Brot"))').first().textContent()).replace(/\s+/g, ' ');
-  ok(/Offen · Laden wählen/.test(brotB), 'B: Brot is parked: ' + brotB);
+  ok(/Netto/.test(brotB) && !/Laden wählen/.test(brotB), 'B: Brot is back on the list and keeps its store: ' + brotB);
   // usual chips from history: focus input
   await A.click(IN);
   await A.waitForTimeout(300);

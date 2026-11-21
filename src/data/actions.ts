@@ -94,6 +94,18 @@ export function parkItem(item: Item) {
   updateItem(item, { parked: true, storeId: null, once: false, onceStopName: null, checked: false, checkedBy: null });
 }
 
+/** "Nicht gefunden" → back on the list: keeps its store (usually just sold out today), off this trip */
+export function backToList(item: Item) {
+  updateItem(item, { nextTrip: true, checked: false, checkedBy: null });
+}
+
+/** "… führt diesen Artikel nicht": back on the list without a store ("Offen · Laden wählen"), and the store isn't
+ *  suggested for it on this list any more */
+export function notCarried(item: Item, storeId: string) {
+  parkItem(item);
+  if (item.storeId === storeId && !item.once) report(setDoc(memoryRef(item.name), { name: normName(item.name), stores: { [item.listId]: null } }, { merge: true }));
+}
+
 /** "Alles hier einkaufen · nur ein Stopp" */
 export function allHere(items: Item[], list: List, storeId: string) {
   const once = !list.storeIds.includes(storeId);
