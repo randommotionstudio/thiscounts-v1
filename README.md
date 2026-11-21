@@ -2,6 +2,8 @@
 
 **Live:** https://thiscounts.netlify.app
 
+> Also in this repo, unrelated to thisCounts: [`zit-zoom/`](zit-zoom/), a browser proof of concept of the Zit Zoom game (separate Netlify site, own README).
+
 A shared shopping list for two people that sorts items **by store** and, inside a store, **by the path through the store**. It's an installable web app (PWA) that works fully offline and syncs live between both phones.
 
 - **Setting it up (accounts, hosting, testing):** [`docs/SETUP.md`](docs/SETUP.md)
