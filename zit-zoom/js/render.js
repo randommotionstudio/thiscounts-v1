@@ -1,7 +1,7 @@
 // Canvas renderer. Everything is drawn procedurally; no image assets.
 
 import { BIOMES, BIOME_LEN, biomeAt } from './course.js';
-import { ripeness, pimpleHeight, headHalf, FOAM_MAX_GAP, MUTATION_INFO, MUTATION_TIME, TWEEZER_LEN } from './game.js';
+import { ripeness, pimpleHeight, headHalf, FOAM_MAX_GAP, MUTATION_INFO, MUTATION_TIME, CRAWLER_R } from './game.js';
 import { drawDex, skinById } from './skins.js';
 import { hash32 } from './rng.js';
 
@@ -606,7 +606,7 @@ export class Renderer {
           }
           const tip = z.tip ?? 360;
           const tipY = by - tip;
-          const topY = tipY - TWEEZER_LEN;
+          const topY = tipY - 150; // drawn long; only the tips (bottom 70) pinch
           const open = z.closed ? 2 : 13;
           const metal = ctx.createLinearGradient(sx - 16, 0, sx + 16, 0);
           metal.addColorStop(0, '#8d97a6');
@@ -631,6 +631,100 @@ export class Renderer {
           ell(ctx, sx, topY + 4, 6, 6);
           ctx.fill();
           ctx.stroke();
+          if (z.gummed > game.t) {
+            // gummed shut with goo
+            ctx.fillStyle = '#f6d84e';
+            ctx.strokeStyle = '#c99a1e';
+            ctx.lineWidth = 1.2;
+            ell(ctx, sx, tipY - 12, 12, 16);
+            ctx.fill();
+            ctx.stroke();
+            ell(ctx, sx + 3, tipY + 4, 4, 7);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,252,220,0.9)';
+            ell(ctx, sx - 4, tipY - 18, 3, 4);
+            ctx.fill();
+          }
+          break;
+        }
+        case 'crawler': {
+          if (z.cx === undefined) break;
+          const bx = this.X(z.cx);
+          if (bx < -40 || bx > this.viewW + 40) break;
+          const by = this.Y(z.cy);
+          const R = CRAWLER_R;
+          if (!z.alive) {
+            const k = z.deadT || 0;
+            if (k > 1.5) break;
+            ctx.globalAlpha = 1 - k / 1.5;
+            ctx.fillStyle = '#8fd16a';
+            ell(ctx, bx, by - 2, R * 1.7, 3.5);
+            ctx.fill();
+            ctx.fillStyle = '#5e9e43';
+            ell(ctx, bx + 5, by - 3, 3, 1.5);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            break;
+          }
+          const t = game.t * 9 + z.x;
+          const chew = z.eating ? Math.abs(Math.sin(game.t * 14)) : 0;
+          // cilia
+          ctx.strokeStyle = '#4f8a35';
+          ctx.lineWidth = 1.4;
+          ctx.lineCap = 'round';
+          for (let i = 0; i < 7; i++) {
+            const a = Math.PI * (0.15 + i * 0.12);
+            const wig = Math.sin(t + i) * 2.5;
+            ctx.beginPath();
+            ctx.moveTo(bx + Math.cos(a) * R * 0.9, by - R - Math.sin(-a) * R * 0.9 + R * 0.95);
+            ctx.lineTo(bx + Math.cos(a) * (R + 5) + wig, by - R + R * 0.95 + Math.sin(a) * 6);
+            ctx.stroke();
+          }
+          for (let i = 0; i < 9; i++) {
+            const a = -Math.PI * (0.1 + i * 0.1);
+            const wig = Math.sin(t * 0.7 + i * 1.3) * 2;
+            ctx.beginPath();
+            ctx.moveTo(bx + Math.cos(a) * R, by - R + Math.sin(a) * R);
+            ctx.lineTo(bx + Math.cos(a) * (R + 4 + wig), by - R + Math.sin(a) * (R + 4 + wig));
+            ctx.stroke();
+          }
+          // body
+          const g = ctx.createRadialGradient(bx - 4, by - R - 5, 1, bx, by - R, R * 1.2);
+          g.addColorStop(0, '#c9f59f');
+          g.addColorStop(0.6, '#8fd16a');
+          g.addColorStop(1, '#5e9e43');
+          ctx.fillStyle = g;
+          ctx.strokeStyle = '#3f7a2a';
+          ctx.lineWidth = 1.6;
+          ell(ctx, bx, by - R, R * (1 + chew * 0.08), R * (1 - chew * 0.1));
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(63,122,42,0.45)';
+          ell(ctx, bx + 5, by - R + 5, 2.6, 2);
+          ctx.fill();
+          ell(ctx, bx + 7, by - R - 4, 1.8, 1.5);
+          ctx.fill();
+          // angry eyes, looking at Dex (left)
+          for (const ex of [-6, 0]) {
+            ctx.fillStyle = '#ffffff';
+            ell(ctx, bx + ex, by - R - 3, 3.4, 3.8);
+            ctx.fill();
+            ctx.fillStyle = '#1d2a12';
+            ell(ctx, bx + ex - 1.2, by - R - 2.5, 1.6, 1.9);
+            ctx.fill();
+          }
+          ctx.strokeStyle = '#1d2a12';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(bx - 9, by - R - 8);
+          ctx.lineTo(bx - 3.5, by - R - 6);
+          ctx.moveTo(bx + 3, by - R - 6.5);
+          ctx.lineTo(bx - 1.5, by - R - 7.5);
+          ctx.stroke();
+          // mouth: chomping while it eats a pimple
+          ctx.fillStyle = '#3a1d1d';
+          ell(ctx, bx - 4, by - R + 4, 3.5, 0.8 + chew * 2.6);
+          ctx.fill();
           break;
         }
         case 'mosquito': {
@@ -859,6 +953,27 @@ export class Renderer {
   }
 
   drawParticles(ctx, game) {
+    for (const s of game.shots) {
+      const x = this.X(s.x);
+      const y = this.Y(s.y);
+      const a = Math.atan2(-s.vy, s.vx);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(a);
+      ctx.fillStyle = 'rgba(255,236,150,0.45)';
+      ell(ctx, -s.r * 1.6, 0, s.r * 2.2, s.r * 0.7);
+      ctx.fill();
+      ctx.fillStyle = '#ffe680';
+      ctx.strokeStyle = '#d8a72a';
+      ctx.lineWidth = 1.2;
+      ell(ctx, 0, 0, s.r * 1.25, s.r);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#fffbe0';
+      ell(ctx, s.r * 0.3, -s.r * 0.35, s.r * 0.35, s.r * 0.25);
+      ctx.fill();
+      ctx.restore();
+    }
     for (const p of game.particles) {
       ctx.globalAlpha = p.puff ? clamp(p.life * 2, 0, 1) : 1;
       ctx.fillStyle = p.color;
@@ -950,7 +1065,9 @@ export class Renderer {
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(90,30,30,0.6)';
       // drift along with the camera a little so texts stay readable
-      const x = this.X(tx.x + (game.dex.x - tx.dx0) * 0.65);
+      // keep the whole word on screen
+      const half = ctx.measureText(tx.text).width / 2 + 4;
+      const x = clamp(this.X(tx.x + (game.dex.x - tx.dx0) * 0.65), half, this.viewW - half);
       const y = this.Y(tx.y);
       ctx.strokeText(tx.text, x, y);
       ctx.fillStyle = tx.color;

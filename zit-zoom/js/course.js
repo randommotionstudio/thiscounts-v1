@@ -39,8 +39,8 @@ export const BIOMES = [
 
 export const BIOME_LEN = 7200;
 export const LOOP_LEN = BIOME_LEN * BIOMES.length;
-/** The first stretch is a gentle tutorial: ripe whiteheads only, no hazards. */
-export const TUTORIAL_END = 2400;
+/** Roughly where the hand-built opening ends (mutations only appear after it). */
+export const TUTORIAL_END = 4800;
 export const MUTATIONS = ['shell', 'wings', 'sticky', 'spores'];
 
 export const PIMPLE_DIMS = {
@@ -69,13 +69,27 @@ const TYPE_POOLS = [
   /* armpit   */ [['white', 52], ['black', 14], ['cluster', 18], ['cyst', 16]],
 ];
 
-// Per-field hazard chances: [tweezers over one pimple, cream racing you to one, volcano field]
+// Per-field hazard chances:
+// [tweezers over one pimple, cream racing you to one, volcano field, bacteria crawling in]
 const FIELD_HAZARDS = [
-  [0.18, 0, 0],
-  [0.22, 0, 0],
-  [0.2, 0, 0],
-  [0.15, 0.35, 0.08],
-  [0.25, 0.1, 0],
+  [0.18, 0, 0, 0.3],
+  [0.22, 0, 0, 0.3],
+  [0.2, 0, 0, 0.35],
+  [0.15, 0.35, 0.08, 0.3],
+  [0.25, 0.1, 0, 0.4],
+];
+
+// The opening is hand-built: one new idea per field, the first enemy after a
+// few seconds. w = ripe whitehead, r = red, o = overripe (yellow).
+// tweezers / crawler: index of the pimple they go with.
+const OPENING = [
+  { gap: 110, gapKind: 'none', field: 'www' },
+  { gap: 120, gapKind: 'none', field: 'wwrw' },
+  { gap: 140, gapKind: 'none', field: 'wwww', crawler: 1 },
+  { gap: 140, gapKind: 'mosquito', field: 'wwo' },
+  { gap: 140, gapKind: 'fringe', field: 'wwww', crawler: 2 },
+  { gap: 140, gapKind: 'spikes', field: 'wwww', tweezers: 2 },
+  { gap: 140, gapKind: 'none', field: 'wwrwo', crawler: 3 },
 ];
 
 export function biomeAt(x) {
@@ -155,14 +169,14 @@ export class Course {
   emitField() {
     const r = this.rng;
     const x0 = this.genX;
-    const tut = x0 < TUTORIAL_END;
     const { index: b } = biomeAt(x0);
     const D = Math.min(2.5, x0 / LOOP_LEN);
+    const spec = OPENING[this.fields] || null;
     this.fields++;
 
     // ── the gap before the field ──
-    let gap = tut ? 110 + r() * 50 : 150 + r() * 90 + D * 40;
-    const gapKind = tut ? 'none' : this.pick(GAP_POOLS[b]);
+    let gap = spec ? spec.gap + r() * 30 : 150 + r() * 90 + D * 40;
+    const gapKind = spec ? spec.gapKind : this.pick(GAP_POOLS[b]);
     // The pimple right before a gap hazard is always a usable launch pad;
     // before hair it is always yellow (overripe): the big launch you need.
     const pad = this.pimples[this.pimples.length - 1];
@@ -188,7 +202,7 @@ export class Course {
       }
       case 'fringe':
       case 'forest': {
-        // Hair to clear: launch high (back edge or a yellow pimple) from the field before.
+        // Hair to clear: launch high from the yellow pad before it.
         const big = gapKind === 'forest';
         const w = big ? 60 + r() * 50 : 30 + r() * 35;
         gap = Math.max(gap, w + 220);
@@ -204,7 +218,7 @@ export class Course {
       }
       case 'mosquito': {
         // A wider gap with a mosquito hovering low over it, below your arc:
-        // come down on it (slam) to bounce across.
+        // come down on it to bounce across.
         gap += 90;
         const mx = x0 + gap * 0.55;
         this.hazards.push({
@@ -216,8 +230,8 @@ export class Course {
     }
 
     // ── special one-off fields ──
-    const [twChance, creamChance, volcanoChance] = FIELD_HAZARDS[b];
-    if (!tut && r() < volcanoChance) {
+    const [twChance, creamChance, volcanoChance, crawlerChance] = FIELD_HAZARDS[b];
+    if (!spec && r() < volcanoChance) {
       this.addPimple('volcano', x0 + gap);
       this.genX += 600; // airborne bonus section
       this.maybeMutation(x0);
@@ -225,39 +239,56 @@ export class Course {
     }
 
     // ── the field ──
-    const n = tut ? 3 + Math.floor(r() * 2) : 3 + Math.floor(r() * 4);
-    const redP = tut ? 0 : Math.min(0.34, 0.1 + 0.1 * D + b * 0.02);
-    const overP = tut ? 0 : 0.13;
     const field = [];
     let left = x0 + gap;
-    for (let i = 0; i < n; i++) {
-      const type = tut ? 'white' : this.pick(TYPE_POOLS[b]);
-      const roll = r();
-      if (type === 'cluster') {
-        // Three minis in a tight row: chain small hops for a bonus.
-        const group = this.nextGroup++;
-        for (let k = 0; k < 3; k++) {
-          const m = this.addPimple('mini', left, roll < redP && k === 1 ? 'red' : 'ripe', group);
-          field.push(m);
-          left = m.x + m.w / 2 + 34 + r() * 14;
-        }
-      } else {
-        let ripe = 'ripe';
-        if (type === 'white') ripe = roll < redP ? 'red' : roll > 1 - overP ? 'over' : 'ripe';
-        const p = this.addPimple(type, left, ripe);
+    if (spec) {
+      for (const ch of spec.field) {
+        const p = this.addPimple('white', left, ch === 'r' ? 'red' : ch === 'o' ? 'over' : 'ripe');
         field.push(p);
-        left = p.x + p.w / 2 + 40 + r() * 55 - Math.min(D, 2) * 6;
+        left = p.x + p.w / 2 + 50 + r() * 40;
+      }
+    } else {
+      const n = 3 + Math.floor(r() * 4);
+      const redP = Math.min(0.34, 0.1 + 0.1 * D + b * 0.02);
+      const overP = 0.13;
+      for (let i = 0; i < n; i++) {
+        const type = this.pick(TYPE_POOLS[b]);
+        const roll = r();
+        if (type === 'cluster') {
+          // Three minis in a tight row: chain small hops for a bonus.
+          const group = this.nextGroup++;
+          for (let k = 0; k < 3; k++) {
+            const m = this.addPimple('mini', left, roll < redP && k === 1 ? 'red' : 'ripe', group);
+            field.push(m);
+            left = m.x + m.w / 2 + 34 + r() * 14;
+          }
+        } else {
+          let ripe = 'ripe';
+          if (type === 'white') ripe = roll < redP ? 'red' : roll > 1 - overP ? 'over' : 'ripe';
+          const p = this.addPimple(type, left, ripe);
+          field.push(p);
+          left = p.x + p.w / 2 + 40 + r() * 55 - Math.min(D, 2) * 6;
+        }
       }
     }
 
     // ── hazards that make you choose a different pimple ──
-    if (!tut && field.length >= 3 && r() < twChance) {
-      const p = field[1 + Math.floor(r() * (field.length - 1))];
+    const twAt = spec ? (spec.tweezers ?? -1)
+      : field.length >= 3 && r() < twChance ? 1 + Math.floor(r() * (field.length - 1)) : -1;
+    if (twAt >= 0) {
+      const p = field[twAt];
       this.hazards.push({ type: 'tweezers', x: p.x, p, base: this.groundY(p.x), period: 1.5 + r() * 0.5, phase: r(), t: 0 });
     }
-    if (!tut && r() < creamChance) {
+    if (!spec && r() < creamChance) {
       const p = field[field.length - 1];
       if (p.ripe !== 'red') this.hazards.push({ type: 'cream', x: p.x, p, trigger: 520 + r() * 60, t: -1, fall: 1.1, done: false });
+    }
+    // Bacteria crawl in from just beyond a pimple, towards Dex, and eat
+    // the first pimple they reach unless you land on them first.
+    const crAt = spec ? (spec.crawler ?? -1) : r() < crawlerChance ? Math.floor(r() * field.length) : -1;
+    if (crAt >= 0) {
+      const p = field[crAt];
+      this.hazards.push({ type: 'crawler', x: p.x + p.w / 2 + 24 + r() * 26, speed: 30 + r() * 24 + D * 8, t: -1, alive: true });
     }
     this.maybeMutation(x0);
   }

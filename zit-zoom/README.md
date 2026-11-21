@@ -38,6 +38,9 @@ Create a **new** Netlify site from this repository with:
 | Streak | ×2 at 5, ×3 at 10, ×4 at 20; Great keeps the streak, OK and Miss reset it |
 | Foam wall | Speeds up over the run; your speed pushes it back; gauge in the HUD |
 | Pimple types | Whitehead, Blackhead, Cluster (+ bonus for all 3), Cyst (hold, release at full charge, over-hold penalty), Zit Volcano (airborne Goo section) |
+| Opening | Hand-built first ~14 s: one new idea per group of pimples (skip a red one, first bacterium at ~5 s, mosquito bounce, hair + yellow pad, spike gap, tweezers). A short hint explains each new thing the first time it scrolls into view |
+| Bacteria | Crawl over the skin towards you and eat the first pimple they reach. Land on them (squash = bounce, counts like a Perfect); walk into them and the run ends |
+| Goo spray | Perfects and yellow pops spray goo a short way ahead: it knocks out bacteria and mosquitoes, gums tweezers shut for 3.5 s and blocks falling cream |
 | Hazards | Tweezers snapping on a loop over one pimple (shadow tell; only dangerous at skin level), fringe and hair forest, ingrown-hair spikes in gaps, mosquitoes (land on them to bounce; touching from below knocks you down), acne cream racing you to a pimple, sweat (misses cost double) |
 | Mutations | Hard Shell, Wings, Sticky Legs, Spore Cloud, each 10 s with its catch. Unlocked by reaching biomes (Skin Charts aren't built yet) |
 | World | Forehead → Nose → Chin → Back → Armpit, then loops with a new skin tone |
@@ -58,6 +61,10 @@ Feedback: timing was too hard, chaining pops felt impossible, and it played like
 | One pimple at a time, random spacing | Fields of 3–6 pimples under every arc | Chaining is always possible; picking a target is the decision |
 | Ripeness changed over time | Fixed, readable colours | Lets you plan a route |
 | Hazards were mostly obstacles | Hazards change which pimple you pick (tweezers, cream, spikes in gaps, yellow pad before hair, mosquito stepping stones) | Gives the pop mechanic decisions |
+
+### Playtest 2
+
+Feedback: much better, but the game still didn't do enough with the mechanic, made worse by an empty first 15 seconds. Added a hand-built opening, bacteria (moving targets that make you slam to save a pimple), and goo spray, so a Perfect also clears your path. Stomps on mosquitoes and bacteria now count towards the streak.
 
 This departs from the GDD's "pulse" timing. Bot runs with human-like tap error (σ = 30 ms) now last a median of ~40 s, land ~55% Perfects and reach streaks of 10+. The previous design couldn't chain past 1.
 

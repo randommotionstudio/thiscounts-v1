@@ -36,6 +36,10 @@ const CYST_OVERHOLD = 0.7;
 export const MUTATION_TIME = 10;
 export const UNITS_PER_MM = 40;
 const MISS_LOSS = 60;
+/** Bacteria: body radius and how long they need to eat a pimple. */
+export const CRAWLER_R = 12;
+const CRAWLER_EAT = 1.6;
+const GUM_TIME = 3.5;
 
 /** Tweezers snap over one pimple on a loop: [shadow from, pinch from, closed from, lift from] as fractions of the cycle. */
 export const TWEEZER_PHASES = [0.25, 0.5, 0.58, 0.8];
@@ -61,6 +65,22 @@ export const DEATH_INFO = {
   hair: { title: 'TANGLED!', sub: 'Before hair, slam a yellow pimple or the back edge for height.' },
   spikes: { title: 'SPIKED!', sub: 'Never come down between pimples over ingrown hairs.' },
   mosquito: { title: 'BITTEN!', sub: 'Come down on mosquitoes from above: they bounce you across gaps.' },
+  bacteria: { title: 'INFECTED!', sub: 'Land on bacteria from above, never walk into them. Perfects spray goo at them.' },
+};
+
+/** Shown once per player, the first time each thing scrolls into view. */
+const INTRO_HINTS = {
+  red: 'Red = not ripe yet. Skip it.',
+  over: 'Yellow = overripe: a mega launch',
+  crawler: 'Bacteria! Land on them, never walk into them',
+  mosquito: 'Land on the mosquito to bounce across the gap',
+  hair: 'Hair ahead: slam the yellow pimple to fly over',
+  spikes: "Ingrown hairs: don't come down in this gap",
+  tweezers: 'Tweezers snap on a loop: time it or pick another pimple',
+  cream: 'Cream incoming! Pop that pimple before it lands',
+  black: 'Blackheads launch you low and fast',
+  mini: 'Clusters: pop all three for a bonus',
+  cyst: 'Cyst: land, hold, let go at full charge',
 };
 
 export function multiplierFor(streak) {
@@ -143,6 +163,9 @@ export class Game {
     this.bigTexts = [];
     this.splats = [];
     this.gooBlobs = [];
+    this.shots = [];
+    this.intro = null;
+    this.introScanT = 0;
     this.banner = null;
     this.hint = null;
     this.edgeHintT = 0;
@@ -237,6 +260,9 @@ export class Game {
       if (z.type === 'mosquito' && z.alive && z.mx !== undefined && Math.abs(d.x - z.mx) < DEX_R + 12 && z.my < d.y + DEX_R) {
         return { x: d.x, y: z.my + 6, kind: 'stomp', pimple: null };
       }
+      if (z.type === 'crawler' && z.alive && z.cx !== undefined && Math.abs(d.x - z.cx) < CRAWLER_R + 9 && z.cy < d.y) {
+        return { x: d.x, y: z.cy + CRAWLER_R * 2, kind: 'stomp', pimple: null };
+      }
     }
     return { x: d.x, y: s.y, kind, pimple: p };
   }
@@ -296,7 +322,9 @@ export class Game {
     this.updateHazards(h);
     if (this.dead) return;
     this.updatePickups();
+    this.updateShots(h);
     this.updateEruption(h);
+    this.scanForIntro(h);
 
     const b = biomeAt(d.x);
     if (b.overall !== this.biomeOverall) {
@@ -330,6 +358,7 @@ export class Game {
     }
     if (!d.slamming) d.vy -= GRAVITY * h;
     d.y += d.vy * h;
+    if (d.vy < 0 && this.checkCrawlerStomp()) return;
     const s = this.surfaceAt(d.x);
     if (d.y <= s.y) {
       d.y = s.y;
@@ -471,10 +500,13 @@ export class Game {
     this.flags.popped = true;
     if (grade === 'perfect' && !this.flags.perfect) {
       this.flags.perfect = true;
-      this.edgeHintT = 5;
+      this.edgeHintT = 4;
     }
     if (this.mut && this.mut.kind === 'spores') this.sporeRipen(p);
     if (p.type === 'volcano') this.erupt = { p, n: 4, t: 0 };
+    // Perfects (and yellow pimples) spray goo forward: it knocks out what's ahead.
+    const shots = (grade === 'perfect' ? 2 : 0) + (st === 'over' ? 2 : 0);
+    if (shots) this.fireGoo(p.x, top + 6, shots);
 
     p.state = 'popped';
     p.popT = this.t;
@@ -589,6 +621,14 @@ export class Game {
       switch (z.type) {
         case 'tweezers': {
           // A loop you can read from afar: shadow, snap, hold, lift.
+          if (z.gummed > this.t) {
+            // Gummed shut by goo: hangs open overhead, harmless for a while.
+            z.tip = TWEEZER_HOVER;
+            z.shadow = 0;
+            z.closed = false;
+            z.danger = false;
+            break;
+          }
           const ph = (this.t / z.period + z.phase) % 1;
           const [P0, P1, P2, P3] = TWEEZER_PHASES;
           let tip = TWEEZER_HOVER;
@@ -627,6 +667,51 @@ export class Game {
           if (cx > z.x - 3 && cx < z.x + z.w + 3 && d.y < c.groundY(cx) + 12) this.hit('spikes');
           break;
         }
+        case 'crawler': {
+          if (!z.alive) {
+            if (z.deadT !== undefined) z.deadT += h;
+            break;
+          }
+          if (z.t < 0) {
+            if (z.x - d.x < 700) {
+              z.t = 0;
+              z.cx = z.x;
+            } else break;
+          }
+          z.t += h;
+          if (z.eating) {
+            const p = z.eating;
+            if (p.state !== 'idle') {
+              z.eating = null;
+            } else {
+              z.eatT += h;
+              if (z.eatT >= CRAWLER_EAT) {
+                p.state = 'shrunk';
+                z.eating = null;
+                this.addText('EATEN', p.x, p.base + 54, '#c6ff7a', 16);
+                this.audio.squish();
+              }
+            }
+          } else {
+            z.cx -= z.speed * h;
+            for (const p of c.pimples) {
+              if (p.state === 'idle' && p.type !== 'cyst' && p.type !== 'volcano' && Math.abs(z.cx - p.x) < 3) {
+                z.eating = p;
+                z.eatT = 0;
+                break;
+              }
+            }
+          }
+          z.cy = this.surfaceAt(z.cx).y;
+          const dx = cx - z.cx;
+          const dy = cy - (z.cy + CRAWLER_R);
+          if (dx * dx + dy * dy < (DEX_R * 0.8 + CRAWLER_R) * (DEX_R * 0.8 + CRAWLER_R)) {
+            // Generous: any airborne touch with your feet above its middle squashes it.
+            if (!d.grounded && d.y > z.cy + CRAWLER_R * 0.5) this.stomp(z, z.cx, z.cy + CRAWLER_R * 2, 'SQUASHED!', 'rgba(120,200,90,0.9)');
+            else this.hit('bacteria');
+          }
+          break;
+        }
         case 'mosquito': {
           if (!z.alive) {
             if (z.deadT !== undefined) z.deadT += h;
@@ -643,23 +728,7 @@ export class Game {
           const dy = cy - z.my;
           if (dx * dx + dy * dy < (DEX_R + 15) * (DEX_R + 15)) {
             if (!d.grounded && (d.vy < 0 || d.slamming) && cy > z.my - 8) {
-              // Stomp: a free bounce that keeps the streak alive.
-              z.alive = false;
-              z.deadT = 0;
-              d.vy = 760;
-              d.slamming = false;
-              d.launched = true;
-              d.flapUsed = false;
-              d.vx = Math.min(MAX_SPEED, d.vx + 20);
-              this.bot.plan = null;
-              this.popPoints += 75 * this.multiplier;
-              this.gooEarned += 2;
-              this.flags.stomped = true;
-              this.addText('SQUISH!', z.mx, z.my + 34, '#e8ffb0', 22);
-              this.audio.squish();
-              this.feel.pulse('medium');
-              this.shake = 5;
-              this.puff(z.mx, z.my, 12, 'rgba(160,50,50,0.85)');
+              this.stomp(z, z.mx, z.my, 'SQUISH!', 'rgba(160,50,50,0.85)');
             } else if (!z.bonkT || this.t - z.bonkT > 0.6) {
               // From below or the side it knocks you down: costs speed and the streak.
               z.bonkT = this.t;
@@ -758,6 +827,156 @@ export class Game {
     }
   }
 
+  /** Landing on a bacterium (from above) squashes it. */
+  checkCrawlerStomp() {
+    const d = this.dex;
+    for (const z of this.course.hazards) {
+      if (z.type !== 'crawler' || !z.alive || z.cx === undefined) continue;
+      const top = z.cy + CRAWLER_R * 2;
+      if (Math.abs(d.x - z.cx) < CRAWLER_R + 12 && d.y <= top + 2 && d.y > z.cy + CRAWLER_R * 0.4) {
+        this.stomp(z, z.cx, top, 'SQUASHED!', 'rgba(120,200,90,0.9)');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** A stomp is a free bounce and counts like a Perfect for the streak. */
+  stomp(z, x, y, label, color) {
+    const d = this.dex;
+    z.alive = false;
+    z.deadT = 0;
+    d.y = Math.max(d.y, y);
+    d.vy = 760;
+    d.slamming = false;
+    d.grounded = false;
+    d.launched = true;
+    d.flapUsed = false;
+    d.vx = Math.min(MAX_SPEED, d.vx + 20);
+    this.bot.plan = null;
+    const prevMult = multiplierFor(this.streak);
+    this.streak++;
+    this.maxStreak = Math.max(this.maxStreak, this.streak);
+    if (multiplierFor(this.streak) > prevMult) {
+      this.addBigText(`×${this.multiplier} STREAK`, '#fff36b');
+      this.audio.streak(this.multiplier);
+    }
+    this.popPoints += 75 * this.multiplier;
+    this.gooEarned += 2;
+    this.flags.stomped = true;
+    this.addText(label, x, y + 34, '#e8ffb0', 22);
+    this.audio.squish();
+    this.feel.pulse('medium');
+    this.shake = 5;
+    this.puff(x, y, 12, color);
+  }
+
+  fireGoo(x, y, n) {
+    const d = this.dex;
+    for (let i = 0; i < n; i++) {
+      // Short range (~150–250 ahead): it clears what you can already see, not the whole screen.
+      this.shots.push({ x, y, vx: d.vx + 60 + i * 55, vy: 300 + (i % 2) * 70, r: 5 + Math.random() * 2 });
+    }
+  }
+
+  /** Goo shots fly forward and knock out bacteria and mosquitoes, gum tweezers and block cream. */
+  updateShots(h) {
+    const c = this.course;
+    for (let i = this.shots.length - 1; i >= 0; i--) {
+      const s = this.shots[i];
+      s.vy -= 1500 * h;
+      s.x += s.vx * h;
+      s.y += s.vy * h;
+      let hit = false;
+      for (const z of c.hazards) {
+        if (Math.abs(z.x - s.x) > 600) continue;
+        if (z.type === 'crawler' && z.alive && z.cx !== undefined) {
+          const dx = s.x - z.cx;
+          const dy = s.y - (z.cy + CRAWLER_R);
+          if (dx * dx + dy * dy < (CRAWLER_R + 9) ** 2) {
+            z.alive = false;
+            z.deadT = 0;
+            this.shotKill(z.cx, z.cy + 20, 'SPLAT!');
+            hit = true;
+          }
+        } else if (z.type === 'mosquito' && z.alive && z.mx !== undefined) {
+          const dx = s.x - z.mx;
+          const dy = s.y - z.my;
+          if (dx * dx + dy * dy < 24 * 24) {
+            z.alive = false;
+            z.deadT = 0;
+            this.shotKill(z.mx, z.my, 'SPLAT!');
+            hit = true;
+          }
+        } else if (z.type === 'tweezers' && !(z.gummed > this.t) && z.tip !== undefined) {
+          const lo = z.base + z.tip - 10;
+          if (Math.abs(s.x - z.x) < 18 && s.y > lo && s.y < lo + TWEEZER_LEN + 40) {
+            z.gummed = this.t + GUM_TIME;
+            this.addText('GUMMED!', z.x, z.base + 120, '#fff2a8', 18);
+            this.audio.splat();
+            hit = true;
+          }
+        } else if (z.type === 'cream' && z.t >= 0 && !z.done) {
+          const k = Math.min(1, z.t / z.fall);
+          const by = z.p.base + z.p.h + 560 * (1 - k * k);
+          if (Math.abs(s.x - z.p.x) < 22 && Math.abs(s.y - by) < 30) {
+            z.done = true;
+            this.addText('BLOCKED!', z.p.x, by, '#ffffff', 18);
+            this.audio.splat();
+            this.puff(z.p.x, by, 10, 'rgba(250,250,245,0.9)');
+            hit = true;
+          }
+        }
+        if (hit) break;
+      }
+      const gy = c.groundY(s.x);
+      if (hit || s.y <= gy) {
+        if (!hit && this.decals.length < 140) this.decals.push({ x: s.x, y: gy, r: s.r * 1.8, life: 5, color: '#f7dc8f' });
+        this.shots.splice(i, 1);
+      }
+    }
+  }
+
+  shotKill(x, y, label) {
+    this.popPoints += 50 * this.multiplier;
+    this.gooEarned += 1;
+    this.flags.shotKill = true;
+    this.addText(label, x, y + 24, '#fff2a8', 20);
+    this.audio.splat();
+    this.feel.pulse('light');
+    this.puff(x, y, 10, 'rgba(255,236,150,0.9)');
+  }
+
+  /** Explains each new thing once, the first time it scrolls into view. */
+  scanForIntro(h) {
+    if (this.autoplay) return;
+    if (this.intro) {
+      this.intro.t -= h;
+      if (this.intro.t <= 0) this.intro = null;
+      return;
+    }
+    this.introScanT -= h;
+    if (this.introScanT > 0) return;
+    this.introScanT = 0.15;
+    const d = this.dex;
+    const inView = (x) => x > d.x + 40 && x < d.x + 380;
+    const show = (key) => {
+      if (this.flags['seen_' + key]) return false;
+      this.flags['seen_' + key] = true;
+      this.intro = { text: INTRO_HINTS[key], t: 2.8 };
+      return true;
+    };
+    for (const z of this.course.hazards) {
+      if (inView(z.type === 'crawler' && z.cx !== undefined ? z.cx : z.x) && INTRO_HINTS[z.type] && show(z.type)) return;
+    }
+    for (const p of this.course.pimples) {
+      if (!inView(p.x) || p.state !== 'idle') continue;
+      if (p.ripe === 'red' && show('red')) return;
+      if (p.ripe === 'over' && show('over')) return;
+      if (INTRO_HINTS[p.type] && show(p.type)) return;
+    }
+  }
+
   endMutation(reason) {
     if (!this.mut) return;
     const d = this.dex;
@@ -829,7 +1048,7 @@ export class Game {
     for (let i = 0; i < 3; i++) {
       this.splats.push({
         x: 0.45 + Math.random() * 0.5, y: 0.12 + Math.random() * 0.5,
-        r: 0.08 + Math.random() * 0.07, life: 3, max: 3, seed: Math.random() * 1000,
+        r: 0.045 + Math.random() * 0.035, life: 3, max: 3, seed: Math.random() * 1000,
       });
     }
     this.audio.splat();
@@ -889,8 +1108,9 @@ export class Game {
     if (d.stuck && d.stuck.kind === 'cyst' && !f.cyst) hint = 'Hold… and let go at full charge!';
     else if (!f.jumped) hint = 'Tap to jump';
     else if (!f.popped) hint = 'Tap in the air to slam straight down onto a pimple';
+    else if (this.intro) hint = this.intro.text;
     else if (!f.perfect) hint = 'Slam when the marker turns gold: right on the head';
-    else if (this.edgeHintT > 0) hint = 'Skip red pimples · yellow ones launch you high';
+    else if (this.edgeHintT > 0) hint = 'Perfects spray goo that knocks out enemies ahead';
     this.hint = hint;
   }
 
@@ -960,6 +1180,12 @@ export class Game {
         bestScore = score;
         best = p;
       }
+    }
+    // A bacterium in reach comes first: squash it before it walks into the landing zone.
+    const cr = hz.find((z) => z.type === 'crawler' && z.alive && z.cx !== undefined && z.cx > d.x + 10 && z.cx < landX);
+    if (cr) {
+      const eta = (cr.cx - d.x) / (d.vx + (cr.eating ? 0 : cr.speed));
+      return { tapX: cr.cx - (cr.eating ? 0 : cr.speed * eta) + gauss() * this.botError * d.vx };
     }
     if (best) {
       const hairNext = hairAhead(best.x) && best.ripe !== 'over';

@@ -41,16 +41,22 @@ test('generating in small steps equals generating at once', () => {
   a.pimples.forEach((p, i) => assert.equal(p.x, b.pimples[i].x));
 });
 
-test('the tutorial stretch is only ripe whiteheads', () => {
-  const c = new Course(42);
-  c.ensure(TUTORIAL_END);
-  const early = c.pimples.filter((p) => p.x < TUTORIAL_END);
-  assert.ok(early.length >= 6);
-  for (const p of early) {
-    assert.equal(p.type, 'white');
-    assert.equal(p.ripe, 'ripe');
+test('the hand-built opening teaches one thing at a time', () => {
+  for (const seed of [42, dailySeed('2026-11-21')]) {
+    const c = new Course(seed);
+    while (c.fields < 7) c.emitField();
+    const end = c.genX;
+    // nothing but whiteheads early on, and the first two fields are hazard-free
+    assert.ok(c.pimples.every((p) => p.type === 'white'));
+    const firstHazard = Math.min(...c.hazards.map((z) => z.x));
+    assert.ok(firstHazard > c.pimples[6].x, 'hazard before the third field');
+    // every early lesson appears
+    const kinds = new Set(c.hazards.map((z) => z.type));
+    for (const k of ['crawler', 'mosquito', 'hair', 'spikes', 'tweezers']) assert.ok(kinds.has(k), `missing ${k}`);
+    assert.ok(c.pimples.some((p) => p.ripe === 'red'));
+    assert.ok(c.pimples.some((p) => p.ripe === 'over'));
+    assert.ok(end < 5400, 'opening too long');
   }
-  assert.equal(c.hazards.filter((z) => z.x < TUTORIAL_END).length, 0);
 });
 
 test('pimples never overlap and gaps stay jumpable', () => {
