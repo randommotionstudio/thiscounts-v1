@@ -132,7 +132,10 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
     done: [...groups.map(g => ['here', g] as const), ...notHereGroups.map(g => ['nothere', g] as const)]
       .filter(([, g]) => g.items.every(i => i.checked)).map(([a, g]) => groupKey(a, g)).sort().join(','),
   };
-  const [settled, setSettled] = useState(now);
+  // order: the checked items at the bottom, top to bottom – a newly checked one goes to the top of them, right below
+  // the open ones. back: unchecked ones that join the open ones at their end, right above the checked ones.
+  // Both the shortest way, so nothing travels further than it has to.
+  const [settled, setSettled] = useState(() => ({ ...now, order: curItems.filter(i => i.checked).map(i => i.id), back: [] as string[] }));
   // Finished categories opened again by tapping their title
   const [opened, setOpened] = useState<string[]>([]);
   const settle = useRef<number | undefined>(undefined);
@@ -140,7 +143,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
   latest.current = now;
   const settleLater = () => {
     const l = latest.current;
-    if (l.sunk === settled.sunk && l.done === settled.done && settle.current === undefined) return;
+    if (l.sunk === [...settled.order].sort().join(',') && l.done === settled.done && settle.current === undefined) return;
     clearTimeout(settle.current);
     settle.current = window.setTimeout(() => {
       settle.current = undefined;
@@ -148,12 +151,28 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       flip.capture();
       // A category that has just been finished closes, even if it was opened before
       setOpened(o => o.filter(k => was.includes(k) && is.includes(k)));
-      setSettled(next);
+      const checked = new Set(next.sunk ? next.sunk.split(',') : []);
+      const at = (id: string) => shownAt.current.get(id) ?? 0;
+      setSettled(prev => {
+        const fresh = [...checked].filter(id => !prev.order.includes(id)).sort((a, b) => at(a) - at(b));
+        const returned = prev.order.filter(id => !checked.has(id));
+        return { ...next, order: [...fresh, ...prev.order.filter(id => checked.has(id))], back: [...prev.back.filter(id => !checked.has(id)), ...returned] };
+      });
     }, SINK_AFTER_MS);
   };
   useEffect(settleLater, [now.sunk, now.done]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => clearTimeout(settle.current), []);
-  const sunkIds = new Set(settled.sunk ? settled.sunk.split(',') : []);
+  const sunkAt = new Map(settled.order.map((id, n) => [id, n]));
+  const backAt = new Map(settled.back.map((id, n) => [id, n]));
+  /** A category's items as shown: open ones (those unchecked during the trip last), then the checked ones */
+  const arrange = (items: Item[]) => [
+    ...items.filter(i => !sunkAt.has(i.id) && !backAt.has(i.id)),
+    ...items.filter(i => !sunkAt.has(i.id) && backAt.has(i.id)).sort((a, b) => backAt.get(a.id)! - backAt.get(b.id)!),
+    ...items.filter(i => sunkAt.has(i.id)).sort((a, b) => sunkAt.get(a.id)! - sunkAt.get(b.id)!),
+  ];
+  // Where each item is on screen right now (several checked at once keep their order on the way down)
+  const shownAt = useRef(new Map<string, number>());
+  shownAt.current = new Map([...groups, ...notHereGroups].flatMap(g => arrange(g.items)).map((i, n) => [i.id, n]));
   const doneGroups = new Set(settled.done ? settled.done.split(',') : []);
   const toggleGroup = (k: string) => { flip.capture(); setOpened(o => (o.includes(k) ? o.filter(x => x !== k) : [...o, k])); };
   const insteadOf = (i: Item) => { const t = spontaneous ? null : temp(i); return t ? data.stores.find(s => s.id === t.from)?.name || null : null; };
@@ -252,7 +271,7 @@ export function StoreScreen({ stopId, spontaneous = false }: { stopId: string; s
       </button>
       <div data-flip-h={k} aria-hidden={closed || undefined} inert={closed || undefined}
         style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', padding: '0 0 2px', margin: '0 0 -2px', ...(closed ? { height: 0, padding: 0, margin: 0 } : null) }}>
-        {[...g.items.filter(i => !sunkIds.has(i.id)), ...g.items.filter(i => sunkIds.has(i.id))].map(i => {
+        {arrange(g.items).map(i => {
           const isNew = lateFromOther(i) && !i.checked;
           const passed = isNew && pi.passed(i.category);
           return (

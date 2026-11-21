@@ -49,10 +49,19 @@ const order = P => P.evaluate(() => { const g = document.querySelector('.scroll 
   const after = await order(A);
   ok(JSON.stringify(after) === JSON.stringify([...start.slice(2), start[0], start[1]]), 'checked ones at the bottom, open ones on top in their order: ' + after.join(', '));
   await A.screenshot({ path: SHOTS + 'store-sinking.png' });
-  // unchecking moves it back up to its place
-  await row(A, first).click(); await A.waitForTimeout(1500);
-  const back = await order(A);
-  ok(JSON.stringify(back) === JSON.stringify([start[0], ...start.slice(2), start[1]]), 'unchecked → back up to its place: ' + back.join(', '));
+  // Every item takes the shortest way. Unchecking the topmost checked one: it is already right above the others
+  const [t, g, x, y] = start; // after the two checks: x, y open – t, g checked
+  await row(A, t).click(); await A.waitForTimeout(1500);
+  let now = await order(A);
+  ok(JSON.stringify(now) === JSON.stringify([x, y, t, g]), 'unchecking the topmost checked item: it stays where it is (' + now.join(', ') + ')');
+  // Checking: it goes right below the open ones, above the ones checked before
+  await row(A, x).click(); await A.waitForTimeout(1500);
+  now = await order(A);
+  ok(JSON.stringify(now) === JSON.stringify([y, t, x, g]), 'checking: lands at the top of the checked ones (' + now.join(', ') + ')');
+  // Unchecking the bottom one: up past the checked ones only, to the end of the open ones
+  await row(A, g).click(); await A.waitForTimeout(1500);
+  now = await order(A);
+  ok(JSON.stringify(now) === JSON.stringify([y, t, g, x]), 'unchecking the bottom one: only up to the end of the open ones (' + now.join(', ') + ')');
 
   // ---- "Nicht gefunden" → back on the list keeps the store ----
   const missing = async name => {
